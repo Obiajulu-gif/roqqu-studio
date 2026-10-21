@@ -5,6 +5,7 @@
  * JetBrains Mono only for real machine values (endpoints, types, code).
  */
 .page {
+  overflow: clip;
   --bg: #080d18;
   --bg-2: #0d1422;
   --panel: #121a2a;
@@ -19,7 +20,6 @@
   --violet: #8b7bff;
   --red: #ff6b6b;
   position: relative;
-  overflow: hidden;
   min-height: 100vh;
   background:
     linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 48px 48px,
@@ -73,9 +73,16 @@
 
 /* --- nav --- */
 .nav {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 22px 24px;
+  position: sticky !important;
+  top: 0;
+  z-index: 50;
+  max-width: none;
+  margin: 0;
+  padding: 16px max(24px, calc((100% - 1152px) / 2));
+  background: rgba(8, 13, 24, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(30, 40, 64, 0.7);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -312,14 +319,14 @@
 
 .nodeTitle {
   fill: var(--text);
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 600;
   font-family: var(--lp-body), sans-serif;
 }
 
 .nodeType {
-  fill: #6f7b93;
-  font-size: 9.5px;
+  fill: #7d89a1;
+  font-size: 9.8px;
   font-family: var(--lp-mono), monospace;
 }
 
@@ -834,7 +841,7 @@
 .footer {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 28px 24px 44px;
+  padding: 40px 24px 56px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -921,5 +928,137 @@
     width: auto;
     margin: 0 6px 6px;
     transform: none;
+  }
+}
+
+/* --- developers --- */
+.devList {
+  list-style: none;
+  margin: 0 0 32px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.devList li {
+  position: relative;
+  padding-left: 22px;
+  color: var(--soft);
+}
+
+.devList li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--blue);
+}
+
+.devList b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* --- faq --- */
+.faq {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
+  margin-top: 28px;
+}
+
+.faq details {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 0 20px;
+}
+
+.faq details[open] {
+  border-color: var(--line-2);
+}
+
+.faq summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 18px 28px 18px 0;
+  position: relative;
+  font-weight: 600;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary::after {
+  content: "+";
+  position: absolute;
+  right: 0;
+  top: 15px;
+  font-size: 20px;
+  color: var(--blue-text);
+}
+
+.faq details[open] summary::after {
+  content: "2";
+}
+
+.faq summary:focus-visible {
+  outline: 2px solid var(--blue-text);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.faq details p {
+  margin: 0 0 18px;
+  color: var(--soft);
+}
+
+/* --- footer --- */
+.footerBrand {
+  max-width: 340px;
+}
+
+.footerBrand p {
+  margin: 12px 0 0;
+}
+
+.footerCols {
+  display: flex;
+  gap: 64px;
+}
+
+.footerCols div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footerCols h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.footerCols a {
+  text-decoration: none;
+}
+
+.footerCols a:hover {
+  color: var(--text);
+}
+
+@media (max-width: 980px) {
+  .faq {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .footerCols {
+    gap: 40px;
   }
 }

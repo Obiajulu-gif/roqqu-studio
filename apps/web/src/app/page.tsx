@@ -31,6 +31,33 @@ const ENDPOINTS = [
   "POST /user/pay-electric",
 ];
 
+const FAQ = [
+  {
+    q: "Do I need to write code?",
+    a: "No. Business owners pick a template or describe what they sell to Rooky. Developers can use the API playground and the generated code.",
+  },
+  {
+    q: "Which coins can my customers pay with?",
+    a: "Bitcoin, Ethereum and Tron. These are the coins Roqqu can create deposit addresses for. The naira total is converted at Roqqu's live coin price.",
+  },
+  {
+    q: "How do you know a customer really paid?",
+    a: "Every order gets its own Roqqu address. When Roqqu's webhook arrives, Studio checks its secret, then asks Roqqu how much landed on that address. Screenshots and the webhook alone never mark an order paid.",
+  },
+  {
+    q: "Is there a test mode?",
+    a: "Practice mode simulates every step with no keys and no money. Roqqu itself has no sandbox, so live calls move real crypto and stay switched off until you allow them on your server.",
+  },
+  {
+    q: "Does Roqqu Studio hold my money?",
+    a: "No. Payments go to your own Roqqu account, using your secret key, which stays on your server and never reaches a browser.",
+  },
+  {
+    q: "What does it cost?",
+    a: "The studio is open source. Roqqu charges its own fees for some services, for example BVN and NIN checks and electricity purchases.",
+  },
+];
+
 const STEPS = [
   { title: "Pick a template", body: "Or tell Rooky what your business does in plain words." },
   { title: "Studio reviews the flow", body: "Payouts that skip verification are blocked before they can run." },
@@ -50,7 +77,7 @@ export default function Landing() {
         </Link>
         <div className={styles.navLinks}>
           <a href="#build">What you can build</a>
-          <a href="#hood">Under the hood</a>
+          <a href="#developers">Developers</a>
           <Link href="/studio/playground">API playground</Link>
           <a href="https://github.com/Obiajulu-gif/roqqu-studio">GitHub</a>
           <Link href="/studio" className={styles.navCta}>
@@ -188,14 +215,24 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="hood" className={styles.section} aria-labelledby="hood-title">
+      <section id="developers" className={styles.section} aria-labelledby="dev-title">
         <div className={styles.hoodGrid}>
           <div>
-            <h2 id="hood-title" className={display.className}>Under the hood, it is real code</h2>
+            <h2 id="dev-title" className={display.className}>Every Roqqu endpoint, ready to copy</h2>
             <p className={styles.sectionLede}>
-              Developers get a typed flow, a safety analyzer that never relies on AI, and runnable
-              Python generated from the canvas. Copy it, run it, own it.
+              The API playground covers the whole Roqqu reference. Pick an endpoint, fill the form,
+              copy working JavaScript, and send a real request without exposing your key.
             </p>
+            <ul className={styles.devList}>
+              <li><b>19 endpoints and the deposit webhook</b> from developers.roqqu.com</li>
+              <li><b>axios, fetch or roqqu.js</b>, updating as you type</li>
+              <li><b>Example responses</b> from the docs, even with no account</li>
+              <li><b>roqqu.js</b>: one dependency-free file, one function per endpoint</li>
+              <li><b>A safety analyzer</b> that blocks unsafe payment flows, no AI involved</li>
+            </ul>
+            <Link href="/studio/playground" className={styles.primary}>
+              Open the API playground
+            </Link>
           </div>
           <UnderTheHood />
         </div>
@@ -237,6 +274,18 @@ export default function Landing() {
         </div>
       </section>
 
+      <section id="faq" className={styles.section} aria-labelledby="faq-title">
+        <h2 id="faq-title" className={display.className}>Questions people ask</h2>
+        <div className={styles.faq}>
+          {FAQ.map((item) => (
+            <details key={item.q}>
+              <summary>{item.q}</summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       <section className={styles.final}>
         <h2 className={display.className}>Your first verified payment flow is a few clicks away.</h2>
         <Link href="/studio" className={styles.primary}>
@@ -246,11 +295,29 @@ export default function Landing() {
       </section>
 
       <footer className={styles.footer}>
-        <p>
-          Built on the <a href="https://developers.roqqu.com">Roqqu API</a>. Roqqu Studio is an
-          independent project, not an official Roqqu product.
-        </p>
-        <a href="https://github.com/Obiajulu-gif/roqqu-studio">Source on GitHub</a>
+        <div className={styles.footerBrand}>
+          <Link href="/" className={styles.brand}>
+            <Image src="/figma/roqqu-logo.svg" alt="" width={24} height={24} />
+            <span className={display.className}>Roqqu Studio</span>
+          </Link>
+          <p>
+            Built on the Roqqu API. An independent project, not an official Roqqu product.
+          </p>
+        </div>
+        <nav className={styles.footerCols} aria-label="Footer">
+          <div>
+            <h3>Product</h3>
+            <Link href="/studio">Studio</Link>
+            <Link href="/studio/playground">API playground</Link>
+            <a href="#build">Templates</a>
+          </div>
+          <div>
+            <h3>Resources</h3>
+            <a href="https://developers.roqqu.com">Roqqu API docs</a>
+            <a href="https://github.com/Obiajulu-gif/roqqu-studio">Source on GitHub</a>
+            <a href="#faq">Questions</a>
+          </div>
+        </nav>
       </footer>
     </div>
   );
