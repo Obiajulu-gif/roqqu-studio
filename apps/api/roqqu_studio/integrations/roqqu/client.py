@@ -210,6 +210,17 @@ class RoqquClient:
             json={"phone_number": phone_number, "amount": float(amount)},
         )
 
+    def verify_meter(self, *, provider: str, meter_type: str, meter_number: str) -> dict[str, Any]:
+        """GET /verify-meter: the customer name and address behind a meter."""
+        return dict(
+            self._call(
+                "GET",
+                "/verify-meter",
+                params={"provider": provider, "meter_type": meter_type, "meter_number": meter_number},
+            )
+            or {}
+        )
+
     def pay_electric(
         self, *, provider: str, meter_type: str, meter_number: str, amount: Decimal, phone_number: str
     ) -> dict[str, Any]:
@@ -228,6 +239,30 @@ class RoqquClient:
             )
             or {}
         )
+
+
+_PRICE_TTL_S = 60.0
+_price_cache: dict[str, Any] = {"at": 0.0, "data": None}
+
+
+def public_prices(base_url: str, *, transport: httpx.BaseTransport | None = None) -> dict[str, Any]:
+    """GET /prices: USD price and 24h change of every Roqqu token.
+
+    Public market data (no key, no money), so it works before any Roqqu account
+    is connected. Cached for a minute so a busy dashboard stays polite."""
+    now = time.monotonic()
+    if _price_cache["data"] is not None and now - _price_cache["at"] < _PRICE_TTL_S:
+        return _price_cache["data"]
+    try:
+        with httpx.Client(base_url=base_url.rstrip("/"), timeout=10.0, transport=transport) as http:
+            resp = http.get("/prices")
+        body = resp.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise RoqquError(f"Roqqu prices unavailable: {type(exc).__name__}") from exc
+    if resp.status_code >= 400 or body.get("status") != "success":
+        raise RoqquError(body.get("message") or f"HTTP {resp.status_code}")
+    _price_cache.update(at=now, data=dict(body.get("data") or {}))
+    return _price_cache["data"]
 
 
 def usd_to_ngn(usd: Decimal | str, settings: Settings) -> Decimal:

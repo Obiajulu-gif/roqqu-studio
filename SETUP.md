@@ -13,6 +13,8 @@ Roqqu Studio runs with **zero keys**. Every key below only unlocks a live featur
 | Shop link, invoice, dashboard pages | Render fully |
 | Pay button on shop/invoice | Needs Roqqu keys and `ALLOW_PRODUCTION_EXECUTION=true` (returns a clear 502 until then) |
 | Email / WhatsApp notifications | Recorded only, not sent |
+| Roqqu rates card on the dashboard | Works without keys (Roqqu's `/prices` is public); shows "unavailable" if Roqqu is unreachable |
+| Pay bills template (meter check, electricity, airtime) | Practice runs work; live runs need Roqqu keys |
 
 ## Keys
 

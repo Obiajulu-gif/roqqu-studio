@@ -43,6 +43,13 @@ export const TEMPLATE_PICKER_OPTIONS: TemplatePickerOption[] = [
     kind: "template",
   },
   {
+    id: "pay-bills",
+    title: "Pay bills",
+    description: "Sell electricity units and airtime through Roqqu",
+    image: "/figma/templates/template-payments.png",
+    kind: "template",
+  },
+  {
     id: "__other__",
     title: "Something else",
     description: "Describe what you want and let Moni build it",

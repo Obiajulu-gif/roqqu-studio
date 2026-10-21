@@ -78,7 +78,9 @@ class Order(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-def roqqu_verifier(payment_reference: str, workflow_id: str | None = None) -> dict[str, Any]:
+def roqqu_verifier(
+    payment_reference: str, workflow_id: str | None = None, token: str | None = None
+) -> dict[str, Any]:
     """Default verifier: ask Roqqu what actually landed on the deposit address.
 
     The payment reference IS the Roqqu deposit address (Generate Wallet). Get
@@ -89,7 +91,9 @@ def roqqu_verifier(payment_reference: str, workflow_id: str | None = None) -> di
 
     settings = credential_store.settings_for(workflow_id)
     with RoqquClient(settings) as client:
-        res = client.wallet_received(token=settings.roqqu_pay_token, address=payment_reference)
+        res = client.wallet_received(
+            token=token or settings.roqqu_pay_token, address=payment_reference
+        )
     return {"status": res["status"], "amount_paid": str(usd_to_ngn(res["amount_usd"], settings))}
 
 
@@ -169,6 +173,10 @@ class OrdersService:
             )
         except (TypeError, ValueError):
             accepts_workflow = False
+        if accepts_workflow and "token" in params:
+            # The coin the buyer paid in rides on the order as "<token>:<amount>".
+            token = order.transaction_reference.partition(":")[0] or None
+            return self.verifier(order.payment_reference, order.workflow_id, token=token)
         if accepts_workflow:
             return self.verifier(order.payment_reference, order.workflow_id)
         return self.verifier(order.payment_reference)

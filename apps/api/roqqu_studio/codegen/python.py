@@ -34,6 +34,7 @@ _ENDPOINTS: dict[str, tuple[str, str]] = {
     "roqqu.nin_verify": ("POST", "/user/nin-verify"),
     "roqqu.recharge_airtime": ("POST", "/user/recharge-airtime"),
     "roqqu.pay_electric": ("POST", "/user/pay-electric"),
+    "roqqu.verify_meter": ("GET", "/verify-meter"),
 }
 _SEND_TYPES = {"roqqu.send_token", "roqqu.split_send", "roqqu.refund_send"}
 

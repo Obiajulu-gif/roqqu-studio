@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from ..ir.models import Workflow
 from .ajo import ajo
+from .bills import bills
 from .invoice import invoice
 from .payroll import payroll
 from .sell_online import sell_online
@@ -89,6 +90,19 @@ _TEMPLATES: dict[str, TemplateDef] = {
             ),
         ),
         builder=payroll,
+    ),
+    "pay-bills": TemplateDef(
+        info=TemplateInfo(
+            id="pay-bills",
+            title="Pay bills (electricity & airtime)",
+            persona="Vendor or app selling airtime and power units",
+            description=(
+                "Sell electricity units and airtime through Roqqu. The meter is "
+                "checked by name before money moves, each request is paid once, "
+                "and your Roqqu balance is checked first."
+            ),
+        ),
+        builder=bills,
     ),
 }
 

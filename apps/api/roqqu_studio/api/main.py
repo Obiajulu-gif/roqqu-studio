@@ -14,11 +14,12 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from decimal import Decimal
+from urllib.parse import parse_qs
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -56,7 +57,14 @@ from roqqu_studio.onboarding import (
     StudioProfileUpdate,
     profile_store,
 )
-from roqqu_studio.integrations.roqqu import RoqquClient, RoqquError, ngn_to_token
+from roqqu_studio.integrations.roqqu import (
+    WALLET_TOKENS,
+    RoqquClient,
+    RoqquError,
+    ngn_to_token,
+    public_prices,
+    usd_to_ngn,
+)
 from roqqu_studio.money import money
 from roqqu_studio.notifications import (
     Notification,
@@ -64,7 +72,7 @@ from roqqu_studio.notifications import (
     notification_log,
     whatsapp_notifier,
 )
-from roqqu_studio.orders import LineItem, Order, orders_service
+from roqqu_studio.orders import LineItem, Order, OrderStatus, orders_service
 from roqqu_studio.executor import (
     ExecutionEvent,
     ExecutionRun,
@@ -726,14 +734,23 @@ def _public_base_url(request: Request) -> str:
     return base
 
 
-def _open_deposit(workflow_id: str | None, amount_ngn: Decimal, reference: str, artifact_id: str) -> dict:
+def _pay_token(workflow_id: str | None, token: str | None) -> str:
+    """The coin the buyer chose (btc, eth or trx), else the merchant default."""
+    chosen = (token or credential_store.settings_for(workflow_id).roqqu_pay_token).lower()
+    if chosen not in WALLET_TOKENS:
+        raise HTTPException(status_code=400, detail=f"pay with one of: {', '.join(WALLET_TOKENS)}")
+    return chosen
+
+
+def _open_deposit(
+    workflow_id: str | None, amount_ngn: Decimal, reference: str, artifact_id: str, token: str
+) -> dict:
     """Collect an NGN amount in crypto on Roqqu: a fresh deposit address
     (Generate Wallet) plus the token amount that covers it at Roqqu's price.
 
     Roqqu has no hosted checkout, so `checkout_url` is our own deposit page.
     The address doubles as the payment reference the verifier checks."""
     settings = credential_store.settings_for(workflow_id)
-    token = settings.roqqu_pay_token
     try:
         with RoqquClient(settings) as client:
             wallet = client.generate_wallet(token=token)
@@ -747,14 +764,66 @@ def _open_deposit(workflow_id: str | None, amount_ngn: Decimal, reference: str, 
     }
 
 
-@app.get("/preview/{artifact_id}/deposit/{reference}", response_class=HTMLResponse)
-def deposit_page(artifact_id: str, reference: str) -> HTMLResponse:
-    """Where to send the crypto: address, exact amount, QR. Status flips only
-    after the verifier sees the money on Roqqu."""
+def _deposit_order(artifact_id: str, reference: str) -> Order:
     _artifact_or_404(artifact_id)
     order = orders_service.get(reference)
     if order is None or order.artifact_id != artifact_id or not order.payment_reference:
         raise HTTPException(status_code=404, detail=f"unknown payment: {reference}")
+    return order
+
+
+@app.get("/roqqu/prices")
+def roqqu_prices() -> dict:
+    """Live Roqqu market prices (public GET /prices) with an NGN column.
+
+    Needs no Roqqu key, so the dashboard rate card works on day one. NGN is
+    derived from ROQQU_NGN_PER_USD because Roqqu quotes USD only."""
+    settings = credential_store.settings_for(None)
+    try:
+        data = public_prices(settings.roqqu_base_url)
+    except RoqquError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from None
+    tokens = []
+    for symbol, row in sorted(data.items()):
+        if not isinstance(row, dict) or row.get("price") is None:
+            continue
+        usd = Decimal(str(row["price"]))
+        tokens.append(
+            {
+                "symbol": symbol,
+                "price_usd": str(usd),
+                "price_ngn": str(usd_to_ngn(usd, settings)),
+                "change": row.get("change"),
+                "payable": symbol in WALLET_TOKENS,
+            }
+        )
+    return {"ngn_per_usd": settings.roqqu_ngn_per_usd, "tokens": tokens}
+
+
+@app.post("/preview/{artifact_id}/deposit/{reference}")
+async def switch_deposit_coin(artifact_id: str, reference: str, request: Request) -> RedirectResponse:
+    """The buyer picked another coin: a fresh address for that coin replaces
+    the old one. A verified order is never touched."""
+    order = _deposit_order(artifact_id, reference)
+    token = parse_qs((await request.body()).decode()).get("token", [""])[0]
+    if order.status is not OrderStatus.VERIFIED:
+        tx = _open_deposit(
+            order.workflow_id, order.amount, reference, artifact_id,
+            _pay_token(order.workflow_id, token),
+        )
+        orders_service.attach_payment(
+            reference,
+            payment_reference=tx["payment_reference"],
+            transaction_reference=tx["transaction_reference"],
+        )
+    return RedirectResponse(f"/preview/{artifact_id}/deposit/{reference}", status_code=303)
+
+
+@app.get("/preview/{artifact_id}/deposit/{reference}", response_class=HTMLResponse)
+def deposit_page(artifact_id: str, reference: str) -> HTMLResponse:
+    """Where to send the crypto: address, exact amount, QR, and a coin switch.
+    Status flips only after the verifier sees the money on Roqqu."""
+    order = _deposit_order(artifact_id, reference)
     import html
 
     import segno
@@ -763,17 +832,25 @@ def deposit_page(artifact_id: str, reference: str) -> HTMLResponse:
     address = order.payment_reference
     qr = segno.make(address, error="m").svg_inline(scale=5, border=2, dark="#1C2127")
     e = html.escape
+    switch = "".join(
+        f'<button name="token" value="{t}"{" disabled" if t == token else ""}>{t.upper()}</button>'
+        for t in WALLET_TOKENS
+    )
     return HTMLResponse(
         f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Pay with {e(token.upper())}</title>
 <style>body{{font-family:system-ui,sans-serif;background:#f6f7fb;color:#1C2127;margin:0;padding:24px}}
 .card{{max-width:420px;margin:auto;background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 20px #0001;text-align:center}}
 code{{display:block;word-break:break-all;background:#eef2ff;padding:12px;border-radius:8px;margin:8px 0}}
-.amt{{font-size:28px;font-weight:700;color:#2764FF}}small{{color:#666}}</style></head><body><div class="card">
+.amt{{font-size:28px;font-weight:700;color:#2764FF}}small{{color:#666}}
+form button{{margin:0 4px;padding:8px 14px;border-radius:999px;border:1px solid #2764FF;background:#fff;color:#2764FF;font-weight:600;cursor:pointer}}
+form button:disabled{{background:#2764FF;color:#fff;cursor:default}}</style></head><body><div class="card">
 <strong style="color:#2764FF;font-size:20px">Roqqu</strong>
+<form method="post" action="/preview/{e(artifact_id)}/deposit/{e(reference)}"><p><small>Pay with</small></p>{switch}</form>
 <p>Send exactly</p><div class="amt">{e(due)} {e(token.upper())}</div>
 <small>= NGN {order.amount:,} at Roqqu's live price</small>
 <p>to this {e(token.upper())} address</p><code>{e(address)}</code>{qr}
+<p><small>Only send {e(token.upper())}, and only to the address shown now.</small></p>
 <p id="s"><small>Waiting for Roqqu to confirm the deposit...</small></p></div>
 <script>setInterval(async()=>{{const r=await fetch("/preview/{e(artifact_id)}/orders/{e(reference)}/verify",{{method:"POST"}});
 if(r.ok&&(await r.json()).status==="verified")document.getElementById("s").textContent="Paid. Confirmed by Roqqu.";}},10000);</script>
@@ -782,7 +859,7 @@ if(r.ok&&(await r.json()).status==="verified")document.getElementById("s").textC
 
 
 @app.post("/preview/{artifact_id}/pay")
-def preview_pay(artifact_id: str, request: Request) -> dict:
+def preview_pay(artifact_id: str, request: Request, token: str | None = None) -> dict:
     """Create a REAL sandbox checkout for the artifact's product (#52).
 
     Order persistence and verification arrive with #53; this returns the live
@@ -791,7 +868,10 @@ def preview_pay(artifact_id: str, request: Request) -> dict:
     artifact = _artifact_or_404(artifact_id)
     reference = f"ord-{uuid4().hex[:10]}"
     # Their keys, their money: collect to the workflow's own account (#68, D19).
-    tx = _open_deposit(artifact.workflow_id, money(artifact.config.price_ngn), reference, artifact_id)
+    tx = _open_deposit(
+        artifact.workflow_id, money(artifact.config.price_ngn), reference, artifact_id,
+        _pay_token(artifact.workflow_id, token),
+    )
     orders_service.create(
         reference=reference,
         artifact_id=artifact_id,
@@ -1237,14 +1317,19 @@ def artifact_notifications(artifact_id: str) -> list[Notification]:
 
 
 @app.post("/preview/{artifact_id}/invoice/{reference}/pay")
-def invoice_pay(artifact_id: str, reference: str, request: Request) -> dict:
+def invoice_pay(
+    artifact_id: str, reference: str, request: Request, token: str | None = None
+) -> dict:
     """Buyer clicked Pay now on an invoice: open a REAL sandbox checkout for
     exactly the invoice amount, into the merchant's account (#85, #68)."""
     artifact = _artifact_or_404(artifact_id)
     inv = orders_service.get(reference)
     if inv is None or inv.artifact_id != artifact_id:
         raise HTTPException(status_code=404, detail=f"unknown invoice: {reference}")
-    tx = _open_deposit(artifact.workflow_id, inv.amount, reference, artifact_id)
+    tx = _open_deposit(
+        artifact.workflow_id, inv.amount, reference, artifact_id,
+        _pay_token(artifact.workflow_id, token),
+    )
     orders_service.attach_payment(
         reference,
         payment_reference=tx["payment_reference"],

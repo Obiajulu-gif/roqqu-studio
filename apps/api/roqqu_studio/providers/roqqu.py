@@ -40,6 +40,7 @@ DOC_BVN = f"{_REF}/bvn-verify"
 DOC_NIN = f"{_REF}/nin-verification"
 DOC_AIRTIME = f"{_REF}/airtime-recharge"
 DOC_ELECTRIC = f"{_REF}/electricity-meter-recharge"
+DOC_METER = f"{_REF}/verify-meter-number"
 
 _COLLECT_OUTPUTS = [
     PortSpec(name="payment_reference", type=D.PAYMENT_REFERENCE),  # the deposit address
@@ -247,6 +248,17 @@ ROQQU_NODE_TYPES: list[NodeTypeDef] = [
         inputs=[PortSpec(name="amount", type=D.MONEY)],
     ),
     NodeTypeDef(
+        type="roqqu.verify_meter",
+        category=C.ROQQU,
+        title="Verify Meter Number",
+        description="Check a meter number and get the customer's name and address.",
+        when_to_use="Before buying electricity: confirm the meter exists and belongs to "
+        "the right customer, so units never go to a mistyped meter.",
+        doc_url=DOC_METER,
+        default_tags=[T.EXTERNAL_CALL, T.BENEFICIARY_VALIDATION],
+        outputs=[PortSpec(name="account_name", type=D.ANY)],
+    ),
+    NodeTypeDef(
         type="roqqu.pay_electric",
         category=C.ROQQU,
         title="Electricity Meter Recharge",
@@ -310,6 +322,11 @@ _REQUEST_TEMPLATES: dict[str, dict] = {
         "method": "POST",
         "path": "/user/recharge-airtime",
         "body": {"phone_number": "080XXXXXXXX", "amount": 200},
+    },
+    "roqqu.verify_meter": {
+        "method": "GET",
+        "path": "/verify-meter",
+        "body": {"provider": "ikeja", "meter_type": "prepaid", "meter_number": "45055844760"},
     },
     "roqqu.pay_electric": {
         "method": "POST",

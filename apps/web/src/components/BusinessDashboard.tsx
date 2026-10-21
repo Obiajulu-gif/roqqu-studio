@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ShopProduct } from "@/types";
 
 import { AjoPanel, type AjoPanelHandle } from "./AjoPanel";
+import { CryptoRates } from "./CryptoRates";
 
 type ProductTab = "sell" | "invoice" | "ajo";
 
@@ -556,6 +557,8 @@ export function BusinessDashboard({
             </article>
           </div>
         </section>
+
+        <CryptoRates />
 
         <div className="biz-tools" data-tour="biz-tools">
         <div

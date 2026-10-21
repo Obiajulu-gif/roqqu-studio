@@ -5231,3 +5231,17 @@ body.is-resizing-sidebar iframe {
 .roster__empty {
   padding: 8px 2px;
 }
+
+/* Roqqu rates card (CryptoRates.tsx) */
+.biz-rates { margin: 16px 0; padding: 16px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+.biz-rates__head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.biz-rates__head h2 { font-size: 15px; margin: 0; }
+.biz-rates__head small, .biz-rates__note, .biz-rates__msg { color: var(--ink-soft); font-size: 12px; }
+.biz-rates__list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.biz-rates__list li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); }
+.biz-rates__list strong { color: var(--accent); }
+.biz-rates__list em { font-style: normal; font-size: 12px; }
+.biz-rates__list em.up { color: #12805c; }
+.biz-rates__list em.down { color: var(--danger); }
+.biz-rates__convert { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 6px; }
+.biz-rates__convert input { width: 120px; padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 8px; font: inherit; }

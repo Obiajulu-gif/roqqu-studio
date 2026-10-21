@@ -16,17 +16,19 @@ describe("template picker options match Figma contract", () => {
     );
   });
 
-  it("lists four options in Figma order with stable ids", () => {
+  it("lists five options in order with stable ids", () => {
     expect(TEMPLATE_PICKER_OPTIONS.map((o) => o.id)).toEqual([
       "sell-online",
       "ajo",
       "invoice",
+      "pay-bills",
       "__other__",
     ]);
     expect(TEMPLATE_PICKER_OPTIONS.map((o) => o.title)).toEqual([
       "Sell goods & services",
       "Start a savings group (Ajo)",
       "Send an invoice",
+      "Pay bills",
       "Something else",
     ]);
   });

@@ -125,12 +125,14 @@ The integration follows the Roqqu API reference (https://developers.roqqu.com, b
 | `roqqu.token_price` | `GET /price` |
 | `roqqu.blockchain_address` | `GET /blockchain/address` (1 call / 100 s, enforced in-process) |
 | `roqqu.account_resolve`, `bvn_verify`, `nin_verify` | `POST /user/account-resolve`, `/user/bvn-verify`, `/user/nin-verify` |
+| `roqqu.verify_meter` | `GET /verify-meter` |
 | `roqqu.recharge_airtime`, `pay_electric` | `POST /user/recharge-airtime`, `/user/pay-electric` |
+| Dashboard "Roqqu rates" card (`GET /roqqu/prices`) | `GET /prices` (public, no key, cached 60 s) |
 | `event.payment_webhook` + `safety.verify_signature` | Receive Token webhook `{secret, token, amount, address, timestamp}`; the `secret` is compared in constant time |
 
 Nodes whose names are not Roqqu endpoints (`invoice_wallet`, `member_wallet`, `batch_send`, `split_send`, `refund_send`) are Studio steps built on Generate Wallet or Send Token, because Roqqu has no invoice, batch, split or refund endpoint.
 
-Payments: NGN totals are priced in crypto with `GET /price` and `ROQQU_NGN_PER_USD`. The buyer gets a fresh deposit address on `/preview/{id}/deposit/{ref}`. The order flips to paid only when Get Wallets shows enough received. Roqqu has no sandbox, so `RoqquClient` refuses every call unless `ALLOW_PRODUCTION_EXECUTION=true`.
+Payments: NGN totals are priced in crypto with `GET /price` and `ROQQU_NGN_PER_USD`. The buyer gets a fresh deposit address on `/preview/{id}/deposit/{ref}` and can switch between BTC, ETH and TRX there (`POST` the same URL with `token=`); each switch generates a new address, and verification checks the coin stored on the order. The order flips to paid only when Get Wallets shows enough received. Roqqu has no sandbox, so `RoqquClient` refuses every call unless `ALLOW_PRODUCTION_EXECUTION=true`.
 
 The files in `docs/` are the original Monnify Studio planning notes and still describe the Monnify sandbox.
 

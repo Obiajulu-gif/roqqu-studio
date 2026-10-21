@@ -529,6 +529,13 @@ class SandboxAdapter:
             elif node.type == "roqqu.nin_verify":
                 data = self._c().nin_verify(nin=str(_cfg(config, "nin", default="")))
                 outputs.update(account_name=_full_name(data), verified=True)
+            elif node.type == "roqqu.verify_meter":
+                data = self._c().verify_meter(
+                    provider=str(_cfg(config, "provider", default="ikeja")),
+                    meter_type=str(_cfg(config, "meter_type", default="prepaid")),
+                    meter_number=str(_cfg(config, "meter_number", default="")),
+                )
+                outputs.update(account_name=str(data.get("cust_name", "")), valid=True)
             elif node.type == "roqqu.recharge_airtime":
                 self._c().recharge_airtime(
                     phone_number=str(_cfg(config, "phone_number", default="")), amount=money(amount)
