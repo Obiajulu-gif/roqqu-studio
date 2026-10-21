@@ -48,8 +48,7 @@ trap 'rm -f "$ENV_FILE"' EXIT
 # (case-sensitive), unlike the Settings/WhatsApp pydantic-settings fields
 # below which match case-insensitively either way.
 for key in CLAUDE_API_KEY ANTHROPIC_API_KEY OPENAI_API_KEY GOOGLE_API_KEY \
-           ROQQU_API_KEY ROQQU_SECRET_KEY ROQQU_CONTRACT_CODE \
-           ROQQU_WALLET_ACCOUNT \
+           NVIDIA_API_KEY ROQQU_SECRET_KEY ROQQU_WEBHOOK_SECRET \
            EVOLUTION_API_URL EVOLUTION_API_KEY EVOLUTION_INSTANCE \
            STUDIO_NOTIFY_NUMBER STUDIO_NOTIFY_EMAIL \
            ZEPTOMAIL_API_KEY ZEPTOMAIL_SENDER ZEPTOMAIL_REPLY_TO; do

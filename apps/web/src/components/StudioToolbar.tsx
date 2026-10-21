@@ -96,7 +96,7 @@ export function StudioToolbar({
             ? "Running…"
             : executionAdapter === "mock"
               ? "Practice run (no real money)"
-              : "Run in Roqqu sandbox"}
+              : "Run live on Roqqu"}
         </button>
       </div>
     </div>

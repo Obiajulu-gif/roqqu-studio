@@ -19,8 +19,8 @@ def _payout_wf(with_guard: bool) -> Workflow:
     """Minimal payout: confirm → validate → [balance?] → transfer."""
     nodes = [
         Node(id="confirm", type="event.fulfilment_confirmed"),
-        Node(id="validate", type="roqqu.validate_bank_account"),
-        Node(id="transfer", type="roqqu.initiate_transfer"),
+        Node(id="validate", type="roqqu.account_resolve"),
+        Node(id="transfer", type="roqqu.send_token"),
     ]
     edges = [
         Edge(source="confirm", target="validate", kind="event"),
@@ -78,7 +78,7 @@ def test_remediate_all_clears_a_bare_transfer_completely():
         name="b",
         nodes=[
             Node(id="confirm", type="event.fulfilment_confirmed"),
-            Node(id="transfer", type="roqqu.initiate_transfer"),
+            Node(id="transfer", type="roqqu.send_token"),
         ],
         edges=[Edge(source="confirm", target="transfer", kind="event")],
         entrypoint="confirm",
@@ -87,4 +87,4 @@ def test_remediate_all_clears_a_bare_transfer_completely():
     assert result.remaining == []
     types = {n.type for n in result.workflow.nodes}
     assert "safety.balance_guard" in types
-    assert "roqqu.validate_bank_account" in types
+    assert "roqqu.account_resolve" in types

@@ -11,10 +11,10 @@ from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
 _ACCEPT_ONLY = MoniFlow(
     name="Collect",
     nodes=[
-        MoniFlowNode(id="init", type="roqqu.initialize_transaction"),
+        MoniFlowNode(id="init", type="roqqu.generate_wallet"),
         MoniFlowNode(id="webhook", type="event.payment_webhook"),
         MoniFlowNode(id="vsig", type="safety.verify_signature"),
-        MoniFlowNode(id="verify", type="roqqu.verify_transaction"),
+        MoniFlowNode(id="verify", type="roqqu.get_wallets"),
         MoniFlowNode(id="vamt", type="safety.validate_amount"),
         MoniFlowNode(id="idem", type="safety.idempotency_guard"),
         MoniFlowNode(id="paid", type="app.mark_order_paid"),

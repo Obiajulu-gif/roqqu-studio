@@ -1,15 +1,12 @@
-"""Roqqu webhook receiver: signature-gated trigger, query-verified truth (#178).
+"""Roqqu webhook receiver: secret-gated trigger, Get-Wallets-verified truth (#178).
 
-We practice what MON002 preaches: HMAC-SHA512 of the raw body must match the
-roqqu-signature header before anything happens, and even then the payload is
-only a trigger - the order flips solely on the authoritative query-verify.
+Roqqu's Receive Token webhook POSTs {secret, token, amount, address, timestamp}.
+We practice what MON002 preaches: the body's `secret` must equal the one set on
+the Roqqu dashboard before anything happens, and even then the payload is only
+a trigger - the order flips solely on the authoritative Get Wallets check.
 """
 
 from __future__ import annotations
-
-import hashlib
-import hmac
-import json
 
 from fastapi.testclient import TestClient
 
@@ -18,11 +15,11 @@ from roqqu_studio.orders import orders_service
 
 client = TestClient(app)
 
-_WF_SECRET = "SK_webhook_test_secret"
+_WF_SECRET = "hook_secret_test"
 
 
-def _paid_pending_invoice() -> tuple[str, str, str]:
-    """An invoice with a checkout attached (PENDING), plus its workflow id."""
+def _paid_pending_invoice() -> tuple[str, str]:
+    """An invoice with a deposit address attached (PENDING) and the address."""
     wf = client.post("/workflows/from-template/invoice").json()["workflow"]
     artifact_id = client.post(
         f"/workflows/{wf['id']}/generate",
@@ -32,120 +29,76 @@ def _paid_pending_invoice() -> tuple[str, str, str]:
         f"/preview/{artifact_id}/invoices",
         json={"customer": "Ada", "description": "Ajo round", "amount": 5000},
     ).json()
+    address = f"T-{inv['reference']}"
     orders_service.attach_payment(
-        inv["reference"],
-        payment_reference=f"PAY-{inv['reference']}",
-        transaction_reference="TX-WEBHOOK-1",
+        inv["reference"], payment_reference=address, transaction_reference="trx:4"
     )
-    return artifact_id, inv["reference"], wf["id"]
-
-
-def _signed(body: dict, secret: str) -> tuple[bytes, str]:
-    raw = json.dumps(body).encode()
-    return raw, hmac.new(secret.encode(), raw, hashlib.sha512).hexdigest()
-
-
-def test_webhook_rejects_bad_signature():
-    _, reference, wf_id = _paid_pending_invoice()
     client.put(
-        f"/workflows/{wf_id}/credentials",
-        json={
-            "api_key": "MK_TEST_wh",
-            "secret_key": _WF_SECRET,
-            "contract_code": "123",
-        },
+        f"/workflows/{wf['id']}/credentials",
+        json={"secret_key": "RQ-SEC-wh", "webhook_secret": _WF_SECRET},
     )
-    raw, _ = _signed({"eventData": {"paymentReference": f"PAY-{reference}"}}, _WF_SECRET)
-    res = client.post(
-        "/roqqu/webhook",
-        content=raw,
-        headers={"roqqu-signature": "forged", "Content-Type": "application/json"},
-    )
-    assert res.status_code == 401
+    return inv["reference"], address
 
 
-def test_webhook_valid_signature_triggers_query_verify():
-    _, reference, wf_id = _paid_pending_invoice()
-    client.put(
-        f"/workflows/{wf_id}/credentials",
-        json={
-            "api_key": "MK_TEST_wh",
-            "secret_key": _WF_SECRET,
-            "contract_code": "123",
-        },
-    )
-    raw, sig = _signed(
-        {"eventData": {"paymentReference": f"PAY-{reference}"}}, _WF_SECRET
-    )
+def _deposit(address: str, secret: str, **extra) -> dict:
+    body = {"secret": secret, "token": "trx", "amount": "4", "address": address,
+            "timestamp": "2026-10-21T10:00:00Z"}
+    body.update(extra)
+    return client.post("/roqqu/webhook", json=body)
+
+
+def test_webhook_rejects_wrong_secret():
+    _, address = _paid_pending_invoice()
+    assert _deposit(address, "forged").status_code == 401
+
+
+def test_webhook_with_right_secret_triggers_verify():
+    reference, address = _paid_pending_invoice()
     original = orders_service.verifier
     orders_service.verifier = lambda ref: {"status": "PAID", "amount_paid": 5000.0}
     try:
-        res = client.post(
-            "/roqqu/webhook",
-            content=raw,
-            headers={"roqqu-signature": sig, "Content-Type": "application/json"},
-        )
+        res = _deposit(address, _WF_SECRET)
     finally:
         orders_service.verifier = original
     assert res.status_code == 200
-    body = res.json()
-    assert body["matched"] is True
-    assert body["status"] == "verified"
+    assert res.json()["matched"] is True
+    assert res.json()["status"] == "verified"
     assert orders_service.get(reference).status.value == "verified"
 
 
-def test_webhook_signed_but_unknown_reference_is_ignored(monkeypatch):
+def test_webhook_with_platform_secret_but_unknown_address_is_ignored(monkeypatch):
     from roqqu_studio.config import Settings
 
     monkeypatch.setattr(
         "roqqu_studio.credentials.get_settings",
-        lambda: Settings(roqqu_secret_key="PLATFORM_SECRET"),
+        lambda: Settings(_env_file=None, roqqu_webhook_secret="PLATFORM_SECRET"),
     )
-    raw, sig = _signed(
-        {"eventData": {"paymentReference": "PAY-not-ours"}}, "PLATFORM_SECRET"
-    )
-    res = client.post(
-        "/roqqu/webhook",
-        content=raw,
-        headers={"roqqu-signature": sig, "Content-Type": "application/json"},
-    )
+    res = _deposit("T-not-ours", "PLATFORM_SECRET")
     assert res.status_code == 200
     assert res.json() == {"received": True, "matched": False}
 
 
-def test_webhook_payload_status_is_never_trusted():
-    """A signed webhook SAYING paid still cannot flip an order Roqqu denies."""
-    _, reference, wf_id = _paid_pending_invoice()
-    client.put(
-        f"/workflows/{wf_id}/credentials",
-        json={
-            "api_key": "MK_TEST_wh",
-            "secret_key": _WF_SECRET,
-            "contract_code": "123",
-        },
-    )
-    raw, sig = _signed(
-        {
-            "eventType": "SUCCESSFUL_TRANSACTION",
-            "eventData": {
-                "paymentReference": f"PAY-{reference}",
-                "paymentStatus": "PAID",
-            },
-        },
-        _WF_SECRET,
-    )
+def test_webhook_amount_is_never_trusted():
+    """A genuine webhook claiming a deposit still cannot flip an order Roqqu denies."""
+    reference, address = _paid_pending_invoice()
     original = orders_service.verifier
     orders_service.verifier = lambda ref: {"status": "PENDING", "amount_paid": 0}
     try:
-        res = client.post(
-            "/roqqu/webhook",
-            content=raw,
-            headers={"roqqu-signature": sig, "Content-Type": "application/json"},
-        )
+        res = _deposit(address, _WF_SECRET, amount="999999")
     finally:
         orders_service.verifier = original
     assert res.status_code == 200
-    # Roqqu said no confirmed payment, so the claim lands as rejected -
-    # the signed PAID in the payload changed nothing. That is the point.
+    # Get Wallets saw nothing, so the claim lands as rejected: the payload's
+    # amount changed nothing. That is the point.
     assert res.json()["status"] == "rejected"
     assert orders_service.get(reference).status.value == "rejected"
+
+
+def test_empty_secret_never_matches(monkeypatch):
+    from roqqu_studio.config import Settings
+
+    monkeypatch.setattr(
+        "roqqu_studio.credentials.get_settings",
+        lambda: Settings(_env_file=None, roqqu_webhook_secret=""),
+    )
+    assert _deposit("T-not-ours", "").status_code == 401

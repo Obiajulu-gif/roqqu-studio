@@ -19,7 +19,7 @@ import inspect
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Protocol
+from typing import Any, Callable
 
 from pydantic import BaseModel, Field
 
@@ -78,18 +78,19 @@ class Order(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class _SupportsQuery(Protocol):  # what the real client provides
-    def query_transaction(self, *, payment_reference: str) -> dict[str, Any]: ...
-
-
 def roqqu_verifier(payment_reference: str, workflow_id: str | None = None) -> dict[str, Any]:
-    """Default verifier: ask Roqqu for the truth, using this workflow's own
-    credentials when it has them, else the platform keys (#53, #68)."""
-    from ..credentials import credential_store
-    from ..integrations.roqqu import RoqquSandboxClient
+    """Default verifier: ask Roqqu what actually landed on the deposit address.
 
-    with RoqquSandboxClient(credential_store.settings_for(workflow_id)) as client:
-        return client.query_transaction(payment_reference=payment_reference)
+    The payment reference IS the Roqqu deposit address (Generate Wallet). Get
+    Wallets reports `total_received_usdt`, converted to NGN at the configured
+    rate so it compares against the NGN order total (#53, #68)."""
+    from ..credentials import credential_store
+    from ..integrations.roqqu import RoqquClient, usd_to_ngn
+
+    settings = credential_store.settings_for(workflow_id)
+    with RoqquClient(settings) as client:
+        res = client.wallet_received(token=settings.roqqu_pay_token, address=payment_reference)
+    return {"status": res["status"], "amount_paid": str(usd_to_ngn(res["amount_usd"], settings))}
 
 
 class OrdersService:

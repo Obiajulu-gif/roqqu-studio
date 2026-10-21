@@ -16,9 +16,8 @@ export interface CredentialsFormProps {
 
 export function CredentialsForm({ workflowId, busy }: CredentialsFormProps) {
   const [status, setStatus] = useState<CredentialStatus | null>(null);
-  const [apiKey, setApiKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
-  const [contractCode, setContractCode] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -43,14 +42,12 @@ export function CredentialsForm({ workflowId, busy }: CredentialsFormProps) {
     setMessage(null);
     try {
       const next = await putCredentials(workflowId, {
-        api_key: apiKey.trim(),
         secret_key: secretKey.trim(),
-        contract_code: contractCode.trim(),
+        webhook_secret: webhookSecret.trim(),
       });
       setStatus(next);
-      setApiKey("");
       setSecretKey("");
-      setContractCode("");
+      setWebhookSecret("");
       setMessage("Credentials saved for this workflow.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Save failed");
@@ -63,7 +60,7 @@ export function CredentialsForm({ workflowId, busy }: CredentialsFormProps) {
     return (
       <div className="studio-creds">
         <h3>Connect your Roqqu account</h3>
-        <p className="muted">Open a workflow to attach sandbox keys.</p>
+        <p className="muted">Open a workflow to attach your Roqqu keys.</p>
       </div>
     );
   }
@@ -74,22 +71,11 @@ export function CredentialsForm({ workflowId, busy }: CredentialsFormProps) {
       <p className="muted">
         {status?.configured
           ? `Configured (${status.source}). Values are write-only.`
-          : "Optional: we use a practice account until then."}
+          : "Optional: Practice runs need no keys. Roqqu has no sandbox, so live calls move real crypto."}
       </p>
       <form className="studio-creds__form" onSubmit={onSubmit}>
         <label>
-          API key
-          <input
-            type="password"
-            autoComplete="off"
-            value={apiKey}
-            onChange={(event) => setApiKey(event.target.value)}
-            disabled={busy || saving}
-            required
-          />
-        </label>
-        <label>
-          Secret key
+          Secret key (RQ-SEC-…, dashboard → Security)
           <input
             type="password"
             autoComplete="off"
@@ -100,12 +86,13 @@ export function CredentialsForm({ workflowId, busy }: CredentialsFormProps) {
           />
         </label>
         <label>
-          Contract code
+          Webhook secret (set beside your webhook URL)
           <input
-            value={contractCode}
-            onChange={(event) => setContractCode(event.target.value)}
+            type="password"
+            autoComplete="off"
+            value={webhookSecret}
+            onChange={(event) => setWebhookSecret(event.target.value)}
             disabled={busy || saving}
-            required
           />
         </label>
         <button

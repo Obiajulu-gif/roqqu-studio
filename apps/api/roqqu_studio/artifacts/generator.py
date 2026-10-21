@@ -27,7 +27,7 @@ log = get_logger("artifacts")
 
 # Node types that collect money in (no capability tag distinguishes collection
 # yet, so v1 detects by type; everything else below is tag-driven, D13).
-_COLLECTING_TYPES = {"roqqu.initialize_transaction", "roqqu.create_reserved_account"}
+_COLLECTING_TYPES = {"roqqu.generate_wallet", "roqqu.member_wallet"}
 
 
 class FlowFeatures(BaseModel):
@@ -48,7 +48,7 @@ def flow_features(workflow: Workflow) -> FlowFeatures:
         tags = catalog.effective_tags(node)
         if node.type in _COLLECTING_TYPES:
             features.collects = True
-        if node.type == "roqqu.create_invoice":
+        if node.type == "roqqu.invoice_wallet":
             features.has_invoices = True
         if T.MUTATES_LEDGER in tags:
             features.has_ledger = True

@@ -96,7 +96,7 @@ def explain(
     if workflow_summary:
         context.append(f"The user's current flow: {workflow_summary}")
     if not sources:
-        sources.append(Source(title="Roqqu developer documentation", url="https://roqqu.com"))
+        sources.append(Source(title="Roqqu developer documentation", url="https://developers.roqqu.com"))
 
     chosen: AIProvider = select_provider(provider)
     grounded = "\n\n".join(context) if context else "(no node context supplied)"

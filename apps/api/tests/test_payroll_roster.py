@@ -27,7 +27,7 @@ def test_data_rows_outputs_the_typed_employees() -> None:
 
 def test_bulk_transfer_pays_each_employee_from_the_sheet() -> None:
     res = MockAdapter().invoke(
-        Node(id="bulk", type="roqqu.bulk_transfer"), {"inputs": {"rows": ROWS}}
+        Node(id="bulk", type="roqqu.batch_send"), {"inputs": {"rows": ROWS}}
     )
     assert res.outputs["paid_count"] == 2
     assert res.outputs["total_paid"] == "240000.00"

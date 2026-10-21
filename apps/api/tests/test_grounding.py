@@ -12,15 +12,15 @@ def test_every_roqqu_node_carries_cheatsheet_grounding():
         d = catalog.resolve(tid)
         if d.type.startswith("roqqu."):
             assert d.when_to_use, f"{d.type} missing when_to_use"
-            assert d.doc_url.startswith("https://roqqu.com"), d.type
+            assert d.doc_url.startswith("https://developers.roqqu.com"), d.type
 
 
 def test_prompt_feeds_documented_language_and_doc_links():
     prompt = _catalog_prompt(default_catalog())
     # Phrases lifted from the cheat sheet, proving she reads Roqqu's words.
-    assert "up to 5,000 payouts" in prompt  # bulk transfer
-    assert "Name Enquiry" in prompt  # validate bank account
-    assert "https://roqqu.com" in prompt  # doc links present
+    assert "no batch endpoint" in prompt  # bulk transfer
+    assert "Confirm who you are paying" in prompt  # validate bank account
+    assert "https://developers.roqqu.com" in prompt  # doc links present
 
 
 def test_prompt_never_leaks_internal_breadcrumbs():

@@ -114,7 +114,7 @@ def test_roqqu_adapter_requires_credentials(monkeypatch):
     without Roqqu credentials, with a clear 422 rather than a fake trace (#9)."""
     from roqqu_studio.config import Settings
 
-    empty = Settings(roqqu_api_key="", roqqu_secret_key="", roqqu_contract_code="")
+    empty = Settings(_env_file=None, roqqu_secret_key="")
     monkeypatch.setattr(api_main.credential_store, "settings_for", lambda _wid: empty)
     workflow = client.get("/workflows/marketplace-unsafe").json()["workflow"]
     res = client.post("/executions", json={"workflow": workflow, "adapter": "roqqu"})
@@ -156,52 +156,36 @@ def test_cfg_bool_handles_text_backed_request_fields():
     )
 
 
-def test_live_reserved_account_node_calls_client_and_surfaces_real_account(monkeypatch):
+def test_live_member_wallet_node_generates_a_real_roqqu_address(monkeypatch):
     from roqqu_studio.config import Settings
     from roqqu_studio.executor.adapter import SandboxAdapter
     from roqqu_studio.ir.models import Node
 
     class FakeClient:
-        def create_reserved_account(self, **kwargs):
-            assert kwargs["account_reference"] == "ajo-ada-1"
-            assert kwargs["bvn"] == "21212121212"
-            assert kwargs["get_all_available_banks"] is False
-            return {
-                "account_reference": "ajo-ada-1",
-                "reservation_reference": "RES-1",
-                "account_number": "6254727989",
-                "account_name": "Ada Ajo Account",
-                "bank": "Moniepoint Microfinance Bank",
-                "bank_code": "50515",
-                "status": "ACTIVE",
-            }
+        def generate_wallet(self, *, token):
+            assert token == "eth"
+            return {"address": "0xabc", "token": "eth", "total_received": "0", "created_at": ""}
 
-    adapter = SandboxAdapter(
-        Settings(
-            roqqu_api_key="key",
-            roqqu_secret_key="secret",
-            roqqu_contract_code="contract",
-        )
-    )
+    adapter = SandboxAdapter(Settings(_env_file=None, roqqu_secret_key="RQ-SEC-x"))
     monkeypatch.setattr(adapter, "_c", lambda: FakeClient())
     result = adapter.invoke(
-        Node(
-            id="account",
-            type="roqqu.create_reserved_account",
-            config={
-                "accountReference": "ajo-ada-1",
-                "accountName": "Ada Ajo Account",
-                "customerName": "Ada",
-                "customerEmail": "ada@example.com",
-                "bvn": "21212121212",
-                "getAllAvailableBanks": "false",
-            },
-        ),
-        {"inputs": {}},
+        Node(id="account", type="roqqu.member_wallet", config={"token": "eth"}), {"inputs": {}}
     )
     assert result.ok is True
-    assert result.outputs["account_number"] == "6254727989"
-    assert result.outputs["status"] == "ACTIVE"
+    assert result.outputs["account_number"] == "0xabc"
+    assert result.request["path"] == "/user/generate-wallet"
+
+
+def test_live_send_refuses_without_a_destination_wallet(monkeypatch):
+    from roqqu_studio.config import Settings
+    from roqqu_studio.executor.adapter import SandboxAdapter
+    from roqqu_studio.ir.models import Node
+
+    adapter = SandboxAdapter(Settings(_env_file=None, roqqu_secret_key="RQ-SEC-x"))
+    monkeypatch.setattr(adapter, "_c", lambda: (_ for _ in ()).throw(AssertionError("no call")))
+    result = adapter.invoke(Node(id="pay", type="roqqu.send_token", config={}), {"inputs": {}})
+    assert result.ok is False
+    assert "destination wallet" in result.error
 
 
 def test_notify_node_simulated_in_practice_and_recorded_live():

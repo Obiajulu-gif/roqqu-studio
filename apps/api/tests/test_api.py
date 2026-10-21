@@ -16,7 +16,7 @@ def test_health():
 
 def test_catalog_lists_node_types():
     catalog = client.get("/catalog").json()
-    assert "roqqu.verify_transaction" in catalog
+    assert "roqqu.get_wallets" in catalog
 
 
 def test_workflows_are_seeded():
@@ -47,9 +47,9 @@ def test_validate_connection_accepts_matching_ports():
     r = client.post(
         "/validate-connection",
         json={
-            "source_type": "roqqu.initialize_transaction",
+            "source_type": "roqqu.generate_wallet",
             "source_port": "payment_reference",
-            "target_type": "roqqu.verify_transaction",
+            "target_type": "roqqu.get_wallets",
             "target_port": "payment_reference",
         },
     ).json()
@@ -60,9 +60,9 @@ def test_validate_connection_rejects_type_mismatch():
     r = client.post(
         "/validate-connection",
         json={
-            "source_type": "roqqu.initialize_transaction",
+            "source_type": "roqqu.generate_wallet",
             "source_port": "checkout_url",
-            "target_type": "roqqu.verify_transaction",
+            "target_type": "roqqu.get_wallets",
             "target_port": "payment_reference",
         },
     ).json()

@@ -49,7 +49,7 @@ def test_code_block_between_safe_flow_stays_clean():
         nodes=[
             Node(id="hook", type="event.payment_webhook", label="Webhook"),
             Node(id="vsig", type="safety.verify_signature", label="Verify Sig"),
-            Node(id="verify", type="roqqu.verify_transaction", label="Verify"),
+            Node(id="verify", type="roqqu.get_wallets", label="Verify"),
             Node(id="vamt", type="safety.validate_amount", label="Amount"),
             Node(id="idem", type="safety.idempotency_guard", label="Idem"),
             Node(id="code", type="custom.code", label="My Fee Logic",

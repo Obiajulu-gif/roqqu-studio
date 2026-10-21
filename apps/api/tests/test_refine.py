@@ -21,10 +21,10 @@ LAZY_REVISION = MoniFlow(
     description="Invoice flow with a refund path.",
     explanation="Adds a refund path for disputed invoices.",
     nodes=[
-        MoniFlowNode(id="create", type="roqqu.create_invoice", label="Create Invoice"),
+        MoniFlowNode(id="create", type="roqqu.invoice_wallet", label="Create Invoice"),
         MoniFlowNode(id="webhook", type="event.payment_webhook", label="Payment Webhook"),
         MoniFlowNode(id="paid", type="app.mark_order_paid", label="Mark Paid"),
-        MoniFlowNode(id="refund", type="roqqu.initiate_refund", label="Refund Dispute"),
+        MoniFlowNode(id="refund", type="roqqu.refund_send", label="Refund Dispute"),
     ],
     edges=[
         MoniFlowEdge(source="create", target="webhook", kind="control"),

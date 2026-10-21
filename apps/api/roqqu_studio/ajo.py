@@ -9,7 +9,7 @@ Payouts are recorded as clearly-labeled sandbox ledger entries: live
 sandbox transfers are gated behind Roqqu enabling disbursement/OTP-off
 (cheat-sheet Pro-Tip 3), and money_out must be honest ledger data, not a
 fabricated number (see OrdersService.totals_for). The flow graph already
-carries roqqu.initiate_transfer, so the real call slots in when enabled.
+carries roqqu.send_token, so the real call slots in when enabled.
 """
 
 from __future__ import annotations

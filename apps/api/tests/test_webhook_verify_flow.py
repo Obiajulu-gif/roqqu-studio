@@ -1,4 +1,4 @@
-"""A card->webhook->verify->notify flow must COMPLETE against the sandbox (#Flow 1).
+"""A deposit->webhook->verify->notify flow must COMPLETE against Roqqu (#Flow 1).
 
 When Moni composes a webhook-driven flow, `verify` hangs off the webhook island,
 so no direct edge carries the initialize's payment_reference. Verify must still
@@ -23,16 +23,15 @@ class _FakeRoqqu:
     def __init__(self) -> None:
         self.queried: list[str] = []
 
-    def initialize_transaction(self, *, amount, reference, **_):
-        return {
-            "checkout_url": "https://roqqu.com",
-            "payment_reference": "pay-real-123",
-            "transaction_reference": "MNFY|real",
-        }
+    def generate_wallet(self, *, token):
+        return {"address": "pay-real-123", "token": token, "total_received": "0", "created_at": ""}
 
-    def query_transaction(self, *, payment_reference):
-        self.queried.append(payment_reference)
-        return {"status": "PENDING", "amount_paid": Decimal("0")}
+    def token_price(self, *, symbol):
+        return Decimal("0.25")
+
+    def wallet_received(self, *, token, address):
+        self.queried.append(address)
+        return {"status": "PENDING", "amount_token": "0", "amount_usd": "0"}
 
 
 def _webhook_first_flow() -> Workflow:
@@ -40,9 +39,9 @@ def _webhook_first_flow() -> Workflow:
     return Workflow(
         id="wh", name="card-webhook-verify-notify", entrypoint="init",
         nodes=[
-            Node(id="init", type="roqqu.initialize_transaction", config={"amount": "7500"}),
+            Node(id="init", type="roqqu.generate_wallet", config={"amount": "7500"}),
             Node(id="hook", type="event.payment_webhook"),
-            Node(id="verify", type="roqqu.verify_transaction"),
+            Node(id="verify", type="roqqu.get_wallets"),
             Node(id="notify", type="app.notify_whatsapp", config={"message": "Payment confirmed"}),
         ],
         edges=[
@@ -54,7 +53,7 @@ def _webhook_first_flow() -> Workflow:
 
 def _sandbox_adapter() -> tuple[SandboxAdapter, _FakeRoqqu]:
     adapter = SandboxAdapter(
-        Settings(roqqu_api_key="k", roqqu_secret_key="s", roqqu_contract_code="c")
+        Settings(_env_file=None, roqqu_secret_key="RQ-SEC-s")
     )
     fake = _FakeRoqqu()
     adapter._client = fake  # _c() returns the set client, so no network

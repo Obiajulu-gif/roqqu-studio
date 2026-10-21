@@ -27,8 +27,8 @@ def _n(node_id: str, type_: str, label: str, x: int, y: int, **kw) -> Node:
 def unsafe_marketplace() -> Workflow:
     """Intentionally-unsafe hero. Expected findings: MON001, MON002, MON003, MON009."""
     nodes = [
-        _n("init", "roqqu.initialize_transaction", "Initialize Payment", 0, 0),
-        _n("split", "roqqu.transaction_split", "Split to Provider (5%/95%)", 220, 0),
+        _n("init", "roqqu.generate_wallet", "Initialize Payment", 0, 0),
+        _n("split", "roqqu.split_send", "Split to Provider (5%/95%)", 220, 0),
         _n("callback", "event.client_callback", "Customer Returns (callback)", 440, 0),
         _n("webhook", "event.payment_webhook", "Payment Webhook", 440, 160),
         _n("fulfil", "app.mark_order_paid", "Mark Booking Funded", 700, 80),
@@ -61,23 +61,23 @@ def safe_marketplace() -> Workflow:
     """The corrected hero. Expected findings: none."""
     nodes = [
         # Collection: the browser callback is informational only.
-        _n("init", "roqqu.initialize_transaction", "Initialize Payment", 0, 0),
+        _n("init", "roqqu.generate_wallet", "Initialize Payment", 0, 0),
         _n("callback", "event.client_callback", "Customer Returns (callback)", 240, 0),
         _n("notify", "app.notify", "Show 'Processing' (no value granted)", 480, 0),
         # Authoritative path runs off the webhook.
         _n("webhook", "event.payment_webhook", "Payment Webhook", 0, 160),
         _n("vsig", "safety.verify_signature", "Verify Signature", 240, 160),
-        _n("verify", "roqqu.verify_transaction", "Verify Transaction", 480, 160),
+        _n("verify", "roqqu.get_wallets", "Verify Transaction", 480, 160),
         _n("vamt", "safety.validate_amount", "Validate Amount", 720, 160),
         _n("idem", "safety.idempotency_guard", "Idempotency Guard", 960, 160),
         _n("fulfil", "app.mark_order_paid", "Mark Booking Funded", 1200, 160),
         # Payout waits for fulfilment, then moves money via Transfer.
         _n("confirm", "event.fulfilment_confirmed", "Customer Confirms Job", 0, 340),
         _n("idem2", "safety.idempotency_guard", "Idempotency Guard (payout)", 240, 340),
-        _n("validate", "roqqu.validate_bank_account", "Validate Provider Account", 480, 340),
+        _n("validate", "roqqu.account_resolve", "Validate Provider Account", 480, 340),
         _n("balance", "safety.balance_guard", "Check Balance First", 720, 340),
-        _n("transfer", "roqqu.initiate_transfer", "Transfer to Provider (minus 5%)", 960, 340),
-        _n("qstatus", "roqqu.query_transfer_status", "Query Transfer Status", 1200, 340),
+        _n("transfer", "roqqu.send_token", "Transfer to Provider (minus 5%)", 960, 340),
+        _n("qstatus", "roqqu.blockchain_address", "Query Transfer Status", 1200, 340),
         _n("audit", "safety.audit_event", "Audit", 1440, 340),
         # Reconciliation catches provider/local divergence.
         _n("sched", "event.scheduled", "Nightly Reconciliation", 0, 500),

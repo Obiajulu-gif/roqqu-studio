@@ -11,16 +11,16 @@ client = TestClient(app)
 
 # The 10 Roqqu endpoints we model, each must carry method + path + a body.
 _ROQQU_TYPES = {
-    "roqqu.initialize_transaction",
-    "roqqu.verify_transaction",
-    "roqqu.create_reserved_account",
-    "roqqu.create_invoice",
-    "roqqu.initiate_transfer",
-    "roqqu.bulk_transfer",
-    "roqqu.query_transfer_status",
-    "roqqu.validate_bank_account",
-    "roqqu.transaction_split",
-    "roqqu.initiate_refund",
+    "roqqu.generate_wallet",
+    "roqqu.get_wallets",
+    "roqqu.member_wallet",
+    "roqqu.invoice_wallet",
+    "roqqu.send_token",
+    "roqqu.batch_send",
+    "roqqu.blockchain_address",
+    "roqqu.account_resolve",
+    "roqqu.split_send",
+    "roqqu.refund_send",
 }
 
 
@@ -29,20 +29,17 @@ def test_every_roqqu_node_has_a_grounded_request_template():
     for t in _ROQQU_TYPES:
         defn = catalog.resolve(t)
         assert defn.method in {"GET", "POST", "PUT"}, t
-        assert defn.path.startswith("/api/"), t
+        assert defn.path.startswith("/user/") or defn.path in ("/price", "/blockchain/address"), t
         assert defn.request_template, f"{t} has no request template"
 
 
 def test_catalog_endpoint_ships_the_template_to_the_ui():
     catalog = client.get("/catalog").json()
-    init = catalog["roqqu.initialize_transaction"]
+    init = catalog["roqqu.generate_wallet"]
     assert init["method"] == "POST"
-    assert init["path"] == "/api/v1/merchant/transactions/init-transaction"
-    body = init["request_template"]
-    # Exact fields from the Roqqu OpenAPI spec.
-    for field in ("amount", "customerName", "customerEmail", "paymentReference",
-                  "contractCode", "currencyCode"):
-        assert field in body, field
+    assert init["path"] == "/user/generate-wallet"
+    # Exact field from the Roqqu OpenAPI spec (developers.roqqu.com).
+    assert init["request_template"] == {"token": "trx"}
     # doc grounding travels too, so Moni/the dev reason from the real shape.
     assert init["doc_url"]
     assert init["when_to_use"]
@@ -50,11 +47,9 @@ def test_catalog_endpoint_ships_the_template_to_the_ui():
 
 def test_transfer_template_matches_disbursement_fields():
     catalog = client.get("/catalog").json()
-    tx = catalog["roqqu.initiate_transfer"]
-    assert tx["path"] == "/api/v2/disbursements/single"
-    for field in ("amount", "destinationBankCode", "destinationAccountNumber",
-                  "reference", "narration"):
-        assert field in tx["request_template"], field
+    tx = catalog["roqqu.send_token"]
+    assert tx["path"] == "/user/send-trx"
+    assert set(tx["request_template"]) == {"amount", "wallet"}
 
 
 def test_non_roqqu_nodes_have_no_endpoint():

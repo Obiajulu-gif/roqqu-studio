@@ -2,7 +2,7 @@
 {# The buyer-facing invoice, as a document (#85, #87, D14/D17). Modelled on the
    Dockie/Carlofty reference sheets: brand + Invoice title, number and dates,
    from/billed-to, a line-item table, a totals stack, payment info, footer.
-   Same trust boundary as the shop: "Pay now" opens a real sandbox checkout;
+   Same trust boundary as the shop: "Pay now" opens a Roqqu deposit address;
    "I have sent the money" only asks Roqqu for the truth. #}
 <html lang="en">
 <head>
@@ -99,7 +99,7 @@
     <div class="parties">
       <div class="party">
         <h3>{{ config.business_name }}</h3>
-        <p>Paid into {{ config.business_name }}'s<br />Roqqu (Moniepoint) account.</p>
+        <p>Paid in crypto to {{ config.business_name }}'s<br />Roqqu wallet.</p>
       </div>
       <div class="party">
         <h3>Billed to</h3>
@@ -197,7 +197,7 @@
     }
     pay.addEventListener("click", async () => {
       pay.disabled = true;
-      status.textContent = "Opening secure checkout...";
+      status.textContent = "Creating your Roqqu deposit address...";
       try {
         const res = await fetch(
           "/preview/{{ artifact_id }}/invoice/{{ invoice.reference }}/pay",
@@ -205,10 +205,10 @@
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         window.open(data.checkout_url, "_blank");
-        status.textContent = "Checkout opened in a new tab. This page confirms itself once Roqqu sees your payment.";
+        status.textContent = "Deposit details opened in a new tab. This page confirms itself once Roqqu sees your payment.";
         pollUntilConfirmed();
       } catch (e) {
-        status.textContent = "Could not start checkout. Try again.";
+        status.textContent = "Could not create a deposit address. Try again.";
       } finally { pay.disabled = false; }
     });
     document.getElementById("claim").addEventListener("click", async () => {

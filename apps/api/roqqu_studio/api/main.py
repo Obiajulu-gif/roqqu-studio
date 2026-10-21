@@ -7,7 +7,6 @@ Run from apps/api:
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import hmac
 import json
 import os
@@ -57,7 +56,7 @@ from roqqu_studio.onboarding import (
     StudioProfileUpdate,
     profile_store,
 )
-from roqqu_studio.integrations.roqqu import RoqquError, RoqquSandboxClient
+from roqqu_studio.integrations.roqqu import RoqquClient, RoqquError, ngn_to_token
 from roqqu_studio.money import money
 from roqqu_studio.notifications import (
     Notification,
@@ -727,6 +726,61 @@ def _public_base_url(request: Request) -> str:
     return base
 
 
+def _open_deposit(workflow_id: str | None, amount_ngn: Decimal, reference: str, artifact_id: str) -> dict:
+    """Collect an NGN amount in crypto on Roqqu: a fresh deposit address
+    (Generate Wallet) plus the token amount that covers it at Roqqu's price.
+
+    Roqqu has no hosted checkout, so `checkout_url` is our own deposit page.
+    The address doubles as the payment reference the verifier checks."""
+    settings = credential_store.settings_for(workflow_id)
+    token = settings.roqqu_pay_token
+    try:
+        with RoqquClient(settings) as client:
+            wallet = client.generate_wallet(token=token)
+            due = ngn_to_token(amount_ngn, client.token_price(symbol=token), settings)
+    except RoqquError as exc:
+        raise HTTPException(status_code=502, detail=f"Roqqu error: {exc}") from None
+    return {
+        "payment_reference": wallet["address"],
+        "transaction_reference": f"{token}:{due}",
+        "checkout_url": f"/preview/{artifact_id}/deposit/{reference}",
+    }
+
+
+@app.get("/preview/{artifact_id}/deposit/{reference}", response_class=HTMLResponse)
+def deposit_page(artifact_id: str, reference: str) -> HTMLResponse:
+    """Where to send the crypto: address, exact amount, QR. Status flips only
+    after the verifier sees the money on Roqqu."""
+    _artifact_or_404(artifact_id)
+    order = orders_service.get(reference)
+    if order is None or order.artifact_id != artifact_id or not order.payment_reference:
+        raise HTTPException(status_code=404, detail=f"unknown payment: {reference}")
+    import html
+
+    import segno
+
+    token, _, due = (order.transaction_reference or "").partition(":")
+    address = order.payment_reference
+    qr = segno.make(address, error="m").svg_inline(scale=5, border=2, dark="#1C2127")
+    e = html.escape
+    return HTMLResponse(
+        f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Pay with {e(token.upper())}</title>
+<style>body{{font-family:system-ui,sans-serif;background:#f6f7fb;color:#1C2127;margin:0;padding:24px}}
+.card{{max-width:420px;margin:auto;background:#fff;border-radius:16px;padding:24px;box-shadow:0 4px 20px #0001;text-align:center}}
+code{{display:block;word-break:break-all;background:#eef2ff;padding:12px;border-radius:8px;margin:8px 0}}
+.amt{{font-size:28px;font-weight:700;color:#2764FF}}small{{color:#666}}</style></head><body><div class="card">
+<strong style="color:#2764FF;font-size:20px">Roqqu</strong>
+<p>Send exactly</p><div class="amt">{e(due)} {e(token.upper())}</div>
+<small>= NGN {order.amount:,} at Roqqu's live price</small>
+<p>to this {e(token.upper())} address</p><code>{e(address)}</code>{qr}
+<p id="s"><small>Waiting for Roqqu to confirm the deposit...</small></p></div>
+<script>setInterval(async()=>{{const r=await fetch("/preview/{e(artifact_id)}/orders/{e(reference)}/verify",{{method:"POST"}});
+if(r.ok&&(await r.json()).status==="verified")document.getElementById("s").textContent="Paid. Confirmed by Roqqu.";}},10000);</script>
+</body></html>"""
+    )
+
+
 @app.post("/preview/{artifact_id}/pay")
 def preview_pay(artifact_id: str, request: Request) -> dict:
     """Create a REAL sandbox checkout for the artifact's product (#52).
@@ -737,21 +791,7 @@ def preview_pay(artifact_id: str, request: Request) -> dict:
     artifact = _artifact_or_404(artifact_id)
     reference = f"ord-{uuid4().hex[:10]}"
     # Their keys, their money: collect to the workflow's own account (#68, D19).
-    resolved = credential_store.settings_for(artifact.workflow_id)
-    try:
-        with RoqquSandboxClient(resolved) as client:
-            tx = client.initialize_transaction(
-                amount=money(artifact.config.price_ngn),
-                customer_name="Studio Demo Customer",
-                customer_email="customer@example.com",
-                reference=reference,
-                description=f"{artifact.config.product_name} ({artifact.config.business_name})",
-                # Bring the buyer back to us after checkout (#178); the page's
-                # auto-poll (#172) then confirms with Roqqu.
-                redirect_url=f"{_public_base_url(request)}/preview/{artifact_id}",
-            )
-    except RoqquError as exc:
-        raise HTTPException(status_code=502, detail=f"Roqqu sandbox error: {exc}") from None
+    tx = _open_deposit(artifact.workflow_id, money(artifact.config.price_ngn), reference, artifact_id)
     orders_service.create(
         reference=reference,
         artifact_id=artifact_id,
@@ -1204,21 +1244,7 @@ def invoice_pay(artifact_id: str, reference: str, request: Request) -> dict:
     inv = orders_service.get(reference)
     if inv is None or inv.artifact_id != artifact_id:
         raise HTTPException(status_code=404, detail=f"unknown invoice: {reference}")
-    resolved = credential_store.settings_for(artifact.workflow_id)
-    try:
-        with RoqquSandboxClient(resolved) as client:
-            tx = client.initialize_transaction(
-                amount=inv.amount,
-                customer_name=inv.customer or "Invoice Customer",
-                customer_email="customer@example.com",
-                reference=f"{reference}-{uuid4().hex[:4]}",
-                description=f"{inv.description} ({artifact.config.business_name})",
-                # Back to the invoice page after checkout (#178), where the
-                # resume-poll (#172) picks up and confirms with Roqqu.
-                redirect_url=f"{_public_base_url(request)}/preview/{artifact_id}/invoice/{reference}",
-            )
-    except RoqquError as exc:
-        raise HTTPException(status_code=502, detail=f"Roqqu sandbox error: {exc}") from None
+    tx = _open_deposit(artifact.workflow_id, inv.amount, reference, artifact_id)
     orders_service.attach_payment(
         reference,
         payment_reference=tx["payment_reference"],
@@ -1343,7 +1369,7 @@ class PayoutItem(BaseModel):
     reference: str = ""
 
 
-_PAYOUT_NODE_TYPES = ("roqqu.bulk_transfer", "roqqu.initiate_transfer")
+_PAYOUT_NODE_TYPES = ("roqqu.batch_send", "roqqu.send_token")
 
 
 def _run_payouts(workflow_id: str) -> tuple[list[PayoutItem], Decimal]:
@@ -1517,40 +1543,35 @@ def verify_order(artifact_id: str, reference: str) -> Order:
 
 @app.post("/roqqu/webhook")
 async def roqqu_webhook(request: Request) -> dict:
-    """Roqqu's push channel for final transaction status (#178).
+    """Roqqu's deposit notification (Receive Token docs).
 
-    We practice what MON002 preaches: the signature (HMAC-SHA512 of the raw
-    body with the merchant secret) is verified before anything else, and even
-    then the payload is only a TRIGGER - the order flips solely on the answer
-    of our authoritative query-verify (#53). Cheat-sheet Pro-Tip 1: webhooks
-    over status-endpoint looping; the page auto-poll (#172) stays as fallback.
+    Body: {secret, token, amount, address, timestamp}. `secret` must equal the
+    one set beside the webhook URL on the Roqqu dashboard; it is compared in
+    constant time before anything else (MON002). Even then the payload is only
+    a TRIGGER: the order flips solely on Get Wallets via the verifier (#53).
     """
     raw = await request.body()
-    signature = request.headers.get("roqqu-signature", "")
-
-    def _matches(secret: str) -> bool:
-        if not secret:
-            return False
-        expected = hmac.new(secret.encode(), raw, hashlib.sha512).hexdigest()
-        return hmac.compare_digest(expected, signature)
-
     try:
         payload = json.loads(raw or b"{}")
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="invalid webhook body") from None
-    event_data = payload.get("eventData") or {}
-    payment_reference = str(
-        event_data.get("paymentReference") or payload.get("paymentReference") or ""
-    )
-    # The payment reference is a LOOKUP key only (never trusted state): it lets
-    # a per-workflow merchant secret (#68) also satisfy the signature check.
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="invalid webhook body")
+    sent_secret = str(payload.get("secret") or "")
+    payment_reference = str(payload.get("address") or "")
+
+    def _matches(secret: str) -> bool:
+        return bool(secret) and hmac.compare_digest(secret.encode(), sent_secret.encode())
+
+    # The address is a LOOKUP key only (never trusted state): it lets a
+    # per-workflow webhook secret (#68) also satisfy the check.
     order = orders_service.find_by_payment_reference(payment_reference)
-    secrets = [credential_store.settings_for(None).roqqu_secret_key]
+    secrets = [credential_store.settings_for(None).roqqu_webhook_secret]
     if order is not None:
-        secrets.append(credential_store.settings_for(order.workflow_id).roqqu_secret_key)
+        secrets.append(credential_store.settings_for(order.workflow_id).roqqu_webhook_secret)
     if not any(_matches(s) for s in secrets):
-        log.warning("webhook.bad_signature", payment_reference=payment_reference)
-        raise HTTPException(status_code=401, detail="invalid signature")
+        log.warning("webhook.bad_secret", payment_reference=payment_reference)
+        raise HTTPException(status_code=401, detail="invalid webhook secret")
     if order is None:
         # Signed but not ours (e.g. a replay for a pruned in-memory order):
         # 200 so Roqqu stops retrying; nothing to flip.
@@ -1586,8 +1607,8 @@ def start_execution(body: StartExecutionRequest) -> StartExecutionResponse:
             # the canvas show provider truth. Credential-aware per workflow (D19).
             resolved = credential_store.settings_for(body.workflow.id)
             try:
-                resolved.assert_sandbox()  # sandbox-pinned; never prod in the challenge
                 resolved.assert_roqqu_credentials()
+                resolved.assert_sandbox()  # Roqqu is production-only: explicit opt-in
             except RuntimeError as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from None
             with SandboxAdapter(resolved) as adapter:

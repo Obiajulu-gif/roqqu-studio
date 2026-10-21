@@ -61,7 +61,7 @@ class Node(BaseModel):
     the ports and default capability tags."""
 
     id: str
-    type: str  # catalog key, e.g. "roqqu.verify_transaction"
+    type: str  # catalog key, e.g. "roqqu.get_wallets"
     label: Optional[str] = None
     config: dict = Field(default_factory=dict)
     # port -> expression. Either a `${...}` reference or a literal value.

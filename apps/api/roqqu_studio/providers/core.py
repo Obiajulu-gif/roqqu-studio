@@ -28,7 +28,8 @@ CORE_NODE_TYPES: list[NodeTypeDef] = [
         type="event.payment_webhook",
         category=C.EVENT,
         title="Payment Webhook",
-        description="Provider-delivered payment notification. Authentic only after signature check.",
+        description="Roqqu deposit webhook {secret, token, amount, address, timestamp}. "
+        "Authentic only after the secret check.",
         default_tags=[T.WEBHOOK_EVENT, T.WAIT_EVENT],
         outputs=[
             PortSpec(name="payload", type=D.WEBHOOK_PAYLOAD),
@@ -54,8 +55,9 @@ CORE_NODE_TYPES: list[NodeTypeDef] = [
     NodeTypeDef(
         type="safety.verify_signature",
         category=C.SAFETY,
-        title="Verify Webhook Signature",
-        description="Reject forged events before any business logic runs.",
+        title="Verify Webhook Secret",
+        description="Compare the webhook's `secret` with the one set on the Roqqu dashboard "
+        "(constant time) and reject forged events before any business logic runs.",
         default_tags=[T.SIGNATURE_CHECK],
         inputs=[
             PortSpec(name="payload", type=D.WEBHOOK_PAYLOAD),
@@ -90,8 +92,8 @@ CORE_NODE_TYPES: list[NodeTypeDef] = [
         when_to_use="Before any transfer or payout from a wallet/ledger: query the "
         "available balance and only proceed if it covers the amount plus fees. "
         "Without it, disbursements fail at runtime with 'insufficient balance' "
-        "(a live failure mode reported by Roqqu merchants).",
-        doc_url="https://roqqu.com",
+        "(Send Token pays from your Roqqu balance).",
+        doc_url="https://developers.roqqu.com/reference/receive-token",
         default_tags=[T.BALANCE_CHECK],
         inputs=[PortSpec(name="amount", type=D.MONEY)],
         outputs=[PortSpec(name="covered", type=D.BOOLEAN)],

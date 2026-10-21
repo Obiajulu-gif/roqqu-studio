@@ -208,7 +208,7 @@ function CanvasInner() {
     () =>
       (currentIr?.nodes ?? []).some(
         (n) =>
-          n.type === "roqqu.bulk_transfer" || n.type === "roqqu.initiate_transfer",
+          n.type === "roqqu.batch_send" || n.type === "roqqu.send_token",
       ),
     [currentIr],
   );
@@ -373,8 +373,8 @@ function CanvasInner() {
       "",
       `Ready to run — ${steps} on the canvas.`,
       "",
-      "Press **Run** (top right) to execute this flow against the Roqqu",
-      "sandbox and watch a live, step-by-step trace appear here.",
+      "Press **Run** (top right) to execute this flow (Practice by default, or live on",
+      "Roqqu) and watch a live, step-by-step trace appear here.",
     ].join("\n");
   }, [
     currentIr?.nodes.length,

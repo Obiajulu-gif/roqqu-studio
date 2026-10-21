@@ -13,11 +13,11 @@ def _transfer_wf(with_validation: bool) -> Workflow:
     """A minimal payout: confirm → [validate?] → transfer."""
     nodes = [
         Node(id="confirm", type="event.fulfilment_confirmed"),
-        Node(id="transfer", type="roqqu.initiate_transfer"),
+        Node(id="transfer", type="roqqu.send_token"),
     ]
     edges = [Edge(source="confirm", target="transfer", kind="event")]
     if with_validation:
-        nodes.insert(1, Node(id="validate", type="roqqu.validate_bank_account"))
+        nodes.insert(1, Node(id="validate", type="roqqu.account_resolve"))
         edges = [
             Edge(source="confirm", target="validate", kind="event"),
             Edge(source="validate", target="transfer"),

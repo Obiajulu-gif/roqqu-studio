@@ -18,10 +18,10 @@ def _chain(amount: str) -> Workflow:
         id="flow-test",
         name="Data Flow Test",
         nodes=[
-            Node(id="init", type="roqqu.initialize_transaction", label="Start",
+            Node(id="init", type="roqqu.generate_wallet", label="Start",
                  config={"amount": amount}),
             Node(id="hook", type="event.payment_webhook", label="Paid?"),
-            Node(id="verify", type="roqqu.verify_transaction", label="Verify"),
+            Node(id="verify", type="roqqu.get_wallets", label="Verify"),
             Node(id="check", type="safety.validate_amount", label="Check"),
         ],
         edges=[
@@ -88,7 +88,7 @@ def test_custom_code_declared_outputs_flow_downstream():
             Node(id="code", type="custom.code", label="My Fee Logic",
                  config={"code": "def fee(x): return x * 0.01",
                          "outputs": {"amount": "500"}}),
-            Node(id="pay", type="roqqu.initiate_transfer", label="Pay Fee"),
+            Node(id="pay", type="roqqu.send_token", label="Pay Fee"),
         ],
         edges=[Edge(source="code", target="pay")],
         entrypoint="code",

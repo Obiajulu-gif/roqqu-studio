@@ -3,7 +3,7 @@
 Top row is the merchant's action: create the invoice and send the link. Bottom
 row is the same truth path every product here shares: nothing is marked paid
 until the webhook is authenticated and Roqqu confirms the exact amount, once.
-Settlement lands in the merchant's Roqqu (Moniepoint) account.
+The buyer pays crypto to a fresh Roqqu deposit address.
 
 Must analyze clean: the analyzer is the guarantee we sell.
 """
@@ -21,12 +21,12 @@ def invoice() -> Workflow:
     """Invoice -> link -> verified payment. Expected findings: none."""
     nodes = [
         # Row 1: the merchant's side.
-        _n("create", "roqqu.create_invoice", "Create Invoice", 0, 0),
+        _n("create", "roqqu.invoice_wallet", "Create Invoice (deposit address)", 0, 0),
         _n("send", "app.notify", "Send Invoice Link", 240, 0),
         # Row 2: the truth path; only Roqqu's word marks an invoice paid.
         _n("webhook", "event.payment_webhook", "Roqqu Payment Webhook", 0, 170),
-        _n("vsig", "safety.verify_signature", "Verify Webhook Signature", 240, 170),
-        _n("verify", "roqqu.verify_transaction", "Verify Transaction", 480, 170),
+        _n("vsig", "safety.verify_signature", "Verify Webhook Secret", 240, 170),
+        _n("verify", "roqqu.get_wallets", "Verify Deposit (Get Wallets)", 480, 170),
         _n("vamt", "safety.validate_amount", "Validate Amount (full invoice)", 720, 170),
         _n("idem", "safety.idempotency_guard", "Idempotency Guard", 960, 170),
         _n("paid", "app.mark_order_paid", "Mark Invoice Paid", 1200, 170),

@@ -20,7 +20,7 @@ WF = {
             {"name": "Ada Obi", "account_number": "0123456789", "bank_code": "058", "amount": "150000"},
             {"name": "Bola Ade", "account_number": "0123456790", "bank_code": "058", "amount": "90000"},
         ]}, "inputs": {}, "extra_tags": [], "position": {"x": 0, "y": 0}},
-        {"id": "bulk", "type": "roqqu.bulk_transfer", "label": "Bulk", "config": {},
+        {"id": "bulk", "type": "roqqu.batch_send", "label": "Bulk", "config": {},
          "inputs": {}, "extra_tags": [], "position": {"x": 1, "y": 0}},
     ],
     "edges": [{"source": "rows", "target": "bulk", "kind": "control"}],

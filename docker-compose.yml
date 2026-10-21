@@ -12,7 +12,8 @@ services:
     environment:
       PORT: "8080"
       STUDIO_ENV: development
-      ALLOW_PRODUCTION_EXECUTION: "false"   # sandbox only, always
+      # Roqqu has no sandbox: "true" lets live runs move real crypto.
+      ALLOW_PRODUCTION_EXECUTION: "${ALLOW_PRODUCTION_EXECUTION:-false}"
       STUDIO_SEED_DEMO: "1"                  # seed "Mama Nkechi Foods" so it is never empty
       CORS_ORIGINS: "http://localhost:3000"
       # --- all optional: absent = keyless fallback, present = live features ---
@@ -21,10 +22,10 @@ services:
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       GOOGLE_API_KEY: "${GOOGLE_API_KEY:-}"
       NVIDIA_API_KEY: "${NVIDIA_API_KEY:-}"
-      ROQQU_API_KEY: "${ROQQU_API_KEY:-}"
       ROQQU_SECRET_KEY: "${ROQQU_SECRET_KEY:-}"
-      ROQQU_CONTRACT_CODE: "${ROQQU_CONTRACT_CODE:-}"
-      ROQQU_WALLET_ACCOUNT: "${ROQQU_WALLET_ACCOUNT:-}"
+      ROQQU_WEBHOOK_SECRET: "${ROQQU_WEBHOOK_SECRET:-}"
+      ROQQU_PAY_TOKEN: "${ROQQU_PAY_TOKEN:-trx}"
+      ROQQU_NGN_PER_USD: "${ROQQU_NGN_PER_USD:-1500}"
       ZEPTOMAIL_API_KEY: "${ZEPTOMAIL_API_KEY:-}"
       ZEPTOMAIL_SENDER: "${ZEPTOMAIL_SENDER:-}"
       ZEPTOMAIL_REPLY_TO: "${ZEPTOMAIL_REPLY_TO:-}"

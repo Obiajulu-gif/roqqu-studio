@@ -1,17 +1,26 @@
-"""Roqqu sandbox client: authenticate and initialize a transaction (#7).
+"""Roqqu API client, built from https://developers.roqqu.com (API v1).
 
-This is the proof of life for the "it is really wired to Roqqu" claim. Sandbox
-only (the settings guard refuses anything else). Every call runs inside a span
-and logs a redacted line; the api key, secret, and access token are registered
-with the observability layer so they can never leak into a log or a shared trace.
+Every endpoint lives under `https://api.roqqu.com/prod/v1`. POST calls carry
+`Authorization: Bearer <secret key>` (dashboard -> Security). Responses share
+one envelope: `{"status": "success"|"fail", "message": ..., "data": ...}`.
 
-Docs: https://roqqu.com
-Traceability: #7 (P1.5 sandbox proof-of-life); decisions D11, D15.
+Roqqu has no sandbox, so the settings guard refuses every live call unless
+ALLOW_PRODUCTION_EXECUTION=true. The secret key is registered with the log
+redactor so it can never surface in a log or a shared trace.
+
+Docs map:
+  Wallet      POST /user/generate-wallet, /user/wallets, /user/delete-wallet,
+              /user/send-{token}; deposits arrive by webhook (Receive Token)
+  Blockchain  GET  /blockchain/address   (1 call / 100 s, else a 10 h IP ban)
+  Market      GET  /price
+  Fiat        POST /user/account-resolve, /user/bvn-verify, /user/nin-verify
+  Bills       POST /user/recharge-airtime, /user/pay-electric
 """
 
 from __future__ import annotations
 
-import base64
+import threading
+import time
 from decimal import Decimal
 from typing import Any
 
@@ -22,246 +31,217 @@ from ...observability import get_logger, register_secret, traced
 
 log = get_logger("roqqu")
 
-_AUTH_PATH = "/api/v1/auth/login"
-_INIT_PATH = "/api/v1/merchant/transactions/init-transaction"
-_QUERY_PATH = "/api/v2/merchant/transactions/query"
-_TRANSFER_PATH = "/api/v2/disbursements/single"
-_RESERVED_ACCOUNT_PATH = "/api/v2/bank-transfer/reserved-accounts"
+DOCS = "https://developers.roqqu.com/reference"
+WALLET_TOKENS = ("btc", "eth", "trx")  # Generate/Get/Delete Wallet support only these
+
+_ADDRESS_LOOKUP_GAP_S = 100.0
+_address_lock = threading.Lock()
+_last_address_lookup = 0.0
 
 
 class RoqquError(RuntimeError):
-    """A Roqqu request failed or returned requestSuccessful=false."""
+    """A Roqqu request failed or returned status != success."""
 
 
-class RoqquSandboxClient:
-    """Thin, sandbox-only Roqqu client. Use as a context manager."""
+class RoqquClient:
+    """Thin Roqqu client. Use as a context manager."""
 
     def __init__(self, settings: Settings, *, transport: httpx.BaseTransport | None = None) -> None:
-        settings.assert_sandbox()
-        if not (settings.roqqu_api_key and settings.roqqu_secret_key):
-            raise RoqquError("Roqqu keys not configured: set ROQQU_API_KEY and ROQQU_SECRET_KEY")
-        register_secret(settings.roqqu_api_key)
+        if not settings.roqqu_secret_key:
+            raise RoqquError("Roqqu keys not configured: set ROQQU_SECRET_KEY")
+        try:
+            settings.assert_sandbox()
+        except RuntimeError as exc:  # surface as a provider error (clean 502), not a 500
+            raise RoqquError(str(exc)) from None
         register_secret(settings.roqqu_secret_key)
         self._settings = settings
         self._http = httpx.Client(
-            base_url=settings.roqqu_base_url, timeout=20.0, transport=transport
+            base_url=settings.roqqu_base_url.rstrip("/"),
+            timeout=20.0,
+            transport=transport,
+            headers={"Authorization": f"Bearer {settings.roqqu_secret_key}"},
         )
-        self._token: str | None = None
 
-    def __enter__(self) -> "RoqquSandboxClient":
+    def __enter__(self) -> "RoqquClient":
         return self
 
     def __exit__(self, *exc: object) -> None:
         self._http.close()
 
-    def _send(self, method: str, path: str, **kwargs: Any) -> httpx.Response:
+    def _call(self, method: str, path: str, **kwargs: Any) -> Any:
+        """Send one request and return the envelope's `data`."""
         try:
-            return self._http.request(method.upper(), path, **kwargs)
-        except httpx.HTTPError as exc:  # DNS, timeout, refused: surface as a provider error
+            resp = self._http.request(method, path, **kwargs)
+        except httpx.HTTPError as exc:  # DNS, timeout, refused
             raise RoqquError(f"Roqqu unreachable: {type(exc).__name__}") from exc
+        try:
+            body = resp.json()
+        except ValueError as exc:
+            raise RoqquError(f"Non-JSON response from Roqqu (HTTP {resp.status_code})") from exc
+        # The docs show some 400s with status "success", so the HTTP code wins.
+        if resp.status_code >= 400 or body.get("status") != "success":
+            raise RoqquError(body.get("message") or f"HTTP {resp.status_code}")
+        return body.get("data")
 
-    def authenticate(self) -> str:
-        creds = f"{self._settings.roqqu_api_key}:{self._settings.roqqu_secret_key}"
-        basic = base64.b64encode(creds.encode()).decode()
-        with traced("roqqu.authenticate"):
-            resp = self._send("post", _AUTH_PATH, headers={"Authorization": f"Basic {basic}"})
-            token = _ok(resp)["responseBody"]["accessToken"]
-            register_secret(token)  # never let the bearer token surface in a log
-            self._token = token
-            log.info("roqqu.authenticated")
-            return token
+    # --- Wallet ---------------------------------------------------------
 
-    def initialize_transaction(
-        self,
-        *,
-        amount: Decimal,
-        customer_name: str,
-        customer_email: str,
-        reference: str,
-        description: str = "Roqqu Studio sandbox proof-of-life",
-        redirect_url: str | None = None,
-    ) -> dict[str, str]:
-        """Create a transaction and return its payment reference and checkout URL."""
-        if self._token is None:
-            self.authenticate()
-        payload: dict[str, Any] = {
-            "amount": float(amount),  # wire format is a number; value is already exact
-            "customerName": customer_name,
-            "customerEmail": customer_email,
-            "paymentReference": reference,
-            "paymentDescription": description,
-            "currencyCode": "NGN",
-            "contractCode": self._settings.roqqu_contract_code,
+    def generate_wallet(self, *, token: str) -> dict[str, Any]:
+        """New deposit address for btc, eth or trx (POST /user/generate-wallet)."""
+        token = _wallet_token(token)
+        with traced("roqqu.generate_wallet", token=token):
+            data = self._call("POST", "/user/generate-wallet", json={"token": token})
+        address = (data or {}).get("address")
+        if not address:
+            raise RoqquError("Roqqu returned no wallet address")
+        log.info("roqqu.wallet.generated", token=token, address=address)
+        return {
+            "address": address,
+            "token": data.get("type", token),
+            "total_received": str(data.get("total_received", 0)),
+            "created_at": data.get("created_at", ""),
         }
-        if redirect_url:
-            payload["redirectUrl"] = redirect_url
-        with traced("roqqu.initialize_transaction", amount=str(amount), reference=reference):
-            resp = self._send("post", 
-                _INIT_PATH,
-                headers={"Authorization": f"Bearer {self._token}"},
-                json=payload,
-            )
-            body = _ok(resp)["responseBody"]
-            result = {
-                "payment_reference": body["paymentReference"],
-                "transaction_reference": body["transactionReference"],
-                "checkout_url": body["checkoutUrl"],
-            }
-            log.info(
-                "roqqu.transaction.initialized",
-                payment_reference=result["payment_reference"],
-                checkout_url=result["checkout_url"],
-            )
-            return result
 
-    def initiate_transfer(
-        self,
-        *,
-        amount: Decimal,
-        reference: str,
-        source_account_number: str,
-        destination_account_number: str,
-        destination_bank_code: str,
-        destination_account_name: str,
-        narration: str = "Roqqu Studio sandbox disbursement",
+    def get_wallets(self, *, token: str) -> list[dict[str, Any]]:
+        """Every wallet on the account for a token (POST /user/wallets).
+
+        The docs warn this has no limit, so call it once per check, not in a loop."""
+        token = _wallet_token(token)
+        with traced("roqqu.get_wallets", token=token):
+            return list(self._call("POST", "/user/wallets", json={"token": token}) or [])
+
+    def wallet_received(self, *, token: str, address: str) -> dict[str, Any]:
+        """Authoritative amount received on one of our addresses.
+
+        Read from Get Wallets (`total_received`, `total_received_usdt`), never
+        from a client claim or the webhook body alone."""
+        for wallet in self.get_wallets(token=token):
+            if wallet.get("address") == address:
+                received = Decimal(str(wallet.get("total_received") or 0))
+                usd = Decimal(str(wallet.get("total_received_usdt") or 0))
+                result = {
+                    "status": "PAID" if received > 0 else "PENDING",
+                    "amount_token": str(received),
+                    "amount_usd": str(usd),
+                }
+                log.info("roqqu.wallet.checked", address=address, status=result["status"])
+                return result
+        raise RoqquError(f"address {address} is not one of this account's {token} wallets")
+
+    def delete_wallet(self, *, token: str, address: str) -> None:
+        """POST /user/delete-wallet. Deposits to it are still credited (per docs)."""
+        self._call("POST", "/user/delete-wallet", json={"token": _wallet_token(token), "address": address})
+
+    def send_token(
+        self, *, token: str, amount: Decimal, wallet: str, memo: str = "", tag: str = ""
     ) -> dict[str, Any]:
-        """Send a single real sandbox transfer (#9, disbursement leg).
+        """Send crypto to an address (POST /user/send-{token}).
 
-        The generated payout leg is only ever as true as this call: a run shows
-        the provider's own answer (queued/failed/OTP-required), never a fake
-        success. `source_account_number` is our disbursement wallet.
-        """
-        if self._token is None:
-            self.authenticate()
-        payload: dict[str, Any] = {
-            "amount": float(amount),  # wire format is a number; value is already exact
-            "reference": reference,
-            "narration": narration,
-            "destinationBankCode": destination_bank_code,
-            "destinationAccountNumber": destination_account_number,
-            "destinationAccountName": destination_account_name,  # sandbox requires it (D01)
-            "currency": "NGN",
-            "sourceAccountNumber": source_account_number,
-        }
-        with traced("roqqu.initiate_transfer", amount=str(amount), reference=reference):
-            resp = self._send("post", 
-                _TRANSFER_PATH,
-                headers={"Authorization": f"Bearer {self._token}"},
-                json=payload,
-            )
-            body = _ok(resp)["responseBody"]
-            result = {
-                "transfer_reference": body.get("reference", reference),
-                "status": body.get("status", "UNKNOWN"),
-                "amount": str(body.get("amount") or amount),
-            }
-            log.info(
-                "roqqu.transfer.initiated",
-                reference=result["transfer_reference"],
-                status=result["status"],
-            )
-            return result
+        `memo` is used by BNB, EOS, HIVE and STEEM only; `tag` by Ripple."""
+        token = token.strip().lower()
+        payload: dict[str, Any] = {"amount": float(amount), "wallet": wallet}
+        if memo:
+            payload["memo"] = memo
+        if tag:
+            payload["tag"] = tag
+        with traced("roqqu.send_token", token=token, amount=str(amount)):
+            self._call("POST", f"/user/send-{token}", json=payload)
+        log.info("roqqu.token.sent", token=token, wallet=wallet)
+        return {"status": "sent", "token": token, "amount": str(amount), "wallet": wallet}
 
-    def create_reserved_account(
-        self,
-        *,
-        account_reference: str,
-        account_name: str,
-        customer_email: str,
-        customer_name: str,
-        bvn: str = "",
-        nin: str = "",
-        get_all_available_banks: bool = True,
+    # --- Blockchain utilities ---------------------------------------------
+
+    def blockchain_address(self, *, symbol: str, address: str) -> dict[str, Any]:
+        """Live chain data for an address (GET /blockchain/address).
+
+        Roqqu bans the caller's IP for 10 hours above 1 call per 100 s, so this
+        process refuses a second call inside that window instead of risking it."""
+        global _last_address_lookup
+        with _address_lock:
+            wait = _ADDRESS_LOOKUP_GAP_S - (time.monotonic() - _last_address_lookup)
+            if _last_address_lookup and wait > 0:
+                raise RoqquError(f"address lookup is rate limited; retry in {int(wait) + 1}s")
+            _last_address_lookup = time.monotonic()
+        with traced("roqqu.blockchain_address", symbol=symbol):
+            return dict(
+                self._call("GET", "/blockchain/address", params={"symbol": symbol, "addr": address})
+                or {}
+            )
+
+    # --- Market -----------------------------------------------------------
+
+    def token_price(self, *, symbol: str) -> Decimal:
+        """Current USD price of a token (GET /price)."""
+        with traced("roqqu.token_price", symbol=symbol):
+            return Decimal(str(self._call("GET", "/price", params={"symbol": symbol.lower()})))
+
+    # --- Fiat -------------------------------------------------------------
+
+    def account_resolve(self, *, account_number: str, bank: str) -> str:
+        """Account holder name for a Nigerian bank account (POST /user/account-resolve).
+
+        `bank` is the bank's name as listed by GET /banks."""
+        with traced("roqqu.account_resolve"):
+            name = self._call(
+                "POST",
+                "/user/account-resolve",
+                json={"account_number": account_number, "bank": bank},
+            )
+        if not name:
+            raise RoqquError("Roqqu could not resolve that account")
+        return str(name)
+
+    def bvn_verify(self, *, bvn: str) -> dict[str, Any]:
+        """POST /user/bvn-verify. Roqqu charges NGN 20 per successful call."""
+        with traced("roqqu.bvn_verify"):
+            return dict(self._call("POST", "/user/bvn-verify", json={"bvn": bvn}) or {})
+
+    def nin_verify(self, *, nin: str) -> dict[str, Any]:
+        """POST /user/nin-verify. Roqqu charges NGN 100 per successful call."""
+        with traced("roqqu.nin_verify"):
+            return dict(self._call("POST", "/user/nin-verify", json={"nin": nin}) or {})
+
+    # --- Bills ------------------------------------------------------------
+
+    def recharge_airtime(self, *, phone_number: str, amount: Decimal) -> None:
+        """POST /user/recharge-airtime."""
+        self._call(
+            "POST",
+            "/user/recharge-airtime",
+            json={"phone_number": phone_number, "amount": float(amount)},
+        )
+
+    def pay_electric(
+        self, *, provider: str, meter_type: str, meter_number: str, amount: Decimal, phone_number: str
     ) -> dict[str, Any]:
-        """Create a real dedicated sandbox account for an ajo member (#235).
-
-        Roqqu requires at least one KYC identifier. Refuse locally with a
-        useful message rather than making a doomed provider request. Provider
-        errors (including sandbox 503/response code 99) remain RoqquError so
-        the executor can show an honest failed node without crashing the run.
-        """
-        if not bvn.strip() and not nin.strip():
-            raise RoqquError("Reserved account requires the member's BVN or NIN")
-        if self._token is None:
-            self.authenticate()
-        payload: dict[str, Any] = {
-            "accountReference": account_reference,
-            "accountName": account_name,
-            "currencyCode": "NGN",
-            "contractCode": self._settings.roqqu_contract_code,
-            "customerEmail": customer_email,
-            "customerName": customer_name,
-            "getAllAvailableBanks": get_all_available_banks,
-        }
-        if bvn.strip():
-            payload["bvn"] = bvn.strip()
-        if nin.strip():
-            payload["nin"] = nin.strip()
-        with traced("roqqu.create_reserved_account", reference=account_reference):
-            resp = self._send("post", 
-                _RESERVED_ACCOUNT_PATH,
-                headers={"Authorization": f"Bearer {self._token}"},
-                json=payload,
+        """POST /user/pay-electric. Roqqu keeps NGN 100 of `amount` as a fee."""
+        return dict(
+            self._call(
+                "POST",
+                "/user/pay-electric",
+                json={
+                    "provider": provider,
+                    "meter_type": meter_type,
+                    "meter_number": meter_number,
+                    "amount": float(amount),
+                    "phone_number": phone_number,
+                },
             )
-            body = _ok(resp)["responseBody"]
-            accounts = body.get("accounts") or []
-            if not accounts:
-                raise RoqquError("Roqqu returned no bank account for the reservation")
-            account = accounts[0]
-            result = {
-                "account_reference": body.get("accountReference", account_reference),
-                "reservation_reference": body.get("reservationReference", ""),
-                "account_number": account.get("accountNumber", ""),
-                "account_name": account.get("accountName", account_name),
-                "bank": account.get("bankName", ""),
-                "bank_code": account.get("bankCode", ""),
-                "status": body.get("status", "UNKNOWN"),
-            }
-            if not result["account_number"]:
-                raise RoqquError("Roqqu returned a reserved account without an account number")
-            log.info(
-                "roqqu.reserved_account.created",
-                reference=result["account_reference"],
-                bank=result["bank"],
-                status=result["status"],
-            )
-            return result
-
-    def query_transaction(self, *, payment_reference: str) -> dict[str, Any]:
-        """Authoritative transaction state by payment reference (#53).
-
-        This is THE trust boundary of the generated artifact: order status only
-        ever changes based on what this returns, never on what a client claims.
-        """
-        if self._token is None:
-            self.authenticate()
-        with traced("roqqu.query_transaction", reference=payment_reference):
-            resp = self._send("get", 
-                _QUERY_PATH,
-                headers={"Authorization": f"Bearer {self._token}"},
-                params={"paymentReference": payment_reference},
-            )
-            body = _ok(resp)["responseBody"]
-            result = {
-                "status": body.get("paymentStatus", "UNKNOWN"),
-                "amount_paid": str(
-                    body.get("amountPaid") or "0"
-                ),  # exact string; money() parses it
-            }
-            log.info(
-                "roqqu.transaction.queried",
-                payment_reference=payment_reference,
-                status=result["status"],
-            )
-            return result
+            or {}
+        )
 
 
-def _ok(resp: httpx.Response) -> dict[str, Any]:
-    """Return the parsed body, or raise RoqquError with the provider message."""
-    try:
-        data = resp.json()
-    except ValueError as exc:
-        raise RoqquError(f"Non-JSON response from Roqqu (HTTP {resp.status_code})") from exc
-    if resp.status_code >= 400 or not data.get("requestSuccessful", False):
-        raise RoqquError(data.get("responseMessage", f"HTTP {resp.status_code}"))
-    return data
+def usd_to_ngn(usd: Decimal | str, settings: Settings) -> Decimal:
+    return (Decimal(str(usd)) * Decimal(settings.roqqu_ngn_per_usd)).quantize(Decimal("0.01"))
+
+
+def ngn_to_token(ngn: Decimal | str, price_usd: Decimal, settings: Settings) -> Decimal:
+    """How much of a token covers an NGN amount (rounded up to 8 dp)."""
+    usd = Decimal(str(ngn)) / Decimal(settings.roqqu_ngn_per_usd)
+    return (usd / price_usd).quantize(Decimal("0.00000001"), rounding="ROUND_UP")
+
+
+def _wallet_token(token: str) -> str:
+    token = (token or "").strip().lower()
+    if token not in WALLET_TOKENS:
+        raise RoqquError(f"Roqqu wallets support {', '.join(WALLET_TOKENS)} only, not {token!r}")
+    return token

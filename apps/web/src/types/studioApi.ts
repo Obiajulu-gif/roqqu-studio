@@ -26,10 +26,10 @@ export interface CredentialStatus {
   source: "workflow" | "platform" | "none" | string;
 }
 
+/** Roqqu keys (developers.roqqu.com): dashboard -> Security, and the webhook modal. */
 export interface RoqquCredentialInput {
-  api_key: string;
   secret_key: string;
-  contract_code: string;
+  webhook_secret: string;
 }
 
 /** Subset of ArtifactConfig the Seller form edits (#55, #61). */

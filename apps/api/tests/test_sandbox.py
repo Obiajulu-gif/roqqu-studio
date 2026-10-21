@@ -53,7 +53,7 @@ def _code_workflow(snippet: str) -> Workflow:
     return Workflow(
         id="cb", name="code-block", entrypoint="seed",
         nodes=[
-            Node(id="seed", type="roqqu.initialize_transaction", config={"amount": "5000"}),
+            Node(id="seed", type="roqqu.generate_wallet", config={"amount": "5000"}),
             Node(id="calc", type="custom.code", config={"code": snippet}),
         ],
         edges=[Edge(source="seed", target="calc")],

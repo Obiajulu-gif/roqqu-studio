@@ -27,10 +27,10 @@ def _flow(**over) -> MoniFlow:
     base = dict(
         name="Sell online",
         nodes=[
-            MoniFlowNode(id="init", type="roqqu.initialize_transaction"),
+            MoniFlowNode(id="init", type="roqqu.generate_wallet"),
             MoniFlowNode(id="webhook", type="event.payment_webhook"),
             MoniFlowNode(id="vsig", type="safety.verify_signature"),
-            MoniFlowNode(id="verify", type="roqqu.verify_transaction"),
+            MoniFlowNode(id="verify", type="roqqu.get_wallets"),
             MoniFlowNode(id="vamt", type="safety.validate_amount"),
             MoniFlowNode(id="idem", type="safety.idempotency_guard"),
             MoniFlowNode(id="paid", type="app.mark_order_paid"),
@@ -151,7 +151,7 @@ def test_disconnected_graph_is_rejected(monkeypatch):
     islands = MoniFlow(
         name="islands",
         nodes=[
-            MoniFlowNode(id="a", type="roqqu.initialize_transaction"),
+            MoniFlowNode(id="a", type="roqqu.generate_wallet"),
             MoniFlowNode(id="b", type="app.notify"),
         ],
         edges=[],  # nothing connected: nothing reachable, would pass vacuously

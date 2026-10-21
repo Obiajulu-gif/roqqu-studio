@@ -61,7 +61,7 @@ def test_create_list_and_buyer_page():
 
     page = client.get(f"/preview/{artifact_id}/invoice/{inv['reference']}").text
     assert "Chidi" in page and "Logo design" in page and "25,000" in page
-    assert "Roqqu (Moniepoint) account" in page
+    assert "Roqqu wallet" in page
     assert "Pay now" in page
 
 
@@ -117,16 +117,20 @@ def test_pay_then_verify_marks_paid(monkeypatch):
         def __exit__(self, *a):
             return False
 
-        def initialize_transaction(self, **kw):
-            return {
-                "payment_reference": "PAYREF-1",
-                "transaction_reference": "TXREF-1",
-                "checkout_url": "https://sandbox.sdk.roqqu.com/checkout/x",
-            }
+        def generate_wallet(self, *, token):
+            return {"address": "TPAYREF1", "token": token, "total_received": "0", "created_at": ""}
 
-    monkeypatch.setattr(api_main, "RoqquSandboxClient", _FakeClient)
+        def token_price(self, *, symbol):
+            from decimal import Decimal
+
+            return Decimal("0.25")
+
+    monkeypatch.setattr(api_main, "RoqquClient", _FakeClient)
     res = client.post(f"/preview/{artifact_id}/invoice/{inv['reference']}/pay")
     assert res.status_code == 200 and "checkout_url" in res.json()
+    # NGN 120,000 at NGN 1,500/USD and USD 0.25/TRX = 320 TRX to the new address.
+    deposit = client.get(res.json()["checkout_url"]).text
+    assert "TPAYREF1" in deposit and "320.00000000 TRX" in deposit
 
     original = orders_service.verifier
     orders_service.verifier = lambda ref: {"status": "PAID", "amount_paid": 120000.0}

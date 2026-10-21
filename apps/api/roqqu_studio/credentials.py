@@ -24,11 +24,10 @@ log = get_logger("credentials")
 
 
 class RoqquCredentials(BaseModel):
-    """A workflow's own sandbox keys (write path only)."""
+    """A workflow's own Roqqu keys (write path only)."""
 
-    api_key: str = Field(min_length=1)
-    secret_key: str = Field(min_length=1)
-    contract_code: str = Field(min_length=1)
+    secret_key: str = Field(min_length=1)  # RQ-SEC-..., dashboard -> Security
+    webhook_secret: str = ""  # the secret set beside the webhook URL on the dashboard
 
 
 class CredentialStatus(BaseModel):
@@ -44,8 +43,8 @@ class CredentialStore:
         self._by_workflow: dict[str, RoqquCredentials] = {}
 
     def put(self, workflow_id: str, creds: RoqquCredentials) -> None:
-        register_secret(creds.api_key)
         register_secret(creds.secret_key)
+        register_secret(creds.webhook_secret)
         self._by_workflow[workflow_id] = creds
         log.info("credentials.set", workflow=workflow_id)  # values are redacted
 
@@ -62,7 +61,7 @@ class CredentialStore:
         if self.has(workflow_id):
             return CredentialStatus(workflow_id=workflow_id, configured=True, source="workflow")
         platform = get_settings()
-        if platform.roqqu_api_key and platform.roqqu_secret_key:
+        if platform.roqqu_secret_key:
             return CredentialStatus(workflow_id=workflow_id, configured=True, source="platform")
         return CredentialStatus(workflow_id=workflow_id, configured=False, source="none")
 
@@ -77,9 +76,8 @@ class CredentialStore:
             return platform
         return platform.model_copy(
             update={
-                "roqqu_api_key": creds.api_key,
                 "roqqu_secret_key": creds.secret_key,
-                "roqqu_contract_code": creds.contract_code,
+                "roqqu_webhook_secret": creds.webhook_secret or platform.roqqu_webhook_secret,
             }
         )
 

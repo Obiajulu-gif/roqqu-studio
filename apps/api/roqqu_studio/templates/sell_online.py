@@ -25,13 +25,13 @@ def sell_online() -> Workflow:
     """Payment link -> verified order. Expected findings: none."""
     nodes = [
         # Row 1: what the seller and customer see. Informational only (MON001).
-        _n("init", "roqqu.initialize_transaction", "Create Payment Link", 0, 0),
+        _n("init", "roqqu.generate_wallet", "Create Deposit Address", 0, 0),
         _n("callback", "event.client_callback", "Customer Says 'I've Paid'", 240, 0),
         _n("notify", "app.notify", "Show 'Awaiting Confirmation'", 480, 0),
         # Row 2: the truth path. Only Roqqu's word marks an order paid.
         _n("webhook", "event.payment_webhook", "Roqqu Payment Webhook", 0, 170),
-        _n("vsig", "safety.verify_signature", "Verify Webhook Signature", 240, 170),
-        _n("verify", "roqqu.verify_transaction", "Verify Transaction", 480, 170),
+        _n("vsig", "safety.verify_signature", "Verify Webhook Secret", 240, 170),
+        _n("verify", "roqqu.get_wallets", "Verify Deposit (Get Wallets)", 480, 170),
         _n("vamt", "safety.validate_amount", "Validate Amount (full price)", 720, 170),
         _n("idem", "safety.idempotency_guard", "Idempotency Guard", 960, 170),
         _n("paid", "app.mark_order_paid", "Mark Order Paid (Verified)", 1200, 170),

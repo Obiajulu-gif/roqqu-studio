@@ -1,200 +1,158 @@
-"""Roqqu client: request shape, parsing, sandbox guard, secret safety (#7).
+"""Roqqu client: request shape, parsing, production guard, secret safety.
 
-All hermetic: httpx MockTransport stands in for the sandbox, so these run with no
-network and no real credentials.
+All hermetic: httpx MockTransport stands in for api.roqqu.com, so these run
+with no network and no real credentials. Shapes follow developers.roqqu.com.
 """
 
 from __future__ import annotations
 
 import io
 import json
+from decimal import Decimal
 
 import httpx
 import pytest
 
 from roqqu_studio.config import Settings
-from roqqu_studio.integrations.roqqu import RoqquError, RoqquSandboxClient
+from roqqu_studio.integrations.roqqu import RoqquClient, RoqquError, ngn_to_token, usd_to_ngn
+from roqqu_studio.integrations.roqqu import client as client_mod
 from roqqu_studio.observability import configure_logging
 
+SECRET = "RQ-SEC-TESTSECRET456"
+ADDRESS = "TXYZmockAddress1234567890"
 
-def _settings(base: str = "https://sandbox.api.roqqu.com") -> Settings:
-    return Settings(
-        roqqu_api_key="APIKEY123",
-        roqqu_secret_key="SECRET456",
-        roqqu_contract_code="CONTRACT789",
-        roqqu_base_url=base,
+
+def _settings(**overrides) -> Settings:
+    values = dict(
+        _env_file=None,
+        roqqu_secret_key=SECRET,
+        allow_production_execution=True,  # Roqqu has no sandbox
+        roqqu_ngn_per_usd="1500",
     )
+    values.update(overrides)
+    return Settings(**values)
+
+
+def _ok(data=None) -> httpx.Response:
+    return httpx.Response(200, json={"status": "success", "message": "ok", "data": data})
 
 
 def _handler(request: httpx.Request) -> httpx.Response:
-    if request.url.path.endswith("/auth/login"):
-        assert request.headers["Authorization"].startswith("Basic ")
-        return httpx.Response(
-            200,
-            json={"requestSuccessful": True, "responseBody": {"accessToken": "TOKENXYZ"}},
-        )
-    if request.url.path.endswith("/init-transaction"):
-        assert request.headers["Authorization"] == "Bearer TOKENXYZ"
-        body = json.loads(request.content)
-        assert body["contractCode"] == "CONTRACT789"
-        assert body["currencyCode"] == "NGN"
-        return httpx.Response(
-            200,
-            json={
-                "requestSuccessful": True,
-                "responseBody": {
-                    "paymentReference": body["paymentReference"],
-                    "transactionReference": "MNFY|TX|123",
-                    "checkoutUrl": "https://sandbox.sdk.roqqu.com/checkout/xyz",
-                },
-            },
-        )
-    return httpx.Response(404, json={"requestSuccessful": False, "responseMessage": "not found"})
+    assert request.headers["Authorization"] == f"Bearer {SECRET}"
+    path = request.url.path
+    body = json.loads(request.content or b"{}")
+    if path == "/prod/v1/user/generate-wallet":
+        return _ok({"address": ADDRESS, "type": body["token"], "total_received": 0, "genesis": 0,
+                    "created_at": "2026-10-21 10:00:00"})
+    if path == "/prod/v1/user/wallets":
+        return _ok([{"address": ADDRESS, "type": "trx", "total_received": 12.5,
+                     "total_received_usdt": 3.25, "genesis": 1}])
+    if path == "/prod/v1/user/send-trx":
+        assert body == {"amount": 10.0, "wallet": "TDEST"}
+        return httpx.Response(200, json={"status": "success", "message": "sent successfully"})
+    if path == "/prod/v1/price":
+        assert request.url.params["symbol"] == "trx"
+        return _ok(0.25)
+    if path == "/prod/v1/user/account-resolve":
+        assert body == {"account_number": "3051559336", "bank": "First Bank of Nigeria Limited"}
+        return _ok("ONOMOR ESEOGHENE BENJAMIN")
+    return httpx.Response(404, json={"status": "fail", "message": f"no route {path}"})
 
 
-def _client(handler=_handler) -> RoqquSandboxClient:
-    return RoqquSandboxClient(_settings(), transport=httpx.MockTransport(handler))
+def _client(handler=_handler, **overrides) -> RoqquClient:
+    return RoqquClient(_settings(**overrides), transport=httpx.MockTransport(handler))
 
 
-def test_initialize_transaction_returns_checkout_url():
-    with _client() as client:
-        result = client.initialize_transaction(
-            amount=100, customer_name="Ada", customer_email="a@b.co", reference="ref-1"
-        )
-    assert result["checkout_url"].startswith("https://")
-    assert result["transaction_reference"] == "MNFY|TX|123"
-    assert result["payment_reference"] == "ref-1"
+def test_generate_wallet_returns_the_new_address() -> None:
+    with _client() as c:
+        wallet = c.generate_wallet(token="TRX")
+    assert wallet["address"] == ADDRESS
+    assert wallet["token"] == "trx"
 
 
-def test_authenticate_uses_basic_auth_then_bearer():
-    with _client() as client:
-        assert client.authenticate() == "TOKENXYZ"
+def test_wallet_tokens_are_limited_to_btc_eth_trx() -> None:
+    with _client() as c, pytest.raises(RoqquError, match="btc, eth, trx"):
+        c.generate_wallet(token="usdt")
 
 
-def test_production_base_url_is_refused():
-    with pytest.raises(RuntimeError):
-        RoqquSandboxClient(_settings(base="https://api.roqqu.com"))
+def test_wallet_received_reads_get_wallets_for_that_address() -> None:
+    with _client() as c:
+        res = c.wallet_received(token="trx", address=ADDRESS)
+    assert res == {"status": "PAID", "amount_token": "12.5", "amount_usd": "3.25"}
 
 
-def test_roqqu_error_on_unsuccessful_response():
-    def bad(_request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            200, json={"requestSuccessful": False, "responseMessage": "bad creds"}
-        )
-
-    with pytest.raises(RoqquError, match="bad creds"), _client(bad) as client:
-        client.authenticate()
+def test_unknown_address_is_an_error_not_a_payment() -> None:
+    with _client() as c, pytest.raises(RoqquError, match="not one of this account"):
+        c.wallet_received(token="trx", address="TSOMEONE_ELSE")
 
 
-def test_secrets_never_appear_in_logs():
-    buf = io.StringIO()
-    configure_logging(stream=buf)
-    with _client() as client:
-        client.initialize_transaction(
-            amount=100, customer_name="Ada", customer_email="a@b.co", reference="ref-1"
-        )
-    logged = buf.getvalue()
-    for secret in ("APIKEY123", "SECRET456", "TOKENXYZ"):
-        assert secret not in logged
+def test_send_token_posts_to_send_symbol() -> None:
+    with _client() as c:
+        res = c.send_token(token="trx", amount=Decimal("10"), wallet="TDEST")
+    assert res["status"] == "sent"
 
 
-def test_create_reserved_account_uses_kyc_and_returns_first_bank_account():
-    def reserved(request: httpx.Request) -> httpx.Response:
-        if request.url.path.endswith("/auth/login"):
-            return httpx.Response(
-                200,
-                json={"requestSuccessful": True, "responseBody": {"accessToken": "TOKENXYZ"}},
-            )
-        assert request.url.path.endswith("/api/v2/bank-transfer/reserved-accounts")
-        assert request.headers["Authorization"] == "Bearer TOKENXYZ"
-        body = json.loads(request.content)
-        assert body == {
-            "accountReference": "ajo-ada-1",
-            "accountName": "Ada Ajo Account",
-            "currencyCode": "NGN",
-            "contractCode": "CONTRACT789",
-            "customerEmail": "ada@example.com",
-            "customerName": "Ada",
-            "getAllAvailableBanks": True,
-            "bvn": "21212121212",
-        }
-        return httpx.Response(
-            200,
-            json={
-                "requestSuccessful": True,
-                "responseBody": {
-                    "accountReference": "ajo-ada-1",
-                    "reservationReference": "RES-1",
-                    "status": "ACTIVE",
-                    "accounts": [
-                        {
-                            "bankCode": "50515",
-                            "bankName": "Moniepoint Microfinance Bank",
-                            "accountNumber": "6254727989",
-                            "accountName": "Ada Ajo Account",
-                        }
-                    ],
-                },
-            },
-        )
-
-    with _client(reserved) as client:
-        result = client.create_reserved_account(
-            account_reference="ajo-ada-1",
-            account_name="Ada Ajo Account",
-            customer_email="ada@example.com",
-            customer_name="Ada",
-            bvn="21212121212",
-        )
-    assert result["account_number"] == "6254727989"
-    assert result["bank"] == "Moniepoint Microfinance Bank"
-    assert result["status"] == "ACTIVE"
+def test_price_and_account_resolve() -> None:
+    with _client() as c:
+        assert c.token_price(symbol="TRX") == Decimal("0.25")
+        name = c.account_resolve(account_number="3051559336", bank="First Bank of Nigeria Limited")
+    assert name == "ONOMOR ESEOGHENE BENJAMIN"
 
 
-def test_create_reserved_account_requires_kyc_before_network_call():
-    with pytest.raises(RoqquError, match="BVN or NIN"), _client() as client:
-        client.create_reserved_account(
-            account_reference="ajo-ada-1",
-            account_name="Ada Ajo Account",
-            customer_email="ada@example.com",
-            customer_name="Ada",
-        )
+def test_fail_envelope_and_http_errors_raise() -> None:
+    def fail(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"status": "fail", "message": "invalid token supplied"})
+
+    with _client(fail) as c, pytest.raises(RoqquError, match="invalid token supplied"):
+        c.token_price(symbol="xyz")
+
+    # The docs show some 400s carrying status "success": the HTTP code still wins.
+    def lying(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"status": "success", "message": "unsupported token"})
+
+    with _client(lying) as c, pytest.raises(RoqquError, match="unsupported token"):
+        c.get_wallets(token="btc")
 
 
-def test_reserved_account_provider_503_remains_a_clear_roqqu_error():
-    def unavailable(request: httpx.Request) -> httpx.Response:
-        if request.url.path.endswith("/auth/login"):
-            return httpx.Response(
-                200,
-                json={"requestSuccessful": True, "responseBody": {"accessToken": "TOKENXYZ"}},
-            )
-        return httpx.Response(
-            503,
-            json={
-                "requestSuccessful": False,
-                "responseCode": "99",
-                "responseMessage": "Service unavailable",
-            },
-        )
+def test_address_lookup_never_exceeds_one_call_per_100s(monkeypatch) -> None:
+    monkeypatch.setattr(client_mod, "_last_address_lookup", 0.0)
 
-    with pytest.raises(RoqquError, match="Service unavailable"), _client(unavailable) as client:
-        client.create_reserved_account(
-            account_reference="ajo-ada-1",
-            account_name="Ada Ajo Account",
-            customer_email="ada@example.com",
-            customer_name="Ada",
-            nin="12345678901",
-        )
+    def chain(request: httpx.Request) -> httpx.Response:
+        return _ok({"address": ADDRESS, "balance": 1})
+
+    with _client(chain) as c:
+        assert c.blockchain_address(symbol="trx", address=ADDRESS)["balance"] == 1
+        with pytest.raises(RoqquError, match="rate limited"):
+            c.blockchain_address(symbol="trx", address=ADDRESS)
+
+
+def test_production_is_refused_unless_explicitly_allowed() -> None:
+    with pytest.raises(RoqquError, match="no sandbox"):
+        RoqquClient(_settings(allow_production_execution=False))
 
 
 def test_missing_keys_and_unreachable_host_are_roqqu_errors() -> None:
     # Keyless deploys must get a clean RoqquError (-> 502), never a raw 500.
     with pytest.raises(RoqquError, match="not configured"):
-        RoqquSandboxClient(Settings(_env_file=None, roqqu_api_key="", roqqu_secret_key=""))
+        RoqquClient(_settings(roqqu_secret_key=""))
 
     def _down(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("dns", request=request)
 
-    with RoqquSandboxClient(_settings(), transport=httpx.MockTransport(_down)) as client:
-        with pytest.raises(RoqquError, match="unreachable"):
-            client.authenticate()
+    with _client(_down) as c, pytest.raises(RoqquError, match="unreachable"):
+        c.generate_wallet(token="trx")
+
+
+def test_secret_never_appears_in_logs() -> None:
+    buf = io.StringIO()
+    configure_logging(stream=buf)
+    with _client() as c:
+        c.generate_wallet(token="trx")
+    assert SECRET not in buf.getvalue()
+
+
+def test_fx_helpers_are_exact() -> None:
+    s = _settings()
+    assert usd_to_ngn("3.25", s) == Decimal("4875.00")
+    # NGN 1,500 = USD 1 = 4 TRX at USD 0.25
+    assert ngn_to_token("1500", Decimal("0.25"), s) == Decimal("4.00000000")

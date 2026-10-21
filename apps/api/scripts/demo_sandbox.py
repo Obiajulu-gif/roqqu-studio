@@ -10,7 +10,7 @@ open in a browser. Every call is traced; secrets are redacted from the logs.
 from __future__ import annotations
 
 from roqqu_studio.config import get_settings
-from roqqu_studio.integrations.roqqu import RoqquError, RoqquSandboxClient
+from roqqu_studio.integrations.roqqu import RoqquError, RoqquClient
 from roqqu_studio.observability import configure_observability, correlation, new_id
 
 
@@ -24,7 +24,7 @@ def main() -> int:
         return 2
 
     try:
-        with correlation(request_id=new_id("req")), RoqquSandboxClient(settings) as client:
+        with correlation(request_id=new_id("req")), RoqquClient(settings) as client:
             result = client.initialize_transaction(
                 amount=100,
                 customer_name="Ada Test",

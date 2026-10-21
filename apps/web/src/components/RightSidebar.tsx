@@ -90,11 +90,11 @@ export function RightSidebar({
             title={
               executionAdapter === "roqqu"
                 ? "Runs against the live Roqqu API (needs ROQQU_* keys). Click to switch to Practice."
-                : "Practice: simulated run, no Roqqu request. Click to run against the real Roqqu sandbox."
+                : "Practice: simulated run, no Roqqu request. Click to run live on Roqqu (real crypto, needs keys)."
             }
             onClick={onToggleAdapter}
           >
-            {executionAdapter === "roqqu" ? "● Sandbox" : "○ Practice"}
+            {executionAdapter === "roqqu" ? "● Live" : "○ Practice"}
           </button>
           <button
             type="button"

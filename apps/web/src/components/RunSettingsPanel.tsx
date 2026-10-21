@@ -1,5 +1,5 @@
 /**
- * Explicit execution mode plus write-only sandbox credentials.
+ * Explicit execution mode plus write-only Roqqu credentials.
  * The default remains mock/practice execution (#202).
  */
 "use client";
@@ -37,7 +37,7 @@ export function RunSettingsPanel({
           />
           <span>
             <strong>Practice</strong>
-            <small>Simulated run with no Roqqu sandbox request.</small>
+            <small>Simulated run with no Roqqu request.</small>
           </span>
         </label>
         <label>
@@ -48,8 +48,8 @@ export function RunSettingsPanel({
             onChange={() => onAdapterChange("roqqu")}
           />
           <span>
-            <strong>Roqqu sandbox</strong>
-            <small>Uses your saved sandbox credentials. Never production money.</small>
+            <strong>Live on Roqqu</strong>
+            <small>Uses your saved Roqqu keys. Roqqu has no sandbox: this moves real crypto.</small>
           </span>
         </label>
       </fieldset>

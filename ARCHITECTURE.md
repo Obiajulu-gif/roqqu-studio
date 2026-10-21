@@ -83,7 +83,7 @@ All of it is lost on API restart.
 
 | Service | Used for | Env |
 |---|---|---|
-| Roqqu sandbox | Checkout, verify, transfer, reserved accounts | `ROQQU_API_KEY`, `ROQQU_SECRET_KEY`, `ROQQU_CONTRACT_CODE`, `ROQQU_WALLET_ACCOUNT`, `ROQQU_BASE_URL` |
+| Roqqu API (production only) | Deposit addresses, deposit verification, crypto payouts, prices, KYC, bills | `ROQQU_SECRET_KEY`, `ROQQU_WEBHOOK_SECRET`, `ROQQU_PAY_TOKEN`, `ROQQU_NGN_PER_USD`, `ROQQU_BASE_URL`, `ALLOW_PRODUCTION_EXECUTION` |
 | Anthropic / OpenAI / Google | Moni | `AI_PROVIDER`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, plus `*_MODEL`, `AI_TIMEOUT_S`, `MONI_COMPOSE_ROUNDS` |
 | ZeptoMail | Email receipts | `ZEPTOMAIL_API_KEY`, `ZEPTOMAIL_SENDER`, `ZEPTOMAIL_REPLY_TO` |
 | Evolution API | WhatsApp | `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE` |
@@ -114,6 +114,24 @@ The app has one route (`/`). Screens are states of `StudioApp.tsx`:
 
 ## Roqqu status
 
-The code was rebranded from Monnify to Roqqu. Roqqu publishes no public developer API, so `integrations/roqqu/client.py` keeps the original endpoint paths and payload shapes as **placeholders**, and `ROQQU_BASE_URL` defaults to a placeholder host. Zero-key mode (the in-memory `MockAdapter`) is the working path. For live mode, replace the paths and field mappings in `client.py` once Roqqu supplies API docs and keys.
+The integration follows the Roqqu API reference (https://developers.roqqu.com, base `https://api.roqqu.com/prod/v1`, `Authorization: Bearer RQ-SEC-...`).
+
+| Studio node | Roqqu endpoint |
+|---|---|
+| `roqqu.generate_wallet`, `invoice_wallet`, `member_wallet` | `POST /user/generate-wallet` (btc, eth, trx) |
+| `roqqu.get_wallets` (the authoritative verify) | `POST /user/wallets` (`total_received`, `total_received_usdt`) |
+| `roqqu.send_token`, `batch_send`, `split_send`, `refund_send` | `POST /user/send-{token}` (one call per payee) |
+| `roqqu.delete_wallet` | `POST /user/delete-wallet` |
+| `roqqu.token_price` | `GET /price` |
+| `roqqu.blockchain_address` | `GET /blockchain/address` (1 call / 100 s, enforced in-process) |
+| `roqqu.account_resolve`, `bvn_verify`, `nin_verify` | `POST /user/account-resolve`, `/user/bvn-verify`, `/user/nin-verify` |
+| `roqqu.recharge_airtime`, `pay_electric` | `POST /user/recharge-airtime`, `/user/pay-electric` |
+| `event.payment_webhook` + `safety.verify_signature` | Receive Token webhook `{secret, token, amount, address, timestamp}`; the `secret` is compared in constant time |
+
+Nodes whose names are not Roqqu endpoints (`invoice_wallet`, `member_wallet`, `batch_send`, `split_send`, `refund_send`) are Studio steps built on Generate Wallet or Send Token, because Roqqu has no invoice, batch, split or refund endpoint.
+
+Payments: NGN totals are priced in crypto with `GET /price` and `ROQQU_NGN_PER_USD`. The buyer gets a fresh deposit address on `/preview/{id}/deposit/{ref}`. The order flips to paid only when Get Wallets shows enough received. Roqqu has no sandbox, so `RoqquClient` refuses every call unless `ALLOW_PRODUCTION_EXECUTION=true`.
+
+The files in `docs/` are the original Monnify Studio planning notes and still describe the Monnify sandbox.
 
 AI providers: `anthropic | openai | google | nvidia`. `nvidia` uses NVIDIA NIM through the OpenAI SDK (`NVIDIA_API_KEY`, optional `NVIDIA_MODEL`, `NVIDIA_BASE_URL`).

@@ -25,7 +25,7 @@ class PortSpec(BaseModel):
 
 
 class NodeTypeDef(BaseModel):
-    type: str  # catalog key, e.g. "roqqu.verify_transaction"
+    type: str  # catalog key, e.g. "roqqu.get_wallets"
     category: NodeCategory
     title: str
     description: str = ""

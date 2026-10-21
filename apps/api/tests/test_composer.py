@@ -20,11 +20,11 @@ UNSAFE_AJO = MoniFlow(
     description="Rotating savings: members contribute, one member gets the pot.",
     explanation="Members pay in monthly; on payout day the pot goes to one member.",
     nodes=[
-        MoniFlowNode(id="init", type="roqqu.initialize_transaction", label="Member Pays In"),
+        MoniFlowNode(id="init", type="roqqu.generate_wallet", label="Member Pays In"),
         MoniFlowNode(id="webhook", type="event.payment_webhook", label="Payment Webhook"),
         MoniFlowNode(id="credit", type="app.credit_ledger", label="Credit Pot"),
         MoniFlowNode(id="payday", type="event.scheduled", label="Payout Day"),
-        MoniFlowNode(id="transfer", type="roqqu.initiate_transfer", label="Pay Member"),
+        MoniFlowNode(id="transfer", type="roqqu.send_token", label="Pay Member"),
     ],
     edges=[
         MoniFlowEdge(source="init", target="webhook", kind="control"),

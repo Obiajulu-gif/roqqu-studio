@@ -11,7 +11,7 @@ Roqqu Studio runs with **zero keys**. Every key below only unlocks a live featur
 | Chat: compose a new flow from free text | Needs an AI key (returns "composing flows needs an AI provider key") |
 | Run | Practice mode (simulated, the default) |
 | Shop link, invoice, dashboard pages | Render fully |
-| Pay button on shop/invoice | Needs Roqqu keys (returns a clear 502 until then) |
+| Pay button on shop/invoice | Needs Roqqu keys and `ALLOW_PRODUCTION_EXECUTION=true` (returns a clear 502 until then) |
 | Email / WhatsApp notifications | Recorded only, not sent |
 
 ## Keys
@@ -33,14 +33,28 @@ If the first provider fails, the API falls through to the next one that has a ke
 
 ### 2. Roqqu (makes Pay and live Run work)
 
-Roqqu has no public developer API documentation. To get access:
+The integration follows the Roqqu API reference at https://developers.roqqu.com (base URL `https://api.roqqu.com/prod/v1`).
 
-1. Contact Roqqu (business or developer support, or the Roqqu hackathon organisers) and ask for API access, API docs and test keys.
-2. Put the values in `ROQQU_API_KEY`, `ROQQU_SECRET_KEY`, `ROQQU_CONTRACT_CODE` and `ROQQU_BASE_URL`.
-3. Update the endpoint paths and field names at the top of `apps/api/roqqu_studio/integrations/roqqu/client.py` to match Roqqu's docs. The current ones are placeholders carried over from the original project.
-4. Update the webhook signature header in `api/main.py` (`/roqqu/webhook`, currently `roqqu-signature`, HMAC-SHA512) to match Roqqu's docs.
+> **Roqqu has no sandbox.** Every live call hits production and moves real crypto. The API refuses live calls until you set `ALLOW_PRODUCTION_EXECUTION=true`. Test with small amounts.
 
-`ROQQU_BASE_URL` must contain `sandbox`, unless you set `ALLOW_PRODUCTION_EXECUTION=true`. This guard stops accidental real-money calls.
+1. Sign up at https://app.roqqu.com/signup and finish verification.
+2. In the dashboard, open the **Security** section and copy your secret key (`RQ-SEC-...`). Put it in `ROQQU_SECRET_KEY`.
+3. In the dashboard's webhook settings, set the URL to `https://<api-domain>/roqqu/webhook` and type a secret. Put the same secret in `ROQQU_WEBHOOK_SECRET`.
+4. Optional settings:
+   - `ROQQU_PAY_TOKEN`: the token buyers pay in, one of `btc`, `eth` or `trx` (default `trx`).
+   - `ROQQU_NGN_PER_USD`: the NGN to USD rate used to price NGN totals in crypto. Roqqu prices are in USD and it has no NGN rate endpoint, so you set this rate yourself.
+5. Set `ALLOW_PRODUCTION_EXECUTION=true` when you are ready for real money.
+
+How a payment works:
+1. The buyer clicks Pay.
+2. Studio calls Generate Wallet to get a fresh address, and Get Token Price to work out how much crypto covers the NGN total.
+3. The buyer sees the address, the amount and a QR code.
+4. Roqqu sends the deposit webhook. Studio checks the webhook `secret`, then reads Get Wallets (`total_received_usdt`) and marks the order paid only if that covers the total.
+
+Roqqu limits to respect:
+- Address Lookup (`/blockchain/address`) allows 1 call per 100 seconds. More gets your IP blocked for 10 hours, so Studio refuses a second call inside that window.
+- Get Wallets returns every wallet you have ever generated, with no paging.
+- BVN checks cost NGN 20 and NIN checks NGN 100 per successful call. Electricity payments keep a NGN 100 fee.
 
 ### 3. Notifications (optional)
 
@@ -85,4 +99,4 @@ On the free tier the service sleeps when idle, and all data is in memory, so a r
 
 ### Roqqu webhook
 
-Once deployed, register `https://<api-domain>/roqqu/webhook` as the webhook URL in your Roqqu dashboard. Payments are only marked paid after the API re-verifies them with Roqqu.
+Once deployed, register `https://<api-domain>/roqqu/webhook` as the webhook URL in your Roqqu dashboard. Payments are only marked paid after the API checks the webhook secret and re-reads Get Wallets.

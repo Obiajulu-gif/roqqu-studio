@@ -26,8 +26,8 @@ export function StudioIconRail({
         <Image
           src="/figma/roqqu-logo-rail.svg"
           alt="Roqqu"
-          width={21}
-          height={13}
+          width={18}
+          height={18}
           unoptimized
         />
       </div>

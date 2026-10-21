@@ -20,7 +20,7 @@
       "node_ids": ["webhook", "fulfil"],
       "path": ["webhook", "fulfil"],
       "explanation": "Webhooks are unauthenticated until you validate the signature.",
-      "remediation": "Insert Verify Webhook Signature immediately after the webhook node.",
+      "remediation": "Insert Verify Webhook Secret immediately after the webhook node.",
       "doc_url": "https://roqqu.com"
     },
     {

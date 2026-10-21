@@ -33,8 +33,8 @@ export function StudioFloatingChrome({
         <Image
           src="/figma/roqqu-logo-rail.svg"
           alt=""
-          width={21}
-          height={13}
+          width={18}
+          height={18}
           unoptimized
         />
         <div className="studio-float__meta">

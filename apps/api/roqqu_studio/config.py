@@ -22,41 +22,37 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    roqqu_api_key: str = ""
+    # Roqqu API (https://developers.roqqu.com): one secret key, sent as
+    # `Authorization: Bearer RQ-SEC-...` (dashboard -> Security).
     roqqu_secret_key: str = ""
-    roqqu_contract_code: str = ""
-    # PLACEHOLDER: set ROQQU_BASE_URL from Roqqu's API docs (none public yet).
-    roqqu_base_url: str = "https://sandbox.api.roqqu.com"
-    # Disbursement source wallet account number (#9). Roqqu won't let us list
-    # wallets on this sandbox, so the source account is supplied out of band.
-    roqqu_wallet_account: str = ""
+    # The `secret` you typed when registering the webhook URL on the Roqqu
+    # dashboard; Roqqu echoes it in every deposit webhook body.
+    roqqu_webhook_secret: str = ""
+    roqqu_base_url: str = "https://api.roqqu.com/prod/v1"
+    # Token buyers pay in. Generate Wallet supports btc, eth and trx only.
+    roqqu_pay_token: str = "trx"
+    # ponytail: Roqqu prices are USD and it has no NGN rate endpoint, so the
+    # NGN->USD bridge is a manual rate; swap for a live FX feed if it matters.
+    roqqu_ngn_per_usd: str = "1500"
 
     allow_production_execution: bool = False
     studio_env: str = "development"
 
     @property
     def is_sandbox(self) -> bool:
+        # Roqqu has no sandbox: every call hits production (real crypto).
         return "sandbox" in self.roqqu_base_url
 
     def assert_sandbox(self) -> None:
         if not self.is_sandbox and not self.allow_production_execution:
             raise RuntimeError(
-                "Refusing a non-sandbox Roqqu base URL. Set ALLOW_PRODUCTION_EXECUTION=true "
-                "only if you truly intend to hit production (never in the challenge build)."
+                "Roqqu has no sandbox: live calls move real crypto. Set "
+                "ALLOW_PRODUCTION_EXECUTION=true only when you intend that."
             )
 
     def assert_roqqu_credentials(self) -> None:
-        missing = [
-            name
-            for name, value in {
-                "ROQQU_API_KEY": self.roqqu_api_key,
-                "ROQQU_SECRET_KEY": self.roqqu_secret_key,
-                "ROQQU_CONTRACT_CODE": self.roqqu_contract_code,
-            }.items()
-            if not value
-        ]
-        if missing:
-            raise RuntimeError(f"Missing Roqqu sandbox credentials: {', '.join(missing)}")
+        if not self.roqqu_secret_key:
+            raise RuntimeError("Missing Roqqu credentials: ROQQU_SECRET_KEY")
 
 
 @lru_cache

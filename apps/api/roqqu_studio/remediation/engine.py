@@ -59,7 +59,7 @@ def _fix_mon001(wf: Workflow, finding: Finding, catalog: Catalog) -> Remediation
         src,
         dst,
         [
-            ("roqqu.verify_transaction", "Verify Transaction"),
+            ("roqqu.get_wallets", "Verify Transaction"),
             ("safety.validate_amount", "Validate Amount"),
             ("safety.idempotency_guard", "Idempotency Guard"),
         ],
@@ -114,7 +114,7 @@ def _fix_mon009(wf: Workflow, finding: Finding, catalog: Catalog) -> Remediation
 def _fix_mon011(wf: Workflow, finding: Finding, catalog: Catalog) -> RemediationStep:
     src, dst = _final_edge(finding)
     ids = insert_chain_on_edge(
-        wf, src, dst, [("roqqu.validate_bank_account", "Validate Bank Account")]
+        wf, src, dst, [("roqqu.account_resolve", "Validate Bank Account")]
     )
     return RemediationStep(
         rule_id="MON011", action=f"Inserted beneficiary validation before '{dst}'", added_nodes=ids

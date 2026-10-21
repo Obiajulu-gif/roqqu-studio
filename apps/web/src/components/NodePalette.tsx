@@ -71,39 +71,30 @@ function GripIcon() {
   );
 }
 
+// Grouped like the Roqqu API reference (developers.roqqu.com).
 const CATEGORY_ORDER = [
-  "Accept Payments",
-  "Transfer/Payouts",
-  "Wallets",
+  "Wallet",
+  "Fiat",
+  "Market & Blockchain",
+  "Ancillary Services",
   "Customer Verification",
-  "Bills & Payments",
   "Events",
   "Control",
   "Application",
 ];
 
+const ROQQU_SECTION: Record<string, string> = {
+  "roqqu.account_resolve": "Fiat",
+  "roqqu.bvn_verify": "Fiat",
+  "roqqu.nin_verify": "Fiat",
+  "roqqu.token_price": "Market & Blockchain",
+  "roqqu.blockchain_address": "Market & Blockchain",
+  "roqqu.recharge_airtime": "Ancillary Services",
+  "roqqu.pay_electric": "Ancillary Services",
+};
+
 function displayCategory(meta: NodeMeta): string {
-  const hay = `${meta.type} ${meta.title}`.toLowerCase();
-  if (
-    hay.includes("bvn") ||
-    hay.includes("nin") ||
-    hay.includes("name enquiry") ||
-    hay.includes("validate bank")
-  ) {
-    return "Customer Verification";
-  }
-  if (
-    hay.includes("transfer") ||
-    hay.includes("disbursement") ||
-    hay.includes("paycode") ||
-    hay.includes("refund") ||
-    hay.includes("payout")
-  ) {
-    return "Transfer/Payouts";
-  }
-  if (hay.includes("wallet")) return "Wallets";
-  if (hay.includes("bill")) return "Bills & Payments";
-  if (meta.category === "roqqu") return "Accept Payments";
+  if (meta.category === "roqqu") return ROQQU_SECTION[meta.type] ?? "Wallet";
   if (meta.category === "safety") return "Customer Verification";
   if (meta.category === "event") return "Events";
   if (meta.category === "control") return "Control";

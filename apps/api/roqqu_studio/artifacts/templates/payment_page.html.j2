@@ -1,6 +1,6 @@
 <!doctype html>
 {# The seller's payment page (#52, D17). Structure is generated; look comes
-   from skin.css.j2 (#59 item 1). The Pay button creates a REAL sandbox
+   from skin.css.j2 (#59 item 1). The Pay button creates a real Roqqu deposit
    checkout via POST /preview/{artifact_id}/pay. #}
 <html lang="en">
 <head>
@@ -87,18 +87,18 @@
 
     btn.addEventListener("click", async () => {
       btn.disabled = true;
-      status.textContent = "Creating secure checkout...";
+      status.textContent = "Creating your Roqqu deposit address...";
       try {
         const res = await fetch("/preview/{{ artifact_id }}/pay", { method: "POST" });
         if (!res.ok) throw new Error((await res.json()).detail || "checkout failed");
         const data = await res.json();
         orderRef = data.order_reference;
-        status.textContent = "Opening Roqqu checkout (order " + orderRef + "). This page confirms itself once Roqqu sees your payment.";
+        status.textContent = "Pay in crypto to the Roqqu address (order " + orderRef + "). This page confirms itself once Roqqu sees your payment.";
         claim.hidden = false;
         window.open(data.checkout_url, "_blank", "noopener");
         pollUntilConfirmed();
       } catch (err) {
-        status.textContent = "Could not start checkout: " + err.message;
+        status.textContent = "Could not create a deposit address: " + err.message;
       } finally {
         btn.disabled = false;
       }

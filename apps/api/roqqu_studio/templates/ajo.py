@@ -27,12 +27,12 @@ def ajo() -> Workflow:
     """Contributions in, scheduled payout out. Expected findings: none."""
     nodes = [
         # Row 1: setup - a dedicated account per member.
-        _n("accounts", "roqqu.create_reserved_account", "Give Each Member an Account", 0, 0),
+        _n("accounts", "roqqu.member_wallet", "Give Each Member a Roqqu Wallet", 0, 0),
         _n("send_acct", "app.notify", "Send Account Details to Members", 300, 0),
         # Row 2: money in - each contribution, only credited after Roqqu confirms.
         _n("webhook", "event.payment_webhook", "Contribution Received", 0, 170),
-        _n("vsig", "safety.verify_signature", "Verify Webhook Signature", 300, 170),
-        _n("verify", "roqqu.verify_transaction", "Verify Contribution", 600, 170),
+        _n("vsig", "safety.verify_signature", "Verify Webhook Secret", 300, 170),
+        _n("verify", "roqqu.get_wallets", "Verify Contribution", 600, 170),
         _n("vamt", "safety.validate_amount", "Validate Contribution Amount", 900, 170),
         _n("idem", "safety.idempotency_guard", "Idempotency Guard", 1200, 170),
         _n("credit", "app.credit_ledger", "Credit Member Contribution", 1500, 170),
@@ -40,9 +40,9 @@ def ajo() -> Workflow:
         # Row 3: money out - the scheduled payout to this cycle's member.
         _n("schedule", "event.scheduled", "Payout Day (this member's turn)", 0, 340),
         _n("balance", "safety.balance_guard", "Check Pool Covers Payout", 300, 340),
-        _n("valbank", "roqqu.validate_bank_account", "Validate Receiver Account", 600, 340),
-        _n("payout", "roqqu.initiate_transfer", "Pay the Whole Pot to This Member", 900, 340),
-        _n("status", "roqqu.query_transfer_status", "Check Payout Status", 1200, 340),
+        _n("valbank", "roqqu.account_resolve", "Validate Receiver Account", 600, 340),
+        _n("payout", "roqqu.send_token", "Pay the Whole Pot to This Member", 900, 340),
+        _n("status", "roqqu.blockchain_address", "Check Payout on Chain", 1200, 340),
         _n("recon", "safety.reconciliation", "Reconcile the Pool", 1500, 340),
         _n("notify_out", "app.notify", "Tell Member: You Collected the Pot", 1800, 340),
     ]

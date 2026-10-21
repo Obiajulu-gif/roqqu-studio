@@ -56,9 +56,9 @@ _TEMPLATES: dict[str, TemplateDef] = {
             title="Invoice a client, get paid",
             persona="Freelancer / B2B billing",
             description=(
-                "Create an invoice, share the link. The buyer pays online and the "
-                "invoice is only marked paid after Roqqu confirms the money in "
-                "your Roqqu (Moniepoint) account."
+                "Create an invoice, share the link. The buyer pays in crypto to a "
+                "fresh Roqqu address, and the invoice is only marked paid once Roqqu "
+                "shows the deposit landed."
             ),
         ),
         builder=invoice,

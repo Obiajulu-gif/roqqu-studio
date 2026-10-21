@@ -13,7 +13,7 @@ from roqqu_studio.observability import configure_logging, get_logger
 
 client = TestClient(app)
 
-_CREDS = {"api_key": "MK_TEST_abc123", "secret_key": "SK_super_secret_9z", "contract_code": "778899"}
+_CREDS = {"secret_key": "RQ-SEC-super_secret_9z", "webhook_secret": "hook_secret_77"}
 
 
 def _a_workflow_id() -> str:
@@ -41,9 +41,9 @@ def test_secret_values_are_never_returned():
         client.get(f"/workflows/{wid}/credentials"),
     ):
         body = res.text
-        assert _CREDS["api_key"] not in body
+        assert _CREDS["webhook_secret"] not in body
         assert _CREDS["secret_key"] not in body
-        assert "api_key" not in res.json()  # no secret fields on the model at all
+        assert "secret_key" not in res.json()  # no secret fields on the model at all
 
 
 def test_credentials_require_a_real_workflow():
@@ -54,13 +54,13 @@ def test_settings_for_prefers_workflow_then_platform():
     store = CredentialStore()
     # No creds: falls back to platform settings (base url unchanged).
     platform = store.settings_for("wf-x")
-    assert "sandbox" in platform.roqqu_base_url
+    assert platform.roqqu_base_url == "https://api.roqqu.com/prod/v1"
 
     store.put("wf-x", RoqquCredentials(**_CREDS))
     resolved = store.settings_for("wf-x")
-    assert resolved.roqqu_api_key == _CREDS["api_key"]
-    assert resolved.roqqu_contract_code == _CREDS["contract_code"]
-    # The user set keys, but NOT the base url: it stays the platform sandbox (guard).
+    assert resolved.roqqu_secret_key == _CREDS["secret_key"]
+    assert resolved.roqqu_webhook_secret == _CREDS["webhook_secret"]
+    # The user set keys, but NOT the base url: it stays platform-pinned (guard).
     assert resolved.roqqu_base_url == platform.roqqu_base_url
 
 

@@ -14,14 +14,14 @@
   --panel: #ffffff;
   --line: #e5e5e5;
   --line-strong: #d1d1d6;
-  --accent: #1b2a6b;
-  --accent-soft: rgba(27, 42, 107, 0.08);
-  --brand: #4c6fff;
+  --accent: #2764FF;
+  --accent-soft: rgba(39, 100, 255, 0.08);
+  --brand: #2764FF;
   --warn: #b45309;
   --danger: #b42318;
   --edge-control: #737373;
-  --edge-event: #1b2a6b;
-  --cat-roqqu: #1b2a6b;
+  --edge-event: #2764FF;
+  --cat-roqqu: #2764FF;
   --cat-event: #1d4e89;
   --cat-safety: #9a3412;
   --cat-control: #57534e;
@@ -620,7 +620,7 @@ body.is-resizing-sidebar iframe {
 }
 
 .studio-btn--deploy {
-  background: #1b2a6b;
+  background: #2764FF;
   color: #fafafa;
   border-radius: 8px;
   padding: 3px 8px;
@@ -851,7 +851,7 @@ body.is-resizing-sidebar iframe {
   align-items: center;
   justify-content: center;
   border: 0;
-  background: #1b2a6b;
+  background: #2764FF;
   color: #fafafa;
   font: inherit;
   font-size: 12px;
@@ -1452,7 +1452,7 @@ body.is-resizing-sidebar iframe {
 }
 
 .studio-onboard__crumb.is-active {
-  color: #1b2a6b;
+  color: #2764FF;
   font-weight: 500;
 }
 
@@ -1687,7 +1687,7 @@ body.is-resizing-sidebar iframe {
 
 .studio-path-gate__door.is-selected {
   border-width: 1px;
-  border-color: #1b2a6b;
+  border-color: #2764FF;
   background: #f5f2ed;
 }
 
@@ -1695,7 +1695,7 @@ body.is-resizing-sidebar iframe {
   border: 0;
   border-radius: 8px;
   padding: 8px 16px;
-  background: #1b2a6b;
+  background: #2764FF;
   color: #fafafa;
   font: inherit;
   font-size: 14px;
@@ -1755,9 +1755,9 @@ body.is-resizing-sidebar iframe {
 }
 
 .studio-chat__chip:hover:not(:disabled) {
-  border-color: #1b2a6b;
-  color: #1b2a6b;
-  background: color-mix(in srgb, #1b2a6b 6%, #fff);
+  border-color: #2764FF;
+  color: #2764FF;
+  background: color-mix(in srgb, #2764FF 6%, #fff);
 }
 
 .studio-chat__chip:disabled {
@@ -2038,7 +2038,7 @@ body.is-resizing-sidebar iframe {
   height: 28px;
   border: 0;
   border-radius: 8px;
-  background: #1b2a6b;
+  background: #2764FF;
   color: #fafafa;
   font: inherit;
   font-size: 14px;
@@ -2413,14 +2413,14 @@ body.is-resizing-sidebar iframe {
 }
 
 .studio-template-picker__card:focus-visible {
-  outline: 2px solid color-mix(in srgb, #1b2a6b 40%, transparent);
+  outline: 2px solid color-mix(in srgb, #2764FF 40%, transparent);
   outline-offset: 4px;
   border-radius: 4px;
 }
 
 /*
  * Figma template thumbs (#144:4306 / #155:5019): h-150, r-8, #F5F2ED blank.
- * Selected: 1px #1b2a6b stroke + rgba(0,0,0,0.2) dim; Select = mini outline (#155:5020).
+ * Selected: 1px #2764FF stroke + rgba(0,0,0,0.2) dim; Select = mini outline (#155:5020).
  */
 .studio-template-picker__thumb {
   position: relative;
@@ -2436,7 +2436,7 @@ body.is-resizing-sidebar iframe {
 }
 
 .studio-template-picker__thumb.is-selected {
-  border-color: #1b2a6b;
+  border-color: #2764FF;
   box-shadow: none;
 }
 
@@ -2478,7 +2478,7 @@ body.is-resizing-sidebar iframe {
   border-radius: 8px;
   padding: 3px 8px;
   background: #fff;
-  color: #1b2a6b;
+  color: #2764FF;
   font: inherit;
   font-size: 12px;
   font-weight: 500;
@@ -5146,7 +5146,7 @@ body.is-resizing-sidebar iframe {
 }
 .studio-rail__btn.is-nudging {
   animation: studio-rail-nudge 2.4s ease-in-out infinite;
-  color: var(--brand, #4c6fff);
+  color: var(--brand, #2764FF);
   box-shadow: 0 0 0 2px rgba(0, 184, 194, 0.35), 0 0 12px rgba(0, 184, 194, 0.45);
   border-radius: 8px;
   position: relative;
@@ -5212,7 +5212,7 @@ body.is-resizing-sidebar iframe {
   background: #fff;
 }
 .roster__row input:focus {
-  border-color: var(--brand, #4c6fff);
+  border-color: var(--brand, #2764FF);
   box-shadow: 0 0 0 2px rgba(0, 184, 194, 0.16);
 }
 .roster__remove {

@@ -216,7 +216,7 @@ export function StudioNode({ id, data, selected }: NodeProps<StudioFlowNode>) {
           <div className="studio-node__header-left">
             <span className="studio-node__provider">
               <span className="studio-node__provider-logo" aria-hidden>
-                <Image src="/figma/roqqu-logo.svg" alt="" width={12} height={7} unoptimized />
+                <Image src="/figma/roqqu-logo.svg" alt="" width={10} height={10} unoptimized />
               </span>
               Roqqu
             </span>
