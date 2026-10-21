@@ -65,7 +65,7 @@ from roqqu_studio.integrations.roqqu import (
     public_prices,
     usd_to_ngn,
 )
-from roqqu_studio import playground
+from roqqu_studio import playground, services
 from roqqu_studio.money import money
 from roqqu_studio.notifications import (
     Notification,
@@ -771,6 +771,55 @@ def _deposit_order(artifact_id: str, reference: str) -> Order:
     if order is None or order.artifact_id != artifact_id or not order.payment_reference:
         raise HTTPException(status_code=404, detail=f"unknown payment: {reference}")
     return order
+
+
+def _svc_session(request: Request) -> str:
+    return request.cookies.get(SESSION_COOKIE) or "anon"
+
+
+def _svc(fn, *args):
+    try:
+        return fn(*args)
+    except services.ServiceError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.detail) from None
+
+
+@app.get("/services/status")
+def services_status() -> dict:
+    return services.status(credential_store.settings_for(None))
+
+
+@app.post("/services/run")
+def services_run(body: services.ServiceRequest, request: Request) -> dict:
+    """One business action (verify meter, buy data, KYC, ...) in practice or live mode."""
+    return _svc(services.run, body, credential_store.settings_for(None), _svc_session(request))
+
+
+@app.post("/services/payroll")
+def services_payroll(body: services.PayrollRequest, request: Request) -> dict:
+    return _svc(services.run_payroll, body, credential_store.settings_for(None), _svc_session(request))
+
+
+@app.get("/services/history")
+def services_history(request: Request, panel: str | None = None) -> list[dict]:
+    return services.history(_svc_session(request), panel)
+
+
+@app.get("/services/alerts")
+def services_alerts(request: Request) -> dict:
+    """Prices (live if Roqqu answers, else practice) and this session's alerts, re-checked."""
+    return services.check_alerts(_svc_session(request), credential_store.settings_for(None))
+
+
+@app.post("/services/alerts")
+def services_add_alert(body: services.AlertRequest, request: Request) -> dict:
+    return services.add_alert(_svc_session(request), body)
+
+
+@app.delete("/services/alerts/{alert_id}")
+def services_remove_alert(alert_id: str, request: Request) -> dict:
+    services.remove_alert(_svc_session(request), alert_id)
+    return {"removed": alert_id}
 
 
 @app.get("/playground/endpoints")

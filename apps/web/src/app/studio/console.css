@@ -856,3 +856,410 @@
   text-decoration: none;
   color: inherit;
 }
+
+/* --- business service panels (ServicePanels.tsx) ------------------------------ */
+.rq-console .biz-product-tabs {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+}
+
+.rq-console .biz-product-tabs button {
+  white-space: nowrap;
+}
+
+.svc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 20px;
+  padding: 18px;
+}
+
+.svc__head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.svc__head p {
+  margin: 4px 0 14px;
+  color: #8d98ae;
+  font-size: 13.5px;
+}
+
+.svc__main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.svc__side h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #b8c1d3;
+}
+
+.svc-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.svc-mode small {
+  color: #6f7b93;
+  font-size: 12px;
+}
+
+.svc-mode__seg,
+.svc-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: #0d1422;
+  border: 1px solid #232e45;
+  width: max-content;
+}
+
+.svc-mode__seg button,
+.svc-tabs button {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: #8d98ae;
+  cursor: pointer;
+}
+
+.svc-mode__seg button.is-on,
+.svc-tabs button.is-on {
+  background: #1c2a45;
+  color: #fff;
+}
+
+.svc-mode__seg button.is-live.is-on {
+  background: rgba(43, 212, 154, 0.18);
+  color: #2bd49a;
+}
+
+.svc-mode__seg button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.svc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #232e45;
+  border-radius: 10px;
+  background: #0f1625;
+}
+
+.svc-card.is-locked {
+  opacity: 0.55;
+}
+
+.svc-card h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.svc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.svc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  color: #b8c1d3;
+}
+
+.svc-field input,
+.svc-field select,
+.svc-table input {
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #2a3550;
+  background: #0b111d;
+  color: #e6eaf3;
+  width: 100%;
+}
+
+.svc-field small {
+  color: #6f7b93;
+  font-size: 11.5px;
+}
+
+.svc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.svc-btn {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #2f3c58;
+  background: #121a2a;
+  color: #e6eaf3;
+  cursor: pointer;
+}
+
+.svc-btn:hover:not(:disabled) {
+  border-color: #5b8cff;
+}
+
+.svc-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.svc-btn--primary {
+  background: #2764ff;
+  border-color: #2764ff;
+  color: #fff;
+}
+
+.svc-link {
+  font: inherit;
+  font-size: 12.5px;
+  background: none;
+  border: 0;
+  color: #7aa0ff;
+  cursor: pointer;
+}
+
+.svc-notice {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  border-left: 3px solid;
+}
+
+.svc-notice.is-ok {
+  border-color: #2bd49a;
+  background: rgba(43, 212, 154, 0.08);
+}
+
+.svc-notice.is-bad {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.08);
+  color: #ffb0b0;
+}
+
+.svc-notice.is-info {
+  border-color: #f5b544;
+  background: rgba(245, 181, 68, 0.08);
+}
+
+.svc-notice code {
+  font-size: 13px;
+  color: #fff;
+}
+
+.svc-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.svc-plans button {
+  font: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid #2a3550;
+  background: #0b111d;
+  color: #e6eaf3;
+  cursor: pointer;
+}
+
+.svc-plans button b {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.svc-plans button span {
+  font-family: var(--font-mono);
+  color: #7aa0ff;
+  font-size: 13px;
+}
+
+.svc-plans button.is-on {
+  border-color: #2764ff;
+  background: rgba(39, 100, 255, 0.12);
+}
+
+.svc-prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.svc-prices div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid #232e45;
+  background: #0f1625;
+  font-size: 13px;
+}
+
+.svc-prices span {
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.svc-prices em {
+  font-style: normal;
+  font-size: 12px;
+}
+
+.svc-prices .up {
+  color: #2bd49a;
+}
+
+.svc-prices .down {
+  color: #ff6b6b;
+}
+
+.svc-alerts,
+.svc-history,
+.svc-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.svc-alerts li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid #232e45;
+  background: #0f1625;
+  font-size: 13.5px;
+}
+
+.svc-alerts li p {
+  margin: 0;
+  flex: 1;
+}
+
+.svc-alerts li small {
+  color: #8d98ae;
+}
+
+.svc-alerts li > span {
+  font-size: 12px;
+  color: #8d98ae;
+}
+
+.svc-alerts li.is-fired {
+  border-color: rgba(43, 212, 154, 0.5);
+}
+
+.svc-alerts li.is-fired > span {
+  color: #2bd49a;
+}
+
+.svc-history li {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 2px 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #1a2338;
+  font-size: 12.5px;
+}
+
+.svc-history li p {
+  margin: 0;
+  color: #e6eaf3;
+}
+
+.svc-history li small {
+  grid-column: 2;
+  color: #6f7b93;
+}
+
+.svc-history li.is-ok > span {
+  color: #2bd49a;
+}
+
+.svc-history li.is-bad > span {
+  color: #ff6b6b;
+}
+
+.svc-empty {
+  margin: 0;
+  color: #6f7b93;
+  font-size: 12.5px;
+}
+
+.svc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.svc-table th {
+  text-align: left;
+  font-weight: 500;
+  color: #8d98ae;
+  padding: 0 6px 6px;
+}
+
+.svc-table td {
+  padding: 4px 6px;
+}
+
+.svc-results li {
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 7px;
+}
+
+.svc-results li.is-ok {
+  background: rgba(43, 212, 154, 0.08);
+}
+
+.svc-results li.is-bad {
+  background: rgba(255, 107, 107, 0.08);
+}
+
+@media (max-width: 900px) {
+  .svc {
+    grid-template-columns: 1fr;
+  }
+}
+
+.biz-activity__svc {
+  padding: 4px 16px 12px;
+}

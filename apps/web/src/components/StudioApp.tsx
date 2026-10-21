@@ -17,6 +17,7 @@ import type {
   StudioNodeData,
 } from "@/types";
 import { useExecutionTrace } from "@/hooks/useExecutionTrace";
+import type { ProductTab } from "@/components/BusinessDashboard";
 import { StudioStatusBar } from "@/components/StudioStatusBar";
 import { useOnboardingTour } from "@/hooks/useOnboardingTour";
 import { useSidebarWidths } from "@/hooks/useSidebarWidths";
@@ -72,6 +73,28 @@ import type {
 } from "@/types";
 
 const HERO_WORKFLOW_IDS = new Set(["marketplace-unsafe", "marketplace-safe"]);
+
+/** The dashboard tab that matches the template a business picked. */
+const TEMPLATE_TAB: Record<string, ProductTab> = {
+  "pay-bills": "bills",
+  "sell-data": "data",
+  withdrawals: "withdraw",
+  kyc: "kyc",
+  "price-alerts": "alerts",
+  payroll: "payroll",
+  invoice: "invoice",
+  ajo: "ajo",
+  "sell-online": "sell",
+};
+
+function productTabFor(goal?: string | null, workflowId?: string | null): ProductTab {
+  const template = (workflowId ?? "").replace(/-[0-9a-f]{12}$/, "");
+  if (TEMPLATE_TAB[template]) return TEMPLATE_TAB[template];
+  if (goal === "invoice") return "invoice";
+  if (goal === "savings") return "ajo";
+  if (goal === "payroll") return "payroll";
+  return "sell";
+}
 
 /** Template choice decides products vs dashboard (shop path only adds products). */
 function goalFromTemplate(templateId: string): BusinessGoal {
@@ -917,13 +940,7 @@ function CanvasInner() {
           shopUrl={bizData?.shopUrl ?? null}
           artifactId={bizData?.artifactId ?? null}
           shareLabel={bizData?.shareLabel}
-          initialProductTab={
-            profile?.goal === "invoice"
-              ? "invoice"
-              : profile?.goal === "savings"
-                ? "ajo"
-                : "sell"
-          }
+          initialProductTab={productTabFor(profile?.goal, profile?.workflow_id)}
           activeNav={businessNav === "workflow" ? "workflow" : "dashboard"}
           onNav={(nav) => {
             if (nav === "workflow") void goBusinessWorkflow();

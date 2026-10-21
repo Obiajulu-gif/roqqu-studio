@@ -26,6 +26,7 @@ const ngn = new Intl.NumberFormat("en-NG", { maximumFractionDigits: 2 });
 export function CryptoRates() {
   const [prices, setPrices] = useState<RoqquPrices | null>(null);
   const [failed, setFailed] = useState(false);
+  const [practice, setPractice] = useState(false);
   const [amount, setAmount] = useState("10000");
 
   useEffect(() => {
@@ -35,10 +36,32 @@ export function CryptoRates() {
         const next = await getJson<RoqquPrices>("/roqqu/prices");
         if (alive) {
           setPrices(next);
+          setPractice(false);
           setFailed(false);
         }
       } catch {
-        if (alive) setFailed(true);
+        // Roqqu unreachable: show the studio's practice prices, clearly labelled.
+        try {
+          const [board, status] = await Promise.all([
+            getJson<{ prices: Record<string, { price: number; change: number }> }>("/services/alerts"),
+            getJson<{ ngn_per_usd: string }>("/services/status"),
+          ]);
+          const rate = Number(status.ngn_per_usd) || 0;
+          const tokens = Object.entries(board.prices).map(([symbol, p]) => ({
+            symbol,
+            price_usd: String(p.price),
+            price_ngn: String(p.price * rate),
+            change: p.change,
+            payable: ["btc", "eth", "trx"].includes(symbol),
+          }));
+          if (alive) {
+            setPrices({ ngn_per_usd: status.ngn_per_usd, tokens });
+            setPractice(true);
+            setFailed(false);
+          }
+        } catch {
+          if (alive) setFailed(true);
+        }
       }
     };
     void load();
@@ -90,7 +113,10 @@ export function CryptoRates() {
             </span>
           </label>
           <small className="biz-rates__note">
-            At ₦{ngn.format(Number(prices?.ngn_per_usd))}/USD. Prices from Roqqu, refreshed every minute.
+            At ₦{ngn.format(Number(prices?.ngn_per_usd))}/USD.{" "}
+            {practice
+              ? "Roqqu is unreachable, so these are practice prices, not market data."
+              : "Prices from Roqqu, refreshed every minute."}
           </small>
         </>
       )}

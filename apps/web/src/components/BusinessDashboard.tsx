@@ -13,14 +13,47 @@ import type { ShopProduct } from "@/types";
 
 import { AjoPanel, type AjoPanelHandle } from "./AjoPanel";
 import { CryptoRates } from "./CryptoRates";
+import {
+  AlertsPanel,
+  BillsPanel,
+  DataPanel,
+  KycPanel,
+  PayrollPanel,
+  RecentServiceActivity,
+  WithdrawPanel,
+} from "./ServicePanels";
 
-type ProductTab = "sell" | "invoice" | "ajo";
+export type ProductTab =
+  | "sell"
+  | "invoice"
+  | "ajo"
+  | "bills"
+  | "data"
+  | "withdraw"
+  | "kyc"
+  | "alerts"
+  | "payroll";
 
 const PRODUCT_TABS: { id: ProductTab; label: string }[] = [
   { id: "sell", label: "Sell Online" },
   { id: "invoice", label: "Invoice" },
   { id: "ajo", label: "Saving Group (Ajo)" },
+  { id: "bills", label: "Pay Bills" },
+  { id: "data", label: "Data Bundles" },
+  { id: "withdraw", label: "Withdrawals" },
+  { id: "kyc", label: "KYC" },
+  { id: "alerts", label: "Price Alerts" },
+  { id: "payroll", label: "Payroll" },
 ];
+
+const SERVICE_PANELS: Partial<Record<ProductTab, () => React.JSX.Element>> = {
+  bills: BillsPanel,
+  data: DataPanel,
+  withdraw: WithdrawPanel,
+  kyc: KycPanel,
+  alerts: AlertsPanel,
+  payroll: PayrollPanel,
+};
 
 function BizIcon({
   name,
@@ -595,6 +628,12 @@ export function BusinessDashboard({
           aria-label={PRODUCT_TABS.find((t) => t.id === productTab)?.label}
           data-tour="biz-shop-link"
         >
+          {SERVICE_PANELS[productTab]
+            ? (() => {
+                const ServicePanel = SERVICE_PANELS[productTab]!;
+                return <ServicePanel />;
+              })()
+            : null}
           {productTab === "sell" && (
             <>
               <header className="biz-product-panel__head">
@@ -968,7 +1007,9 @@ export function BusinessDashboard({
               </button>
             </header>
             {activityPreview.length === 0 ? (
-              <p className="biz-activity__empty">No activity yet — payments appear here when money moves.</p>
+              <div className="biz-activity__svc">
+                <RecentServiceActivity />
+              </div>
             ) : (
               <ul className="biz-activity__list">
                 {activityPreview.map((item) => (
