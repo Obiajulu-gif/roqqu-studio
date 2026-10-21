@@ -38,6 +38,8 @@ class RoqquSandboxClient:
 
     def __init__(self, settings: Settings, *, transport: httpx.BaseTransport | None = None) -> None:
         settings.assert_sandbox()
+        if not (settings.roqqu_api_key and settings.roqqu_secret_key):
+            raise RoqquError("Roqqu keys not configured: set ROQQU_API_KEY and ROQQU_SECRET_KEY")
         register_secret(settings.roqqu_api_key)
         register_secret(settings.roqqu_secret_key)
         self._settings = settings
@@ -52,11 +54,17 @@ class RoqquSandboxClient:
     def __exit__(self, *exc: object) -> None:
         self._http.close()
 
+    def _send(self, method: str, path: str, **kwargs: Any) -> httpx.Response:
+        try:
+            return self._http.request(method.upper(), path, **kwargs)
+        except httpx.HTTPError as exc:  # DNS, timeout, refused: surface as a provider error
+            raise RoqquError(f"Roqqu unreachable: {type(exc).__name__}") from exc
+
     def authenticate(self) -> str:
         creds = f"{self._settings.roqqu_api_key}:{self._settings.roqqu_secret_key}"
         basic = base64.b64encode(creds.encode()).decode()
         with traced("roqqu.authenticate"):
-            resp = self._http.post(_AUTH_PATH, headers={"Authorization": f"Basic {basic}"})
+            resp = self._send("post", _AUTH_PATH, headers={"Authorization": f"Basic {basic}"})
             token = _ok(resp)["responseBody"]["accessToken"]
             register_secret(token)  # never let the bearer token surface in a log
             self._token = token
@@ -88,7 +96,7 @@ class RoqquSandboxClient:
         if redirect_url:
             payload["redirectUrl"] = redirect_url
         with traced("roqqu.initialize_transaction", amount=str(amount), reference=reference):
-            resp = self._http.post(
+            resp = self._send("post", 
                 _INIT_PATH,
                 headers={"Authorization": f"Bearer {self._token}"},
                 json=payload,
@@ -136,7 +144,7 @@ class RoqquSandboxClient:
             "sourceAccountNumber": source_account_number,
         }
         with traced("roqqu.initiate_transfer", amount=str(amount), reference=reference):
-            resp = self._http.post(
+            resp = self._send("post", 
                 _TRANSFER_PATH,
                 headers={"Authorization": f"Bearer {self._token}"},
                 json=payload,
@@ -190,7 +198,7 @@ class RoqquSandboxClient:
         if nin.strip():
             payload["nin"] = nin.strip()
         with traced("roqqu.create_reserved_account", reference=account_reference):
-            resp = self._http.post(
+            resp = self._send("post", 
                 _RESERVED_ACCOUNT_PATH,
                 headers={"Authorization": f"Bearer {self._token}"},
                 json=payload,
@@ -228,7 +236,7 @@ class RoqquSandboxClient:
         if self._token is None:
             self.authenticate()
         with traced("roqqu.query_transaction", reference=payment_reference):
-            resp = self._http.get(
+            resp = self._send("get", 
                 _QUERY_PATH,
                 headers={"Authorization": f"Bearer {self._token}"},
                 params={"paymentReference": payment_reference},

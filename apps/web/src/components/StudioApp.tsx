@@ -114,10 +114,10 @@ function CanvasInner() {
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [explainBusy, setExplainBusy] = useState(false);
   const [explainNote, setExplainNote] = useState<string | null>(null);
-  // Default to the real Roqqu sandbox: a demo key is seeded, so Run should
-  // hit Roqqu out of the box (Flow C). Practice/mock is one click away.
+  // Default to Practice (mock): Run works with zero keys. Switching to the
+  // live Roqqu adapter needs ROQQU_* keys on the API.
   const [executionAdapter, setExecutionAdapter] =
-    useState<ExecutionAdapter>("roqqu");
+    useState<ExecutionAdapter>("mock");
   const toggleExecutionAdapter = () =>
     setExecutionAdapter((current) => (current === "roqqu" ? "mock" : "roqqu"));
 

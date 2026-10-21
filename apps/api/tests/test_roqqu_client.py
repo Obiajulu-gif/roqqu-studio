@@ -185,3 +185,16 @@ def test_reserved_account_provider_503_remains_a_clear_roqqu_error():
             customer_name="Ada",
             nin="12345678901",
         )
+
+
+def test_missing_keys_and_unreachable_host_are_roqqu_errors() -> None:
+    # Keyless deploys must get a clean RoqquError (-> 502), never a raw 500.
+    with pytest.raises(RoqquError, match="not configured"):
+        RoqquSandboxClient(Settings(_env_file=None, roqqu_api_key="", roqqu_secret_key=""))
+
+    def _down(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("dns", request=request)
+
+    with RoqquSandboxClient(_settings(), transport=httpx.MockTransport(_down)) as client:
+        with pytest.raises(RoqquError, match="unreachable"):
+            client.authenticate()

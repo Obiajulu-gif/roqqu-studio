@@ -89,7 +89,7 @@ export function RightSidebar({
             aria-pressed={executionAdapter === "roqqu"}
             title={
               executionAdapter === "roqqu"
-                ? "Runs against the REAL Roqqu sandbox (a demo key is connected). Click to switch to Practice."
+                ? "Runs against the live Roqqu API (needs ROQQU_* keys). Click to switch to Practice."
                 : "Practice: simulated run, no Roqqu request. Click to run against the real Roqqu sandbox."
             }
             onClick={onToggleAdapter}
