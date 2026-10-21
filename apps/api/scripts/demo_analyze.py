@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import sys
 
-from monnify_studio.analysis import Report, analyze
-from monnify_studio.fixtures import safe_marketplace, unsafe_marketplace
-from monnify_studio.providers import default_catalog
+from roqqu_studio.analysis import Report, analyze
+from roqqu_studio.fixtures import safe_marketplace, unsafe_marketplace
+from roqqu_studio.providers import default_catalog
 
 SEV_ICON = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🔵", "info": "⚪"}
 

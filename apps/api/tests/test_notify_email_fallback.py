@@ -6,7 +6,7 @@ fallback the demo email would send into example.com and nobody would see it.
 
 from __future__ import annotations
 
-import monnify_studio.executor.adapter as adapter
+import roqqu_studio.executor.adapter as adapter
 
 
 def test_real_config_email_wins(monkeypatch) -> None:

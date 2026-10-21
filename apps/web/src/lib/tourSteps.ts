@@ -24,7 +24,7 @@ export const BUSINESS_TOUR_STEPS: TourStep[] = [
   {
     id: "welcome",
     target: "",
-    title: "Welcome to Monnify Studio",
+    title: "Welcome to Roqqu Studio",
     body: "Quick tour of your dashboard, it only takes a minute.",
     chrome: "dashboard",
     placement: "center",
@@ -79,7 +79,7 @@ export const BUSINESS_TOUR_STEPS: TourStep[] = [
     id: "done",
     target: "",
     title: "You’re all set",
-    body: "That is everything you need to know about monnify studio.",
+    body: "That is everything you need to know about roqqu studio.",
     chrome: "dashboard",
     placement: "center",
     imageSrc: "/figma/tour/tour-step-7.png",
@@ -91,7 +91,7 @@ export const DEVELOPER_TOUR_STEPS: TourStep[] = [
     id: "catalog",
     target: "dev-catalog",
     title: "API catalog",
-    body: "Drag Monnify building blocks onto the whiteboard to build a Flow.",
+    body: "Drag Roqqu building blocks onto the whiteboard to build a Flow.",
     chrome: "hover",
   },
   {
@@ -105,7 +105,7 @@ export const DEVELOPER_TOUR_STEPS: TourStep[] = [
     id: "run",
     target: "dev-run",
     title: "Run",
-    body: "Run with practice money first. No real cash moves until you connect Monnify.",
+    body: "Run with practice money first. No real cash moves until you connect Roqqu.",
     chrome: "hover",
   },
 ];
@@ -125,7 +125,7 @@ export const BUSINESS_WORKFLOW_TOUR_STEPS: TourStep[] = [
     id: "catalog",
     target: "dev-catalog",
     title: "Add another step",
-    body: "Choose a Monnify building block here and add it to your workflow when your business needs more.",
+    body: "Choose a Roqqu building block here and add it to your workflow when your business needs more.",
     chrome: "hover",
   },
   {
@@ -144,5 +144,5 @@ export function tourStepsFor(path: TourPath): TourStep[] {
 }
 
 export function tourDismissKey(path: TourPath): string {
-  return `monnify.studio.tour.dismissed.${path}`;
+  return `roqqu.studio.tour.dismissed.${path}`;
 }

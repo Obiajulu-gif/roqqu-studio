@@ -192,7 +192,7 @@ export function useStudioSession({ setNodes, setEdges }: UseStudioSessionOptions
         id: blankId,
         name: "Blank canvas",
         version: 1,
-        provider: "monnify",
+        provider: "roqqu",
         description: "Empty workflow, add nodes from the API catalog.",
         variables: {},
         nodes: [],

@@ -13,7 +13,7 @@ export interface StudioToolbarProps {
   reviewOpen: boolean;
   traceOpen: boolean;
   running: boolean;
-  executionAdapter: "mock" | "monnify";
+  executionAdapter: "mock" | "roqqu";
   onTogglePalette: () => void;
   onToggleReview: () => void;
   onToggleTrace: () => void;
@@ -96,7 +96,7 @@ export function StudioToolbar({
             ? "Running…"
             : executionAdapter === "mock"
               ? "Practice run (no real money)"
-              : "Run in Monnify sandbox"}
+              : "Run in Roqqu sandbox"}
         </button>
       </div>
     </div>

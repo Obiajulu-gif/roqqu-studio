@@ -1,9 +1,9 @@
 /**
  * Palette → canvas drag MIME (#103 Drag & Drop Feature).
  */
-export const STUDIO_DND_MIME = "application/x-monnify-studio-node";
+export const STUDIO_DND_MIME = "application/x-roqqu-studio-node";
 
-export const DRAG_DROP_TIP_KEY = "monnify.studio.tip.drag-drop.dismissed";
+export const DRAG_DROP_TIP_KEY = "roqqu.studio.tip.drag-drop.dismissed";
 
 export function readDragNodeType(dataTransfer: DataTransfer): string | null {
   const raw = dataTransfer.getData(STUDIO_DND_MIME).trim();

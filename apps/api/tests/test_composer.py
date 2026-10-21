@@ -5,11 +5,11 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-import monnify_studio.ai.composer as composer_mod
-from monnify_studio.ai.composer import ComposeError, ComposeUnavailable, compose_flow
-from monnify_studio.ai.providers import KeywordFallback
-from monnify_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
-from monnify_studio.api.main import app
+import roqqu_studio.ai.composer as composer_mod
+from roqqu_studio.ai.composer import ComposeError, ComposeUnavailable, compose_flow
+from roqqu_studio.ai.providers import KeywordFallback
+from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
+from roqqu_studio.api.main import app
 
 client = TestClient(app)
 
@@ -20,11 +20,11 @@ UNSAFE_AJO = MoniFlow(
     description="Rotating savings: members contribute, one member gets the pot.",
     explanation="Members pay in monthly; on payout day the pot goes to one member.",
     nodes=[
-        MoniFlowNode(id="init", type="monnify.initialize_transaction", label="Member Pays In"),
+        MoniFlowNode(id="init", type="roqqu.initialize_transaction", label="Member Pays In"),
         MoniFlowNode(id="webhook", type="event.payment_webhook", label="Payment Webhook"),
         MoniFlowNode(id="credit", type="app.credit_ledger", label="Credit Pot"),
         MoniFlowNode(id="payday", type="event.scheduled", label="Payout Day"),
-        MoniFlowNode(id="transfer", type="monnify.initiate_transfer", label="Pay Member"),
+        MoniFlowNode(id="transfer", type="roqqu.initiate_transfer", label="Pay Member"),
     ],
     edges=[
         MoniFlowEdge(source="init", target="webhook", kind="control"),
@@ -70,7 +70,7 @@ def test_invalid_node_types_exhaust_rounds_then_refuse(monkeypatch):
     bad = MoniFlow(
         name="bad",
         nodes=[
-            MoniFlowNode(id="a", type="monnify.hack_the_bank"),
+            MoniFlowNode(id="a", type="roqqu.hack_the_bank"),
             MoniFlowNode(id="b", type="app.notify"),
         ],
         edges=[MoniFlowEdge(source="a", target="b")],

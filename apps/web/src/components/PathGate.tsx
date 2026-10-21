@@ -17,7 +17,7 @@ export function PathGate({ busy = false, error = null, onContinue }: PathGatePro
   return (
     <div className="studio-path-gate__card">
       <header className="studio-path-gate__header">
-        <h1 id="studio-path-title">Welcome to Monnify Studio</h1>
+        <h1 id="studio-path-title">Welcome to Roqqu Studio</h1>
         <p>Choose how you want to start</p>
       </header>
 

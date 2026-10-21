@@ -21,7 +21,7 @@
   --danger: #b42318;
   --edge-control: #737373;
   --edge-event: #013d41;
-  --cat-monnify: #013d41;
+  --cat-roqqu: #013d41;
   --cat-event: #1d4e89;
   --cat-safety: #9a3412;
   --cat-control: #57534e;
@@ -646,7 +646,7 @@ body.is-resizing-sidebar iframe {
   border-radius: 8px;
 }
 
-/* Run-mode toggle next to Run (Flow C): live = real Monnify sandbox. */
+/* Run-mode toggle next to Run (Flow C): live = real Roqqu sandbox. */
 .studio-btn--mode {
   font-size: 12px;
   font-weight: 500;
@@ -2998,9 +2998,9 @@ body.is-resizing-sidebar iframe {
 }
 
 /* Category is scannable via the icon chip tint (AC-7), not a border stripe. */
-.studio-node.cat-monnify .studio-node__icon-chip {
-  background: color-mix(in srgb, var(--cat-monnify) 12%, #fff);
-  border-color: color-mix(in srgb, var(--cat-monnify) 45%, var(--line));
+.studio-node.cat-roqqu .studio-node__icon-chip {
+  background: color-mix(in srgb, var(--cat-roqqu) 12%, #fff);
+  border-color: color-mix(in srgb, var(--cat-roqqu) 45%, var(--line));
 }
 .studio-node.cat-event .studio-node__icon-chip {
   background: color-mix(in srgb, var(--cat-event) 12%, #fff);
@@ -3018,8 +3018,8 @@ body.is-resizing-sidebar iframe {
   background: color-mix(in srgb, var(--cat-application) 12%, #fff);
   border-color: color-mix(in srgb, var(--cat-application) 45%, var(--line));
 }
-.studio-node.cat-monnify .studio-node__icon-glyph {
-  background: var(--cat-monnify);
+.studio-node.cat-roqqu .studio-node__icon-glyph {
+  background: var(--cat-roqqu);
 }
 .studio-node.cat-event .studio-node__icon-glyph {
   background: var(--cat-event);

@@ -165,7 +165,7 @@ export const AjoPanel = forwardRef<AjoPanelHandle, AjoPanelProps>(function AjoPa
             </button>
             <span className="biz-ajo__sim-note">
               Demo only: advances the pool and sends the real WhatsApp nudge.
-              Money in still needs a Monnify-verified payment.
+              Money in still needs a Roqqu-verified payment.
             </span>
           </div>
           {(state?.payouts?.length ?? 0) > 0 ? (

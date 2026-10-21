@@ -1,5 +1,5 @@
 /**
- * Execution trace contracts (mirror monnify_studio.executor.events).
+ * Execution trace contracts (mirror roqqu_studio.executor.events).
  * Interim hand port until D6 JSON Schema codegen. Provenance: #28, #8, #79, D2, D15.
  */
 
@@ -10,8 +10,8 @@ export type RunStatus =
   | "completed"
   | "failed";
 
-/** Backed by the API's mock and sandbox-only Monnify adapters. */
-export type ExecutionAdapter = "mock" | "monnify";
+/** Backed by the API's mock and sandbox-only Roqqu adapters. */
+export type ExecutionAdapter = "mock" | "roqqu";
 
 export type ExecutionEventType =
   | "run.started"

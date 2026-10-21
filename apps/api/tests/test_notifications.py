@@ -7,11 +7,11 @@ from decimal import Decimal
 import pytest
 from fastapi.testclient import TestClient
 
-import monnify_studio.notifications as notif
-from monnify_studio.api.main import app
-from monnify_studio.integrations.whatsapp import normalize_ng
-from monnify_studio.notifications import EmailNotifier, WhatsAppNotifier, notification_log
-from monnify_studio.orders import orders_service
+import roqqu_studio.notifications as notif
+from roqqu_studio.api.main import app
+from roqqu_studio.integrations.whatsapp import normalize_ng
+from roqqu_studio.notifications import EmailNotifier, WhatsAppNotifier, notification_log
+from roqqu_studio.orders import orders_service
 
 client = TestClient(app)
 

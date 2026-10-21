@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.ajo import ajo_store
-from monnify_studio.api.main import app
-from monnify_studio.notifications import notification_log
-import monnify_studio.api.main as api_main
-from monnify_studio.orders import orders_service
+from roqqu_studio.ajo import ajo_store
+from roqqu_studio.api.main import app
+from roqqu_studio.notifications import notification_log
+import roqqu_studio.api.main as api_main
+from roqqu_studio.orders import orders_service
 
 client = TestClient(app)
 
@@ -28,7 +28,7 @@ def _ajo_artifact() -> str:
 
 
 def _contribute_and_verify(artifact_id: str, member: str) -> dict:
-    """A member contributes and Monnify confirms it (scripted verifier)."""
+    """A member contributes and Roqqu confirms it (scripted verifier)."""
     ref = client.post(f"/preview/{artifact_id}/contribute", json={"member": member}).json()[
         "contribution_reference"
     ]
@@ -121,7 +121,7 @@ def test_simulate_advances_cycle_without_touching_money():
     second = client.post(f"/preview/{artifact_id}/ajo/simulate-contribution", json={}).json()
     assert second["round"] == 2  # rotated
     assert len(second["payouts"]) == 1
-    # Money in stays zero: no Monnify order was ever verified by the simulation.
+    # Money in stays zero: no Roqqu order was ever verified by the simulation.
     totals = client.get(f"/preview/{artifact_id}/totals?period=all").json()
     assert totals["money_in"] == "0.00"
     # Simulated payout must NOT hit the money book either.

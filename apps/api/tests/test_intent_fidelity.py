@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-import monnify_studio.ai.composer as comp
-from monnify_studio.ai.composer import compose_flow
-from monnify_studio.ai.fidelity import intent_gaps
-from monnify_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
+import roqqu_studio.ai.composer as comp
+from roqqu_studio.ai.composer import compose_flow
+from roqqu_studio.ai.fidelity import intent_gaps
+from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
 
 # A clean accept-only flow: collects and fulfils, but tells nobody and pays nobody.
 _ACCEPT_ONLY = MoniFlow(
     name="Collect",
     nodes=[
-        MoniFlowNode(id="init", type="monnify.initialize_transaction"),
+        MoniFlowNode(id="init", type="roqqu.initialize_transaction"),
         MoniFlowNode(id="webhook", type="event.payment_webhook"),
         MoniFlowNode(id="vsig", type="safety.verify_signature"),
-        MoniFlowNode(id="verify", type="monnify.verify_transaction"),
+        MoniFlowNode(id="verify", type="roqqu.verify_transaction"),
         MoniFlowNode(id="vamt", type="safety.validate_amount"),
         MoniFlowNode(id="idem", type="safety.idempotency_guard"),
         MoniFlowNode(id="paid", type="app.mark_order_paid"),
@@ -53,7 +53,7 @@ class _Seq:
 
 
 def _wf(flow: MoniFlow):
-    from monnify_studio.providers import default_catalog
+    from roqqu_studio.providers import default_catalog
 
     return comp._to_workflow(flow, default_catalog())
 

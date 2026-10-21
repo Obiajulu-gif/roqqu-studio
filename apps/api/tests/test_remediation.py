@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from monnify_studio.analysis import analyze
-from monnify_studio.fixtures import unsafe_marketplace
-from monnify_studio.providers import default_catalog
-from monnify_studio.remediation import apply_fix, remediate_all
+from roqqu_studio.analysis import analyze
+from roqqu_studio.fixtures import unsafe_marketplace
+from roqqu_studio.providers import default_catalog
+from roqqu_studio.remediation import apply_fix, remediate_all
 
 
 def test_remediate_all_makes_the_unsafe_hero_clean():

@@ -6,10 +6,10 @@ from decimal import Decimal
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.api.main import app
-from monnify_studio.artifacts import ArtifactConfig, generate_artifact
-from monnify_studio.orders import orders_service
-from monnify_studio.templates import build_template
+from roqqu_studio.api.main import app
+from roqqu_studio.artifacts import ArtifactConfig, generate_artifact
+from roqqu_studio.orders import orders_service
+from roqqu_studio.templates import build_template
 
 client = TestClient(app)
 
@@ -112,7 +112,7 @@ def test_single_line_invoice_still_renders_as_a_document():
         customer="Bola",
         description="Consulting",
     )
-    from monnify_studio.artifacts import render_invoice_page
+    from roqqu_studio.artifacts import render_invoice_page
 
     page = render_invoice_page(artifact, inv)
     assert "Consulting" in page and "50,000.00" in page

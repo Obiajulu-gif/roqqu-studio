@@ -53,7 +53,7 @@ export function ConfigPanel({
   const [jsonDraft, setJsonDraft] = useState("");
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [jsonSaved, setJsonSaved] = useState(false);
-  // The editable fields live under request_template.body (Monnify's real request
+  // The editable fields live under request_template.body (Roqqu's real request
   // shape, #176). Fall back to a flat template for older shapes.
   function templateBody(): Record<string, unknown> {
     const tpl = meta?.request_template ?? {};
@@ -261,7 +261,7 @@ export function ConfigPanel({
                   value={String(node.config?.code ?? "")}
                   spellCheck={false}
                   rows={12}
-                  placeholder={"# Runs between Monnify steps in generated Python\n"}
+                  placeholder={"# Runs between Roqqu steps in generated Python\n"}
                   onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
                     onChange({
                       ...node,
@@ -430,7 +430,7 @@ export function ConfigPanel({
             {meta?.when_to_use ? <p>{meta.when_to_use}</p> : null}
             {meta?.doc_url ? (
               <a href={meta.doc_url} target="_blank" rel="noreferrer">
-                Read Monnify docs
+                Read Roqqu docs
               </a>
             ) : null}
           </div>

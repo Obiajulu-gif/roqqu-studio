@@ -5,12 +5,12 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-import monnify_studio.ai.composer as composer_mod
-from monnify_studio.ai.composer import ComposeRefused, refine_flow
-from monnify_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
-from monnify_studio.api.main import app
-from monnify_studio.store import store
-from monnify_studio.templates import build_template
+import roqqu_studio.ai.composer as composer_mod
+from roqqu_studio.ai.composer import ComposeRefused, refine_flow
+from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
+from roqqu_studio.api.main import app
+from roqqu_studio.store import store
+from roqqu_studio.templates import build_template
 
 client = TestClient(app)
 
@@ -21,10 +21,10 @@ LAZY_REVISION = MoniFlow(
     description="Invoice flow with a refund path.",
     explanation="Adds a refund path for disputed invoices.",
     nodes=[
-        MoniFlowNode(id="create", type="monnify.create_invoice", label="Create Invoice"),
+        MoniFlowNode(id="create", type="roqqu.create_invoice", label="Create Invoice"),
         MoniFlowNode(id="webhook", type="event.payment_webhook", label="Payment Webhook"),
         MoniFlowNode(id="paid", type="app.mark_order_paid", label="Mark Paid"),
-        MoniFlowNode(id="refund", type="monnify.initiate_refund", label="Refund Dispute"),
+        MoniFlowNode(id="refund", type="roqqu.initiate_refund", label="Refund Dispute"),
     ],
     edges=[
         MoniFlowEdge(source="create", target="webhook", kind="control"),

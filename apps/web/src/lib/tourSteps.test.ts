@@ -15,7 +15,7 @@ describe("tourSteps (#103)", () => {
   it("business tour has Figma 7 plain-words steps __AC2", () => {
     expect(tourStepsFor("business")).toHaveLength(7);
     expect(BUSINESS_TOUR_STEPS.map((s) => s.title)).toEqual([
-      "Welcome to Monnify Studio",
+      "Welcome to Roqqu Studio",
       "Your money at a glance",
       "The right tool for business",
       "What’s been happening",
@@ -70,7 +70,7 @@ describe("tourSteps (#103)", () => {
       "dev-run",
     ]);
     expect(tourDismissKey("business-workflow")).toBe(
-      "monnify.studio.tour.dismissed.business-workflow",
+      "roqqu.studio.tour.dismissed.business-workflow",
     );
     for (const step of BUSINESS_WORKFLOW_TOUR_STEPS) {
       expect(step.chrome).toBe("hover");
@@ -82,10 +82,10 @@ describe("tourSteps (#103)", () => {
 
   it("uses stable dismiss keys __AC7", () => {
     expect(tourDismissKey("business")).toBe(
-      "monnify.studio.tour.dismissed.business",
+      "roqqu.studio.tour.dismissed.business",
     );
     expect(tourDismissKey("developer")).toBe(
-      "monnify.studio.tour.dismissed.developer",
+      "roqqu.studio.tour.dismissed.developer",
     );
   });
 });

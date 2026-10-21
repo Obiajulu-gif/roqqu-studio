@@ -2,9 +2,9 @@
 
 > The story is **Bringing Down the Gates** (see `docs/PITCH.md`): Moniepoint
 > brought down the physical gate to payments; the API rebuilt it as a developer
-> gate; Monnify Studio brings that last one down.
+> gate; Roqqu Studio brings that last one down.
 >
-> Live app: **https://monnify-studio-web-cu5qickhka-bq.a.run.app** — starts on a
+> Live app: **https://roqqu-studio-web-cu5qickhka-bq.a.run.app** — starts on a
 > clean slate (no seeded data), so a tester only ever sees what they create.
 > Status legend: ✅ works · ⚠️ partial · ❌ not built.
 
@@ -13,7 +13,7 @@
 ## Flow 1 — Developer (the "is my integration correct?" gate)
 
 **Journey:** land → **I'm a developer** → type what to build → Moni generates a
-correct, analyzed flow → **Run** hits the real Monnify sandbox → the run asks
+correct, analyzed flow → **Run** hits the real Roqqu sandbox → the run asks
 *"where should the confirmation go?"* and delivers a **real WhatsApp + email** to
 the tester → edit an endpoint's **request body** → Run reflects the edit → **copy
 the read-only Python** and go.
@@ -23,7 +23,7 @@ the read-only Python** and go.
 | Land → developer door | ✅ | |
 | Type → Moni generates a correct flow | ✅ | ~30s (multi-round LLM + analyzer). Provider failover (openai → google → anthropic). |
 | **Code** is the default panel | ✅ | Read-only, syntax-highlighted Python (One Dark). The old debug-dump landing is gone (#212). |
-| Press **Run** → hits real Monnify sandbox | ✅ | Default is **Sandbox** (demo key) with a one-click mode toggle. Honest `PENDING` until a human pays. |
+| Press **Run** → hits real Roqqu sandbox | ✅ | Default is **Sandbox** (demo key) with a one-click mode toggle. Honest `PENDING` until a human pays. |
 | Webhook-driven flow **completes** (not "failed") | ✅ | Verify falls back to the run's real payment_reference, so a card→webhook→verify→notify flow finishes. |
 | **Notification on run** — real WhatsApp + email | ✅ | A notify block opens a pre-run prompt for the tester's own number/email, then delivers via Evolution (WhatsApp) + ZeptoMail (email). Enter nothing → no send. |
 | Edit an endpoint **request body** → Run reflects it | ✅ | Edits drive the live call, not just codegen. Editable via ConfigPanel. |
@@ -32,7 +32,7 @@ the read-only Python** and go.
 | **Drag-drop** a dashboard / invoice block | ⚠️ | Node glyphs shipped; full drag-drop product blocks still open (#232). |
 
 **What makes Flow 1 land:** the analyzer catching a real MON finding → **Apply-Fix**
-→ clean → Run against real Monnify → a confirmation lands on your phone → **copy
+→ clean → Run against real Roqqu → a confirmation lands on your phone → **copy
 trustworthy code**.
 
 ---
@@ -51,9 +51,9 @@ flows like a developer.
 | Pick **Ajo** / **Shop** → set up → **dashboard** | ✅ | Real totals / invoices / activity / goal-aware share. |
 | **Detailed onboarding tour** on the dashboard | ✅ | Seven-step walkthrough with spotlights (#103). |
 | Share a **link** to a customer | ✅ | Goal-aware share (shop vs ajo) + WhatsApp share. |
-| Buyer self-serves the **pay-link storefront** | ✅ | One shop link + QR; buyer picks items → invoice → paid only when Monnify confirms. |
+| Buyer self-serves the **pay-link storefront** | ✅ | One shop link + QR; buyer picks items → invoice → paid only when Roqqu confirms. |
 | Customer **reminded to pay** (ajo → WhatsApp) | ✅ | Calls Evolution per unpaid member; delivery/failure recorded truthfully (#234). |
-| Reserved account per ajo member | ⚠️ | Live v2 call with BVN/NIN; honest fallback when Monnify returns 503/`99` (#235). |
+| Reserved account per ajo member | ⚠️ | Live v2 call with BVN/NIN; honest fallback when Roqqu returns 503/`99` (#235). |
 | Money moves → dashboard updates | ✅ | Real collection + disbursement against sandbox. |
 | Whiteboard + business whiteboard tour | ✅ | Reachable via the rail; three-step plain-words tour (#233). |
 | "Something else" (no template) | ✅ | Describing a product to Moni generates a real dashboard artifact (#222). |
@@ -65,7 +65,7 @@ flows like a developer.
 
 | Item | Status | Notes |
 |---|---|---|
-| Real Monnify sandbox: collect + verify + disburse | ✅ | Proven live. OTP off, real source wallet. |
+| Real Roqqu sandbox: collect + verify + disburse | ✅ | Proven live. OTP off, real source wallet. |
 | Webhook receiver (signature-verified, re-verifies) | ✅ | Live + configured (#178). |
 | Moni AI resilient (provider failover) | ✅ | openai default, falls through to google/anthropic. |
 | **Real WhatsApp works on prod** | ✅ | Evolution reached from Cloud Run via a cloudflared tunnel from the Carlofty box (see the prod-ops runbook). Keep the tunnel up during a live demo. |
@@ -77,7 +77,7 @@ flows like a developer.
 
 ## Run it
 
-**Judges — nothing to install:** https://monnify-studio-web-cu5qickhka-bq.a.run.app
+**Judges — nothing to install:** https://roqqu-studio-web-cu5qickhka-bq.a.run.app
 
 **Locally — one command:**
 
@@ -86,4 +86,4 @@ docker compose up      # http://localhost:3000, no DB, keyless-capable
 ```
 
 Drop keys into a `.env` (copy `.env.example`) to unlock real compose + the live
-Monnify sandbox + notifications.
+Roqqu sandbox + notifications.

@@ -6,11 +6,11 @@ from decimal import Decimal
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.analysis import analyze
-from monnify_studio.api.main import app
-from monnify_studio.orders import OrderStatus, orders_service
-from monnify_studio.providers import default_catalog
-from monnify_studio.templates import build_template
+from roqqu_studio.analysis import analyze
+from roqqu_studio.api.main import app
+from roqqu_studio.orders import OrderStatus, orders_service
+from roqqu_studio.providers import default_catalog
+from roqqu_studio.templates import build_template
 
 client = TestClient(app)
 
@@ -33,8 +33,8 @@ def test_ajo_has_both_money_in_and_money_out_paths():
     types = {n.type for n in wf.nodes}
     # Money in: authenticated contribution -> credit. Money out: guarded payout.
     assert "event.payment_webhook" in types and "app.credit_ledger" in types
-    assert "safety.balance_guard" in types and "monnify.initiate_transfer" in types
-    assert "monnify.validate_bank_account" in types  # MON011 receiver validation
+    assert "safety.balance_guard" in types and "roqqu.initiate_transfer" in types
+    assert "roqqu.validate_bank_account" in types  # MON011 receiver validation
 
 
 def _shop_artifact() -> str:

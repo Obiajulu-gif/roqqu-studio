@@ -92,7 +92,7 @@ export interface BusinessDashboardProps {
   transactions?: DashboardTxn[];
   notifications?: BizNotification[];
   /** Verified-only money book from the backend (#135); overrides the computed
-   *  tiles so inflow reflects only what Monnify confirmed, never a claim. */
+   *  tiles so inflow reflects only what Roqqu confirmed, never a claim. */
   totals?: { inflow: number; outflow: number; net: number; actions: number } | null;
   /** Absolute URL of the business's share page (shop or contribution, #135/#160). */
   shopUrl?: string | null;
@@ -422,7 +422,7 @@ export function BusinessDashboard({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `monnify-${direction}.csv`;
+    a.download = `roqqu-${direction}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -433,13 +433,13 @@ export function BusinessDashboard({
         <div className="biz-sidebar__top">
           <div className="biz-sidebar__brand">
             <Image
-              src="/figma/monnify-logo.svg"
+              src="/figma/roqqu-logo.svg"
               alt=""
               width={28}
               height={28}
               unoptimized
             />
-            {!collapsed && <strong>Monnify Studio</strong>}
+            {!collapsed && <strong>Roqqu Studio</strong>}
           </div>
           <button
             type="button"
@@ -594,7 +594,7 @@ export function BusinessDashboard({
                   <code>
                     {shopUrl
                       ? shopUrl.replace(/^https?:\/\//, "")
-                      : "pay.monnify.studio/your-shop"}
+                      : "pay.roqqu.studio/your-shop"}
                   </code>
                 </div>
                 <div className="biz-shoplink__actions">

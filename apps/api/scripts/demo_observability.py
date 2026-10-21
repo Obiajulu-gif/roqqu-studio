@@ -9,9 +9,9 @@ console span exporter also prints the span, so you can see the trace.
 
 from __future__ import annotations
 
-from monnify_studio.analysis import analyze
-from monnify_studio.fixtures import unsafe_marketplace
-from monnify_studio.observability import (
+from roqqu_studio.analysis import analyze
+from roqqu_studio.fixtures import unsafe_marketplace
+from roqqu_studio.observability import (
     configure_observability,
     correlation,
     get_logger,
@@ -19,12 +19,12 @@ from monnify_studio.observability import (
     register_secret,
     traced,
 )
-from monnify_studio.providers import default_catalog
+from roqqu_studio.providers import default_catalog
 
 
 def main() -> int:
     configure_observability()
-    register_secret("sk_live_pretend_monnify_key")  # as if loaded from the env
+    register_secret("sk_live_pretend_roqqu_key")  # as if loaded from the env
     log = get_logger("demo")
 
     with correlation(request_id=new_id("req")):
@@ -36,8 +36,8 @@ def main() -> int:
                 findings=len(report.findings),
                 criticals=report.criticals,
                 # Both of these must come out redacted:
-                authorization="Bearer sk_live_pretend_monnify_key",
-                note="verified with key sk_live_pretend_monnify_key",
+                authorization="Bearer sk_live_pretend_roqqu_key",
+                note="verified with key sk_live_pretend_roqqu_key",
             )
     return 0
 

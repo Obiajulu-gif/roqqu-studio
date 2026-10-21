@@ -1,26 +1,26 @@
-"""Moni is grounded in the Monnify cheat sheet, not training memory (#25)."""
+"""Moni is grounded in the Roqqu cheat sheet, not training memory (#25)."""
 
 from __future__ import annotations
 
-from monnify_studio.ai.composer import _catalog_prompt, _clean
-from monnify_studio.providers import default_catalog
+from roqqu_studio.ai.composer import _catalog_prompt, _clean
+from roqqu_studio.providers import default_catalog
 
 
-def test_every_monnify_node_carries_cheatsheet_grounding():
+def test_every_roqqu_node_carries_cheatsheet_grounding():
     catalog = default_catalog()
     for tid in catalog.types():
         d = catalog.resolve(tid)
-        if d.type.startswith("monnify."):
+        if d.type.startswith("roqqu."):
             assert d.when_to_use, f"{d.type} missing when_to_use"
-            assert d.doc_url.startswith("https://developers.monnify.com"), d.type
+            assert d.doc_url.startswith("https://roqqu.com"), d.type
 
 
 def test_prompt_feeds_documented_language_and_doc_links():
     prompt = _catalog_prompt(default_catalog())
-    # Phrases lifted from the cheat sheet, proving she reads Monnify's words.
+    # Phrases lifted from the cheat sheet, proving she reads Roqqu's words.
     assert "up to 5,000 payouts" in prompt  # bulk transfer
     assert "Name Enquiry" in prompt  # validate bank account
-    assert "https://developers.monnify.com" in prompt  # doc links present
+    assert "https://roqqu.com" in prompt  # doc links present
 
 
 def test_prompt_never_leaks_internal_breadcrumbs():

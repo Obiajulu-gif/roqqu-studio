@@ -37,13 +37,13 @@ export function OnboardingChrome({
       <header className="studio-onboard__top">
         <div className="studio-onboard__brand">
           <Image
-            src="/figma/monnify-logo.svg"
+            src="/figma/roqqu-logo.svg"
             alt=""
             width={24}
             height={24}
             unoptimized
           />
-          <strong>Monnify Studio</strong>
+          <strong>Roqqu Studio</strong>
         </div>
         <nav className="studio-onboard__crumbs" aria-label="Onboarding steps">
           {STEPS.map((step, index) => {

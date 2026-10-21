@@ -1,4 +1,4 @@
-# Monnify Studio - shortcuts. The one that matters is `make up`.
+# Roqqu Studio - shortcuts. The one that matters is `make up`.
 .DEFAULT_GOAL := help
 
 .PHONY: help up down logs test

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-import monnify_studio.ai.moni as moni_mod
+import roqqu_studio.ai.moni as moni_mod
 from fastapi.testclient import TestClient
 
-from monnify_studio.ai import classify_intent
-from monnify_studio.ai.providers import KeywordFallback
-from monnify_studio.ai.schema import MoniIntent
-from monnify_studio.api.main import app
+from roqqu_studio.ai import classify_intent
+from roqqu_studio.ai.providers import KeywordFallback
+from roqqu_studio.ai.schema import MoniIntent
+from roqqu_studio.api.main import app
 
 client = TestClient(app)
 

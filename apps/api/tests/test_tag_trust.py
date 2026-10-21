@@ -13,18 +13,18 @@ from __future__ import annotations
 
 import pytest
 
-from monnify_studio.analysis.engine import Analysis
-from monnify_studio.analysis.rules import RULES
-from monnify_studio.fixtures import unsafe_marketplace
-from monnify_studio.ir.models import Edge, Node, Workflow
-from monnify_studio.ir.types import SELF_DECLARABLE_TAGS, CapabilityTag as T
-from monnify_studio.providers.base import Catalog
-from monnify_studio.providers.core import CORE_NODE_TYPES
-from monnify_studio.providers.monnify import MONNIFY_NODE_TYPES
+from roqqu_studio.analysis.engine import Analysis
+from roqqu_studio.analysis.rules import RULES
+from roqqu_studio.fixtures import unsafe_marketplace
+from roqqu_studio.ir.models import Edge, Node, Workflow
+from roqqu_studio.ir.types import SELF_DECLARABLE_TAGS, CapabilityTag as T
+from roqqu_studio.providers.base import Catalog
+from roqqu_studio.providers.core import CORE_NODE_TYPES
+from roqqu_studio.providers.roqqu import ROQQU_NODE_TYPES
 
 
 def _catalog() -> Catalog:
-    return Catalog().register_pack(CORE_NODE_TYPES).register_pack(MONNIFY_NODE_TYPES)
+    return Catalog().register_pack(CORE_NODE_TYPES).register_pack(ROQQU_NODE_TYPES)
 
 
 def _findings(workflow: Workflow) -> set[tuple[str, tuple[str, ...]]]:

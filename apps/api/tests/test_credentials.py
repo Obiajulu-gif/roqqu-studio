@@ -1,4 +1,4 @@
-"""Per-workflow Monnify credentials: their secrets, their money (#68, D19)."""
+"""Per-workflow Roqqu credentials: their secrets, their money (#68, D19)."""
 
 from __future__ import annotations
 
@@ -7,9 +7,9 @@ import json
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.api.main import app
-from monnify_studio.credentials import CredentialStore, MonnifyCredentials
-from monnify_studio.observability import configure_logging, get_logger
+from roqqu_studio.api.main import app
+from roqqu_studio.credentials import CredentialStore, RoqquCredentials
+from roqqu_studio.observability import configure_logging, get_logger
 
 client = TestClient(app)
 
@@ -54,20 +54,20 @@ def test_settings_for_prefers_workflow_then_platform():
     store = CredentialStore()
     # No creds: falls back to platform settings (base url unchanged).
     platform = store.settings_for("wf-x")
-    assert "sandbox" in platform.monnify_base_url
+    assert "sandbox" in platform.roqqu_base_url
 
-    store.put("wf-x", MonnifyCredentials(**_CREDS))
+    store.put("wf-x", RoqquCredentials(**_CREDS))
     resolved = store.settings_for("wf-x")
-    assert resolved.monnify_api_key == _CREDS["api_key"]
-    assert resolved.monnify_contract_code == _CREDS["contract_code"]
+    assert resolved.roqqu_api_key == _CREDS["api_key"]
+    assert resolved.roqqu_contract_code == _CREDS["contract_code"]
     # The user set keys, but NOT the base url: it stays the platform sandbox (guard).
-    assert resolved.monnify_base_url == platform.monnify_base_url
+    assert resolved.roqqu_base_url == platform.roqqu_base_url
 
 
 def test_stored_secret_is_redacted_in_logs():
     buf = io.StringIO()
     configure_logging(stream=buf)
-    CredentialStore().put("wf-log", MonnifyCredentials(**_CREDS))
+    CredentialStore().put("wf-log", RoqquCredentials(**_CREDS))
     get_logger("t").info("using key", note=f"key is {_CREDS['secret_key']}")
     line = json.loads([x for x in buf.getvalue().splitlines() if x.strip()][-1])
     assert _CREDS["secret_key"] not in line["note"]

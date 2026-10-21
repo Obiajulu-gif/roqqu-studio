@@ -37,18 +37,18 @@ export function RunSettingsPanel({
           />
           <span>
             <strong>Practice</strong>
-            <small>Simulated run with no Monnify sandbox request.</small>
+            <small>Simulated run with no Roqqu sandbox request.</small>
           </span>
         </label>
         <label>
           <input
             type="radio"
             name="execution-adapter"
-            checked={adapter === "monnify"}
-            onChange={() => onAdapterChange("monnify")}
+            checked={adapter === "roqqu"}
+            onChange={() => onAdapterChange("roqqu")}
           />
           <span>
-            <strong>Monnify sandbox</strong>
+            <strong>Roqqu sandbox</strong>
             <small>Uses your saved sandbox credentials. Never production money.</small>
           </span>
         </label>

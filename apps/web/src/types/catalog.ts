@@ -3,7 +3,7 @@
  * Interim hand port of providers catalog until D6 codegen. Provenance: #4, D13, D6.
  */
 export type NodeCategory =
-  | "monnify"
+  | "roqqu"
   | "event"
   | "control"
   | "safety"

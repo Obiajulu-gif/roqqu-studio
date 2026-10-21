@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.api.main import app
+from roqqu_studio.api.main import app
 
 client = TestClient(app)
 
@@ -45,7 +45,7 @@ def test_contribution_page_and_flow_are_verify_driven():
 
     page = client.get(f"/preview/{aid}/contribute").text
     assert "Umu Ada" in page and "Monthly Dues" in page and "5,000.00" in page
-    assert "verified with Monnify" in page
+    assert "verified with Roqqu" in page
 
     res = client.post(f"/preview/{aid}/contribute", json={"member": "Ngozi"})
     assert res.status_code == 200

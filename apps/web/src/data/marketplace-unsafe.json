@@ -3,15 +3,15 @@
     "id": "marketplace-unsafe",
     "name": "Marketplace - Unsafe",
     "version": 1,
-    "provider": "monnify",
+    "provider": "roqqu",
     "description": "Naive payout-after-fulfilment marketplace with unsafe integration patterns.",
     "variables": {
       "order_id": { "name": "order_id", "type": "Any", "description": "" },
       "expected_amount": { "name": "expected_amount", "type": "Any", "description": "" }
     },
     "nodes": [
-      { "id": "init", "type": "monnify.initialize_transaction", "label": "Initialize Payment", "config": {}, "inputs": {}, "extra_tags": [], "position": { "x": 0, "y": 0 } },
-      { "id": "split", "type": "monnify.transaction_split", "label": "Split to Provider (5%/95%)", "config": {}, "inputs": {}, "extra_tags": [], "position": { "x": 220, "y": 0 } },
+      { "id": "init", "type": "roqqu.initialize_transaction", "label": "Initialize Payment", "config": {}, "inputs": {}, "extra_tags": [], "position": { "x": 0, "y": 0 } },
+      { "id": "split", "type": "roqqu.transaction_split", "label": "Split to Provider (5%/95%)", "config": {}, "inputs": {}, "extra_tags": [], "position": { "x": 220, "y": 0 } },
       { "id": "callback", "type": "event.client_callback", "label": "Customer Returns (callback)", "config": {}, "inputs": {}, "extra_tags": [], "position": { "x": 440, "y": 0 } },
       { "id": "webhook", "type": "event.payment_webhook", "label": "Payment Webhook", "config": {}, "inputs": {}, "extra_tags": [], "position": { "x": 440, "y": 160 } },
       { "id": "fulfil", "type": "app.mark_order_paid", "label": "Mark Booking Funded", "config": {}, "inputs": {}, "extra_tags": [], "position": { "x": 700, "y": 80 } },
@@ -28,8 +28,8 @@
     "entrypoint": "init"
   },
   "node_types": {
-    "monnify.initialize_transaction": { "type": "monnify.initialize_transaction", "category": "monnify", "title": "Initialize Transaction" },
-    "monnify.transaction_split": { "type": "monnify.transaction_split", "category": "monnify", "title": "Transaction Split" },
+    "roqqu.initialize_transaction": { "type": "roqqu.initialize_transaction", "category": "roqqu", "title": "Initialize Transaction" },
+    "roqqu.transaction_split": { "type": "roqqu.transaction_split", "category": "roqqu", "title": "Transaction Split" },
     "event.client_callback": { "type": "event.client_callback", "category": "event", "title": "Client Callback" },
     "event.payment_webhook": { "type": "event.payment_webhook", "category": "event", "title": "Payment Webhook" },
     "app.mark_order_paid": { "type": "app.mark_order_paid", "category": "application", "title": "Mark Order Paid / Fulfil" },

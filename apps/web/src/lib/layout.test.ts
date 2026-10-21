@@ -44,7 +44,7 @@ function sampleWorkflow(positions: Record<string, { x: number; y: number }>): Wo
     id: "test",
     name: "test",
     version: 1,
-    provider: "monnify",
+    provider: "roqqu",
     description: "",
     variables: {},
     entrypoint: "a",

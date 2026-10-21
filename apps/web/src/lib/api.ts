@@ -15,7 +15,7 @@ import type {
   GenerateArtifactResult,
   GeneratedCode,
   IntentResult,
-  MonnifyCredentialInput,
+  RoqquCredentialInput,
   NodeMeta,
   RemediateResult,
   StartExecutionResult,
@@ -179,7 +179,7 @@ export async function remediateWorkflow(
   });
 }
 
-/** Start a mock or explicit Monnify-sandbox IR run. Live API required; no fixture fallback. */
+/** Start a mock or explicit Roqqu-sandbox IR run. Live API required; no fixture fallback. */
 export async function startExecution(
   workflow: Workflow,
   adapter: ExecutionAdapter = "mock",
@@ -298,7 +298,7 @@ export async function fetchCredentialStatus(
 
 export async function putCredentials(
   workflowId: string,
-  creds: MonnifyCredentialInput,
+  creds: RoqquCredentialInput,
 ): Promise<CredentialStatus> {
   return putJson<CredentialStatus>(`/workflows/${workflowId}/credentials`, creds);
 }

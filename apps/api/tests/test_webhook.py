@@ -1,7 +1,7 @@
-"""Monnify webhook receiver: signature-gated trigger, query-verified truth (#178).
+"""Roqqu webhook receiver: signature-gated trigger, query-verified truth (#178).
 
 We practice what MON002 preaches: HMAC-SHA512 of the raw body must match the
-monnify-signature header before anything happens, and even then the payload is
+roqqu-signature header before anything happens, and even then the payload is
 only a trigger - the order flips solely on the authoritative query-verify.
 """
 
@@ -13,8 +13,8 @@ import json
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.api.main import app
-from monnify_studio.orders import orders_service
+from roqqu_studio.api.main import app
+from roqqu_studio.orders import orders_service
 
 client = TestClient(app)
 
@@ -57,9 +57,9 @@ def test_webhook_rejects_bad_signature():
     )
     raw, _ = _signed({"eventData": {"paymentReference": f"PAY-{reference}"}}, _WF_SECRET)
     res = client.post(
-        "/monnify/webhook",
+        "/roqqu/webhook",
         content=raw,
-        headers={"monnify-signature": "forged", "Content-Type": "application/json"},
+        headers={"roqqu-signature": "forged", "Content-Type": "application/json"},
     )
     assert res.status_code == 401
 
@@ -81,9 +81,9 @@ def test_webhook_valid_signature_triggers_query_verify():
     orders_service.verifier = lambda ref: {"status": "PAID", "amount_paid": 5000.0}
     try:
         res = client.post(
-            "/monnify/webhook",
+            "/roqqu/webhook",
             content=raw,
-            headers={"monnify-signature": sig, "Content-Type": "application/json"},
+            headers={"roqqu-signature": sig, "Content-Type": "application/json"},
         )
     finally:
         orders_service.verifier = original
@@ -95,26 +95,26 @@ def test_webhook_valid_signature_triggers_query_verify():
 
 
 def test_webhook_signed_but_unknown_reference_is_ignored(monkeypatch):
-    from monnify_studio.config import Settings
+    from roqqu_studio.config import Settings
 
     monkeypatch.setattr(
-        "monnify_studio.credentials.get_settings",
-        lambda: Settings(monnify_secret_key="PLATFORM_SECRET"),
+        "roqqu_studio.credentials.get_settings",
+        lambda: Settings(roqqu_secret_key="PLATFORM_SECRET"),
     )
     raw, sig = _signed(
         {"eventData": {"paymentReference": "PAY-not-ours"}}, "PLATFORM_SECRET"
     )
     res = client.post(
-        "/monnify/webhook",
+        "/roqqu/webhook",
         content=raw,
-        headers={"monnify-signature": sig, "Content-Type": "application/json"},
+        headers={"roqqu-signature": sig, "Content-Type": "application/json"},
     )
     assert res.status_code == 200
     assert res.json() == {"received": True, "matched": False}
 
 
 def test_webhook_payload_status_is_never_trusted():
-    """A signed webhook SAYING paid still cannot flip an order Monnify denies."""
+    """A signed webhook SAYING paid still cannot flip an order Roqqu denies."""
     _, reference, wf_id = _paid_pending_invoice()
     client.put(
         f"/workflows/{wf_id}/credentials",
@@ -138,14 +138,14 @@ def test_webhook_payload_status_is_never_trusted():
     orders_service.verifier = lambda ref: {"status": "PENDING", "amount_paid": 0}
     try:
         res = client.post(
-            "/monnify/webhook",
+            "/roqqu/webhook",
             content=raw,
-            headers={"monnify-signature": sig, "Content-Type": "application/json"},
+            headers={"roqqu-signature": sig, "Content-Type": "application/json"},
         )
     finally:
         orders_service.verifier = original
     assert res.status_code == 200
-    # Monnify said no confirmed payment, so the claim lands as rejected -
+    # Roqqu said no confirmed payment, so the claim lands as rejected -
     # the signed PAID in the payload changed nothing. That is the point.
     assert res.json()["status"] == "rejected"
     assert orders_service.get(reference).status.value == "rejected"

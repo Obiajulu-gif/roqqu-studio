@@ -22,7 +22,7 @@ const DEFAULTS: ArtifactConfigInput = {
   product_name: "Product",
   price_ngn: 5000,
   accent_color: "#0f6b57",
-  tagline: "Pay securely. Every order is verified with Monnify.",
+  tagline: "Pay securely. Every order is verified with Roqqu.",
   logo_url: "",
 };
 

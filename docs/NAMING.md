@@ -1,6 +1,6 @@
 # Naming register (canonical)
 
-One name per concept, grounded in the product model ([#105](https://github.com/Greyisheep/monnify-studio/issues/105)). Use these words in the UI, the code, Moni's replies, the README, and the pitch, so everyone says the same thing and we can explain each in a line.
+One name per concept, grounded in the product model ([#105](https://github.com/Greyisheep/roqqu-studio/issues/105)). Use these words in the UI, the code, Moni's replies, the README, and the pitch, so everyone says the same thing and we can explain each in a line.
 
 ## The dual-register rule
 
@@ -10,7 +10,7 @@ The Business door must be usable by an 8-year-old and an 80-year-old; the Develo
 
 | Concept | Name | One line | Code symbol |
 |---------|------|----------|-------------|
-| The thing you build | **Flow** | a bundle of Monnify calls wired in best-practice order | `Workflow` |
+| The thing you build | **Flow** | a bundle of Roqqu calls wired in best-practice order | `Workflow` |
 | A step in a flow | **Block** | one node on the whiteboard (an API call or a check) | `Node` |
 | The editor | **Whiteboard** | where you see and edit a flow as blocks (both doors share it) | `canvas` / Studio |
 | A ready-made flow | **Template** | a finished flow you pick and tweak | template id |

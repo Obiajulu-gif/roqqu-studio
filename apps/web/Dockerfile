@@ -1,4 +1,4 @@
-# Monnify Studio web (canvas + generated-product preview) — Cloud Run image (#84).
+# Roqqu Studio web (canvas + generated-product preview) — Cloud Run image (#84).
 FROM node:22-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./

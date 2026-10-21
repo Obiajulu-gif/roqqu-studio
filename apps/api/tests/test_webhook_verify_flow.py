@@ -11,13 +11,13 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from monnify_studio.config import Settings
-from monnify_studio.executor import RunStatus, execution_store, run_workflow
-from monnify_studio.executor.adapter import SandboxAdapter, _run_payment_reference
-from monnify_studio.ir.models import Edge, Node, Workflow
+from roqqu_studio.config import Settings
+from roqqu_studio.executor import RunStatus, execution_store, run_workflow
+from roqqu_studio.executor.adapter import SandboxAdapter, _run_payment_reference
+from roqqu_studio.ir.models import Edge, Node, Workflow
 
 
-class _FakeMonnify:
+class _FakeRoqqu:
     """Records what verify was asked to query, returns provider truth."""
 
     def __init__(self) -> None:
@@ -25,7 +25,7 @@ class _FakeMonnify:
 
     def initialize_transaction(self, *, amount, reference, **_):
         return {
-            "checkout_url": "https://sandbox.monnify.com/checkout/real",
+            "checkout_url": "https://roqqu.com",
             "payment_reference": "pay-real-123",
             "transaction_reference": "MNFY|real",
         }
@@ -40,9 +40,9 @@ def _webhook_first_flow() -> Workflow:
     return Workflow(
         id="wh", name="card-webhook-verify-notify", entrypoint="init",
         nodes=[
-            Node(id="init", type="monnify.initialize_transaction", config={"amount": "7500"}),
+            Node(id="init", type="roqqu.initialize_transaction", config={"amount": "7500"}),
             Node(id="hook", type="event.payment_webhook"),
-            Node(id="verify", type="monnify.verify_transaction"),
+            Node(id="verify", type="roqqu.verify_transaction"),
             Node(id="notify", type="app.notify_whatsapp", config={"message": "Payment confirmed"}),
         ],
         edges=[
@@ -52,11 +52,11 @@ def _webhook_first_flow() -> Workflow:
     )
 
 
-def _sandbox_adapter() -> tuple[SandboxAdapter, _FakeMonnify]:
+def _sandbox_adapter() -> tuple[SandboxAdapter, _FakeRoqqu]:
     adapter = SandboxAdapter(
-        Settings(monnify_api_key="k", monnify_secret_key="s", monnify_contract_code="c")
+        Settings(roqqu_api_key="k", roqqu_secret_key="s", roqqu_contract_code="c")
     )
-    fake = _FakeMonnify()
+    fake = _FakeRoqqu()
     adapter._client = fake  # _c() returns the set client, so no network
     return adapter, fake
 

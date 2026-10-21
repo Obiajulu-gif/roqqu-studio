@@ -1,6 +1,6 @@
 /**
  * Studio shell aligned to Figma Main (21:1670) + Maincollapsed (21:1732).
- * Provenance: #4, #27, #28, #44, #55, Figma Monnify-challenge, D14.
+ * Provenance: #4, #27, #28, #44, #55, Figma Roqqu-challenge, D14.
  */
 "use client";
 
@@ -114,12 +114,12 @@ function CanvasInner() {
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [explainBusy, setExplainBusy] = useState(false);
   const [explainNote, setExplainNote] = useState<string | null>(null);
-  // Default to the real Monnify sandbox: a demo key is seeded, so Run should
-  // hit Monnify out of the box (Flow C). Practice/mock is one click away.
+  // Default to the real Roqqu sandbox: a demo key is seeded, so Run should
+  // hit Roqqu out of the box (Flow C). Practice/mock is one click away.
   const [executionAdapter, setExecutionAdapter] =
-    useState<ExecutionAdapter>("monnify");
+    useState<ExecutionAdapter>("roqqu");
   const toggleExecutionAdapter = () =>
-    setExecutionAdapter((current) => (current === "monnify" ? "mock" : "monnify"));
+    setExecutionAdapter((current) => (current === "roqqu" ? "mock" : "roqqu"));
 
   const session = useStudioSession({ setNodes, setEdges });
   const sidebars = useSidebarWidths();
@@ -208,7 +208,7 @@ function CanvasInner() {
     () =>
       (currentIr?.nodes ?? []).some(
         (n) =>
-          n.type === "monnify.bulk_transfer" || n.type === "monnify.initiate_transfer",
+          n.type === "roqqu.bulk_transfer" || n.type === "roqqu.initiate_transfer",
       ),
     [currentIr],
   );
@@ -373,7 +373,7 @@ function CanvasInner() {
       "",
       `Ready to run — ${steps} on the canvas.`,
       "",
-      "Press **Run** (top right) to execute this flow against the Monnify",
+      "Press **Run** (top right) to execute this flow against the Roqqu",
       "sandbox and watch a live, step-by-step trace appear here.",
     ].join("\n");
   }, [

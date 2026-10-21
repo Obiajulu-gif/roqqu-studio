@@ -1,15 +1,15 @@
-"""Invoices: create, share a link, buyer pays, Monnify confirms (#85)."""
+"""Invoices: create, share a link, buyer pays, Roqqu confirms (#85)."""
 
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-import monnify_studio.api.main as api_main
-from monnify_studio.analysis import analyze
-from monnify_studio.api.main import app
-from monnify_studio.orders import orders_service
-from monnify_studio.providers import default_catalog
-from monnify_studio.templates import build_template
+import roqqu_studio.api.main as api_main
+from roqqu_studio.analysis import analyze
+from roqqu_studio.api.main import app
+from roqqu_studio.orders import orders_service
+from roqqu_studio.providers import default_catalog
+from roqqu_studio.templates import build_template
 
 client = TestClient(app)
 
@@ -31,9 +31,9 @@ def test_invoice_template_is_registered_and_clean():
 
 
 def test_moni_routes_invoice_talk(monkeypatch):
-    import monnify_studio.ai.moni as moni_mod
-    from monnify_studio.ai import classify_intent
-    from monnify_studio.ai.providers import KeywordFallback
+    import roqqu_studio.ai.moni as moni_mod
+    from roqqu_studio.ai import classify_intent
+    from roqqu_studio.ai.providers import KeywordFallback
 
     monkeypatch.setattr(moni_mod, "select_provider", lambda p=None: KeywordFallback())
     intent, _ = classify_intent("I need to invoice my client for a logo")
@@ -61,7 +61,7 @@ def test_create_list_and_buyer_page():
 
     page = client.get(f"/preview/{artifact_id}/invoice/{inv['reference']}").text
     assert "Chidi" in page and "Logo design" in page and "25,000" in page
-    assert "Monnify (Moniepoint) account" in page
+    assert "Roqqu (Moniepoint) account" in page
     assert "Pay now" in page
 
 
@@ -121,10 +121,10 @@ def test_pay_then_verify_marks_paid(monkeypatch):
             return {
                 "payment_reference": "PAYREF-1",
                 "transaction_reference": "TXREF-1",
-                "checkout_url": "https://sandbox.sdk.monnify.com/checkout/x",
+                "checkout_url": "https://sandbox.sdk.roqqu.com/checkout/x",
             }
 
-    monkeypatch.setattr(api_main, "MonnifySandboxClient", _FakeClient)
+    monkeypatch.setattr(api_main, "RoqquSandboxClient", _FakeClient)
     res = client.post(f"/preview/{artifact_id}/invoice/{inv['reference']}/pay")
     assert res.status_code == 200 and "checkout_url" in res.json()
 

@@ -2,8 +2,8 @@ from decimal import Decimal
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.api.main import app
-from monnify_studio.onboarding import SESSION_COOKIE, profile_store
+from roqqu_studio.api.main import app
+from roqqu_studio.onboarding import SESSION_COOKIE, profile_store
 
 client = TestClient(app)
 
@@ -137,7 +137,7 @@ def test_back_to_user_type_clears_path():
 def test_session_cookie_is_lax_and_insecure_in_development():
     """Local dev goes through the same-origin proxy: Lax + non-secure works
     over http and matches the same-origin fetch pattern (#135 follow-up)."""
-    import monnify_studio.api.main as main_mod
+    import roqqu_studio.api.main as main_mod
 
     original = main_mod.settings.studio_env
     main_mod.settings.studio_env = "development"
@@ -181,7 +181,7 @@ def test_session_cookie_is_none_and_secure_outside_development():
     Run services): SameSite=Lax is never attached to a cross-site fetch, which
     silently reset onboarding path/goal/step past the first call. Must be
     SameSite=None (only valid alongside Secure) (#135 follow-up)."""
-    import monnify_studio.api.main as main_mod
+    import roqqu_studio.api.main as main_mod
 
     original = main_mod.settings.studio_env
     main_mod.settings.studio_env = "production"

@@ -1,10 +1,10 @@
-# Monnify Studio - the whole product in one command:
+# Roqqu Studio - the whole product in one command:
 #
 #     docker compose up
 #
 # Opens the studio at http://localhost:3000. Works with ZERO keys (Moni routes
 # by keyword, orders run on the mock adapter). Drop keys into a .env file next
-# to this one (copy .env.example) to unlock real compose + the live Monnify
+# to this one (copy .env.example) to unlock real compose + the live Roqqu
 # sandbox + real notifications. No database, no extra services - all in memory.
 services:
   api:
@@ -20,10 +20,11 @@ services:
       ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       GOOGLE_API_KEY: "${GOOGLE_API_KEY:-}"
-      MONNIFY_API_KEY: "${MONNIFY_API_KEY:-}"
-      MONNIFY_SECRET_KEY: "${MONNIFY_SECRET_KEY:-}"
-      MONNIFY_CONTRACT_CODE: "${MONNIFY_CONTRACT_CODE:-}"
-      MONNIFY_WALLET_ACCOUNT: "${MONNIFY_WALLET_ACCOUNT:-}"
+      NVIDIA_API_KEY: "${NVIDIA_API_KEY:-}"
+      ROQQU_API_KEY: "${ROQQU_API_KEY:-}"
+      ROQQU_SECRET_KEY: "${ROQQU_SECRET_KEY:-}"
+      ROQQU_CONTRACT_CODE: "${ROQQU_CONTRACT_CODE:-}"
+      ROQQU_WALLET_ACCOUNT: "${ROQQU_WALLET_ACCOUNT:-}"
       ZEPTOMAIL_API_KEY: "${ZEPTOMAIL_API_KEY:-}"
       ZEPTOMAIL_SENDER: "${ZEPTOMAIL_SENDER:-}"
       ZEPTOMAIL_REPLY_TO: "${ZEPTOMAIL_REPLY_TO:-}"

@@ -24,8 +24,8 @@ export function StudioIconRail({
     <nav className="studio-rail" aria-label="Studio navigation">
       <div className="studio-rail__logo">
         <Image
-          src="/figma/monnify-logo-rail.svg"
-          alt="Monnify"
+          src="/figma/roqqu-logo-rail.svg"
+          alt="Roqqu"
           width={21}
           height={13}
           unoptimized

@@ -38,3 +38,7 @@ postgres-data/
 # E2E agent-flow run artifacts (local only — never commit)
 runs/
 .worktrees/
+
+graphify-out/
+*.log
+.venv/

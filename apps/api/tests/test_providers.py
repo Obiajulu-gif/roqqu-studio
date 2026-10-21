@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from monnify_studio.ai.providers import (
+from roqqu_studio.ai.providers import (
     FailoverProvider,
     KeywordFallback,
     _REGISTRY,
     select_provider,
 )
-from monnify_studio.ai.schema import MoniFlow, MoniIntent
+from roqqu_studio.ai.schema import MoniFlow, MoniIntent
 
 
 def _no_providers_available(monkeypatch):

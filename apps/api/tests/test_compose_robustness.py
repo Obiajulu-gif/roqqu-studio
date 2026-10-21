@@ -10,10 +10,10 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-import monnify_studio.ai.composer as comp
-from monnify_studio.ai.composer import ComposeError, compose_flow
-from monnify_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
-from monnify_studio.api.main import app
+import roqqu_studio.ai.composer as comp
+from roqqu_studio.ai.composer import ComposeError, compose_flow
+from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
+from roqqu_studio.api.main import app
 
 client = TestClient(app)
 

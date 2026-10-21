@@ -49,7 +49,7 @@ Use these as the worked examples when in doubt:
   MON rules are one line on top of it. Simple interface, powerful body.
 - **Deep module (frontend):** `apps/web/src/lib/flowIo.ts` - one adapter owns
   IR <-> React Flow mapping so canvas components never invent edge kinds.
-- **Information hiding:** the `providers/` catalog hides every Monnify-specific
+- **Information hiding:** the `providers/` catalog hides every Roqqu-specific
   detail behind a neutral `NodeTypeDef`. The analyzer reasons only over
   capability *tags* and never learns a provider exists (D13). Swapping providers
   touches one file.
@@ -72,7 +72,7 @@ what it is.
 Canonical monorepo layout (grows into this - don't create empty dirs early):
 
 ```
-monnify-studio/
+roqqu-studio/
 ├── README.md            # what it is + quickstart, nothing more
 ├── .env.example         # config template (never a real .env)
 ├── .github/             # CI workflows, issue/PR templates
@@ -80,7 +80,7 @@ monnify-studio/
 ├── infra/               # docker-compose, deployment, migrations config
 ├── apps/
 │   ├── api/             # FastAPI backend (its own pyproject, tests, scripts)
-│   │   ├── monnify_studio/   # the package (ir / providers / analysis / ...)
+│   │   ├── roqqu_studio/   # the package (ir / providers / analysis / ...)
 │   │   ├── scripts/          # runnable dev/demo scripts
 │   │   └── tests/
 │   └── web/             # Next.js + React Flow frontend
@@ -281,5 +281,5 @@ A change is done when:
 - Trace context propagates across the API, executor, and provider adapters.
 - Secrets are always redacted from logs, key-based and value-based
   (`observability/redaction.py`). Register secret values with `register_secret`.
-- Reach for `get_logger()` and `traced(...)` from `monnify_studio.observability`
+- Reach for `get_logger()` and `traced(...)` from `roqqu_studio.observability`
   rather than ad hoc logging.

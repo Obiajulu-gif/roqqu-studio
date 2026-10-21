@@ -27,7 +27,7 @@ export function StudioHeader({
       <div className="studio-brand">
         <span className="studio-mark">MS</span>
         <div>
-          <h1>Monnify Studio</h1>
+          <h1>Roqqu Studio</h1>
           <p>Architecture canvas - prove the system around the endpoint</p>
         </div>
       </div>

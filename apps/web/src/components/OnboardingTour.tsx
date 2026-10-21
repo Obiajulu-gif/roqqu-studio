@@ -224,13 +224,13 @@ export function OnboardingTour({
           <div className="studio-tour__card-head">
             <span className="studio-tour__brand">
               <Image
-                src="/figma/monnify-logo.svg"
+                src="/figma/roqqu-logo.svg"
                 alt=""
                 width={16}
                 height={16}
                 unoptimized
               />
-              Monnify
+              Roqqu
             </span>
             <span className="studio-tour__progress">{progress}</span>
           </div>

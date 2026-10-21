@@ -35,7 +35,7 @@ jobs:
           uv export --frozen --all-extras --no-hashes --no-emit-project -o /tmp/requirements.txt
           uvx pip-audit --disable-pip --no-deps -r /tmp/requirements.txt
       - name: Lint (ruff)
-        run: uv run ruff check monnify_studio tests
+        run: uv run ruff check roqqu_studio tests
       - name: Tests (pytest)
         # No API keys in CI on purpose: the suite must pass keyless, proving the
         # keyword/grounding fallbacks (D11) really carry the product.

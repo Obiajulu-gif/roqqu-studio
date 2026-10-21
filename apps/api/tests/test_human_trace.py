@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from monnify_studio.executor import MockAdapter, run_workflow, execution_store
-from monnify_studio.templates import build_template
+from roqqu_studio.executor import MockAdapter, run_workflow, execution_store
+from roqqu_studio.templates import build_template
 
 
 def _events():

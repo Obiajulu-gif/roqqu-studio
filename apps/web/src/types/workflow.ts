@@ -1,6 +1,6 @@
 /**
  * Workflow / IR graph shapes.
- * Interim hand port of monnify_studio.ir models until D6 JSON Schema codegen.
+ * Interim hand port of roqqu_studio.ir models until D6 JSON Schema codegen.
  * Provenance: #4, D6.
  */
 

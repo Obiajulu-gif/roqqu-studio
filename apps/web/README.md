@@ -1,10 +1,10 @@
-# Monnify Studio (web)
+# Roqqu Studio (web)
 
 > To run the whole product (web + API) in one command, use `docker compose up`
 > from the repo root — see the top-level `README.md`. The steps below are for
 > working on the web app on its own.
 
-Next.js + React Flow shell for the Monnify Studio canvas: edit the payment IR,
+Next.js + React Flow shell for the Roqqu Studio canvas: edit the payment IR,
 run Architecture Review, and Apply Fix against the FastAPI analyzer.
 
 Tracks Epic 1 Lane C work: canvas + typed editing (#4), Architecture Review UI
@@ -30,7 +30,7 @@ Needs Node 20+ and the API from `apps/api` when you want Live API mode.
 # Terminal 1 - API (Python 3.11+, typically port 8010)
 cd apps/api
 # activate your venv, then:
-uvicorn monnify_studio.api.main:app --reload --port 8010
+uvicorn roqqu_studio.api.main:app --reload --port 8010
 
 # Terminal 2 - web
 cd apps/web

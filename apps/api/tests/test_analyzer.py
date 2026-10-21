@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from monnify_studio.analysis import analyze
-from monnify_studio.fixtures import safe_marketplace, unsafe_marketplace
-from monnify_studio.providers import default_catalog
+from roqqu_studio.analysis import analyze
+from roqqu_studio.fixtures import safe_marketplace, unsafe_marketplace
+from roqqu_studio.providers import default_catalog
 
 
 def _rule_ids(workflow) -> set[str]:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from monnify_studio.money import covers, money
+from roqqu_studio.money import covers, money
 
 
 def test_classic_float_trap_is_exact():

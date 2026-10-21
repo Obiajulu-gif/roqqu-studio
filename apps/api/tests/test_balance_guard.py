@@ -7,20 +7,20 @@ structural twin; balance math elsewhere is exact-kobo (D21).
 
 from __future__ import annotations
 
-from monnify_studio.analysis import analyze
-from monnify_studio.fixtures import safe_marketplace
-from monnify_studio.ir.models import Edge, Node, Workflow
-from monnify_studio.providers import default_catalog
-from monnify_studio.remediation import apply_fix, remediate_all
-from monnify_studio.templates import build_template
+from roqqu_studio.analysis import analyze
+from roqqu_studio.fixtures import safe_marketplace
+from roqqu_studio.ir.models import Edge, Node, Workflow
+from roqqu_studio.providers import default_catalog
+from roqqu_studio.remediation import apply_fix, remediate_all
+from roqqu_studio.templates import build_template
 
 
 def _payout_wf(with_guard: bool) -> Workflow:
     """Minimal payout: confirm → validate → [balance?] → transfer."""
     nodes = [
         Node(id="confirm", type="event.fulfilment_confirmed"),
-        Node(id="validate", type="monnify.validate_bank_account"),
-        Node(id="transfer", type="monnify.initiate_transfer"),
+        Node(id="validate", type="roqqu.validate_bank_account"),
+        Node(id="transfer", type="roqqu.initiate_transfer"),
     ]
     edges = [
         Edge(source="confirm", target="validate", kind="event"),
@@ -78,7 +78,7 @@ def test_remediate_all_clears_a_bare_transfer_completely():
         name="b",
         nodes=[
             Node(id="confirm", type="event.fulfilment_confirmed"),
-            Node(id="transfer", type="monnify.initiate_transfer"),
+            Node(id="transfer", type="roqqu.initiate_transfer"),
         ],
         edges=[Edge(source="confirm", target="transfer", kind="event")],
         entrypoint="confirm",
@@ -87,4 +87,4 @@ def test_remediate_all_clears_a_bare_transfer_completely():
     assert result.remaining == []
     types = {n.type for n in result.workflow.nodes}
     assert "safety.balance_guard" in types
-    assert "monnify.validate_bank_account" in types
+    assert "roqqu.validate_bank_account" in types

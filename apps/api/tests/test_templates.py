@@ -5,10 +5,10 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from monnify_studio.analysis import analyze
-from monnify_studio.api.main import app
-from monnify_studio.providers import default_catalog
-from monnify_studio.templates import build_template, list_templates
+from roqqu_studio.analysis import analyze
+from roqqu_studio.api.main import app
+from roqqu_studio.providers import default_catalog
+from roqqu_studio.templates import build_template, list_templates
 
 client = TestClient(app)
 

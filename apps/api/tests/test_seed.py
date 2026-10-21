@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.api.main import app
-from monnify_studio.api.seed import WORKFLOW_ID, seed_demo
-from monnify_studio.store import store
+from roqqu_studio.api.main import app
+from roqqu_studio.api.seed import WORKFLOW_ID, seed_demo
+from roqqu_studio.store import store
 
 client = TestClient(app)
 

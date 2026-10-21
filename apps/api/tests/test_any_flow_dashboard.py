@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.api.main import app
-from monnify_studio.artifacts import ArtifactConfig, flow_features, generate_artifact
-from monnify_studio.executor import MockAdapter, run_workflow
-from monnify_studio.ir.models import Edge, Node, Workflow
+from roqqu_studio.api.main import app
+from roqqu_studio.artifacts import ArtifactConfig, flow_features, generate_artifact
+from roqqu_studio.executor import MockAdapter, run_workflow
+from roqqu_studio.ir.models import Edge, Node, Workflow
 
 client = TestClient(app)
 

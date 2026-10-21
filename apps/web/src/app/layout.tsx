@@ -4,9 +4,9 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Monnify Studio",
+  title: "Roqqu Studio",
   description:
-    "AI-native development environment for building reliable Monnify payment integrations.",
+    "AI-native development environment for building reliable Roqqu payment integrations.",
 };
 
 export default function RootLayout({

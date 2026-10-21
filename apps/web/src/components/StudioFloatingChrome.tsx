@@ -31,7 +31,7 @@ export function StudioFloatingChrome({
     <>
       <div className="studio-float studio-float--left" role="group" aria-label="Workflow">
         <Image
-          src="/figma/monnify-logo-rail.svg"
+          src="/figma/roqqu-logo-rail.svg"
           alt=""
           width={21}
           height={13}

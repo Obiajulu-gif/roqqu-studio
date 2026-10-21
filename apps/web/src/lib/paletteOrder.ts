@@ -4,7 +4,7 @@
  * handlers so it's unit-testable without touching DataTransfer/DOM rects.
  */
 
-export const PALETTE_ORDER_KEY = "monnify.studio.palette.order";
+export const PALETTE_ORDER_KEY = "roqqu.studio.palette.order";
 
 /** category label -> ordered catalog type keys */
 export type PaletteOrder = Record<string, string[]>;

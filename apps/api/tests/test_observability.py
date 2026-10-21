@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 import json
 
-from monnify_studio.observability import (
+from roqqu_studio.observability import (
     configure_logging,
     configure_tracing,
     correlation,
@@ -63,7 +63,7 @@ def test_registered_secret_is_scrubbed_from_messages():
     register_secret("sk_live_supersecret")
     buf = io.StringIO()
     configure_logging(stream=buf)
-    get_logger("t").info("calling monnify", note="used key sk_live_supersecret today")
+    get_logger("t").info("calling roqqu", note="used key sk_live_supersecret today")
     rec = _last_json(buf)
     assert "sk_live_supersecret" not in rec["note"]
     assert "[REDACTED]" in rec["note"]

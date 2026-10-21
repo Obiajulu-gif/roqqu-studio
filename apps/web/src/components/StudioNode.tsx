@@ -1,7 +1,7 @@
 /**
  * Canvas node chrome — "Hover Card" (Figma 210:6660/210:6379/210:6396,
  * cross-checked against jj9fKZ…/112:5282 for exact header/subtitle layout).
- * Provider pill (outline button, Monnify logo) + icon chip + ellipsis menu +
+ * Provider pill (outline button, Roqqu logo) + icon chip + ellipsis menu +
  * bold title + 2-line subtitle (catalog title + mono endpoint id); expands
  * on selection into "Edit triggers" fields; green border when joined to
  * another node via a valid connection.
@@ -26,7 +26,7 @@ import type { StudioNodeData } from "@/types";
 export type StudioFlowNode = FlowNode<StudioNodeData, "studio">;
 
 const CATEGORY_CLASS: Record<string, string> = {
-  monnify: "cat-monnify",
+  roqqu: "cat-roqqu",
   event: "cat-event",
   control: "cat-control",
   safety: "cat-safety",
@@ -116,7 +116,7 @@ function CategoryGlyph({ category, nodeType }: { category: string; nodeType: str
           />
         </svg>
       );
-    case "monnify":
+    case "roqqu":
       return (
         <svg {...common} aria-hidden>
           <rect x="3" y="2.5" width="10" height="11" rx="1.3" stroke="currentColor" strokeWidth="1.2" />
@@ -216,9 +216,9 @@ export function StudioNode({ id, data, selected }: NodeProps<StudioFlowNode>) {
           <div className="studio-node__header-left">
             <span className="studio-node__provider">
               <span className="studio-node__provider-logo" aria-hidden>
-                <Image src="/figma/monnify-logo.svg" alt="" width={12} height={7} unoptimized />
+                <Image src="/figma/roqqu-logo.svg" alt="" width={12} height={7} unoptimized />
               </span>
-              Monnify
+              Roqqu
             </span>
             <span className="studio-node__icon-chip" aria-hidden>
               <CategoryGlyph category={data.category} nodeType={data.nodeType} />

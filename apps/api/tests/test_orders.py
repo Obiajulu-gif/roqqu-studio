@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from monnify_studio.api.main import app
-from monnify_studio.orders import OrdersService, OrderStatus, orders_service
-from monnify_studio.orders.service import NOTE_NO_PAYMENT, NOTE_VERIFIED
+from roqqu_studio.api.main import app
+from roqqu_studio.orders import OrdersService, OrderStatus, orders_service
+from roqqu_studio.orders.service import NOTE_NO_PAYMENT, NOTE_VERIFIED
 
 client = TestClient(app)
 
@@ -29,7 +29,7 @@ def _order(svc: OrdersService, amount: float = 15500.0):
 
 
 def test_fake_alert_never_flips_status():
-    # Customer claims payment; Monnify has no record. The demo beat.
+    # Customer claims payment; Roqqu has no record. The demo beat.
     svc = _service([{"status": "PENDING", "amount_paid": 0.0}])
     _order(svc)
     order = svc.verify("ord-test1")

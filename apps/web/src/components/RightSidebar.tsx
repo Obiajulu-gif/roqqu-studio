@@ -84,17 +84,17 @@ export function RightSidebar({
           <button
             type="button"
             className={`studio-btn studio-btn--mode${
-              executionAdapter === "monnify" ? " is-live" : ""
+              executionAdapter === "roqqu" ? " is-live" : ""
             }`}
-            aria-pressed={executionAdapter === "monnify"}
+            aria-pressed={executionAdapter === "roqqu"}
             title={
-              executionAdapter === "monnify"
-                ? "Runs against the REAL Monnify sandbox (a demo key is connected). Click to switch to Practice."
-                : "Practice: simulated run, no Monnify request. Click to run against the real Monnify sandbox."
+              executionAdapter === "roqqu"
+                ? "Runs against the REAL Roqqu sandbox (a demo key is connected). Click to switch to Practice."
+                : "Practice: simulated run, no Roqqu request. Click to run against the real Roqqu sandbox."
             }
             onClick={onToggleAdapter}
           >
-            {executionAdapter === "monnify" ? "● Sandbox" : "○ Practice"}
+            {executionAdapter === "roqqu" ? "● Sandbox" : "○ Practice"}
           </button>
           <button
             type="button"

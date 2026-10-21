@@ -6,12 +6,12 @@ from fastapi.testclient import TestClient
 
 import importlib
 
-from monnify_studio.ai.schema import MoniAnswer
-from monnify_studio.api.main import app
+from roqqu_studio.ai.schema import MoniAnswer
+from roqqu_studio.api.main import app
 
 # The package exports the explain *function*, which shadows the submodule on
 # `import ... as`; resolve the module explicitly for monkeypatching.
-explain_mod = importlib.import_module("monnify_studio.ai.explain")
+explain_mod = importlib.import_module("roqqu_studio.ai.explain")
 explain = explain_mod.explain
 
 client = TestClient(app)
@@ -44,10 +44,10 @@ def _offline(monkeypatch, provider):
 
 def test_sources_come_from_catalog_never_model(monkeypatch):
     _offline(monkeypatch, _Answering())
-    result, provider = explain("why is split wrong here?", node_type="monnify.transaction_split")
+    result, provider = explain("why is split wrong here?", node_type="roqqu.transaction_split")
     assert provider == "fake"
     assert result.sources and all(
-        s.url.startswith("https://developers.monnify.com") for s in result.sources
+        s.url.startswith("https://roqqu.com") for s in result.sources
     )
     assert "Transfer" in result.answer
 
@@ -65,42 +65,42 @@ class _AnswersWithUrl:
 
 def test_model_invented_url_is_stripped_from_answer(monkeypatch):
     _offline(monkeypatch, _AnswersWithUrl())
-    result, _ = explain("why?", node_type="monnify.verify_transaction")
+    result, _ = explain("why?", node_type="roqqu.verify_transaction")
     assert "http" not in result.answer  # citations only come from sources[]
     assert "Verify the transaction" in result.answer
-    assert all(s.url.startswith("https://developers.monnify.com") for s in result.sources)
+    assert all(s.url.startswith("https://roqqu.com") for s in result.sources)
 
 
 def test_failed_doc_fetch_is_not_cached(monkeypatch):
     # A transient fetch failure must not permanently degrade this url to empty.
-    explain_mod._DOC_CACHE.pop("https://developers.monnify.com/probe", None)
+    explain_mod._DOC_CACHE.pop("https://roqqu.com", None)
 
     def _boom(url, timeout=6.0, follow_redirects=True):
         raise RuntimeError("network blip")
 
     monkeypatch.setattr(explain_mod.httpx, "get", _boom)
-    assert explain_mod._fetch_doc("https://developers.monnify.com/probe") == ""
+    assert explain_mod._fetch_doc("https://roqqu.com") == ""
     # The failure was not written to the cache, so a later success can still land.
-    assert "https://developers.monnify.com/probe" not in explain_mod._DOC_CACHE
+    assert "https://roqqu.com" not in explain_mod._DOC_CACHE
 
 
 def test_provider_failure_degrades_to_grounding(monkeypatch):
     _offline(monkeypatch, _Failing())
-    result, provider = explain("why validate the account?", node_type="monnify.validate_bank_account")
+    result, provider = explain("why validate the account?", node_type="roqqu.validate_bank_account")
     assert "grounding" in provider  # fell back, but still a real answer
     assert "Name Enquiry" in result.answer or "payout account" in result.answer
-    assert result.sources[0].url.startswith("https://developers.monnify.com")
+    assert result.sources[0].url.startswith("https://roqqu.com")
 
 
 def test_endpoint_roundtrip_and_unknown_node(monkeypatch):
     _offline(monkeypatch, _Answering())
     res = client.post(
         "/assistant/explain",
-        json={"question": "why?", "node_type": "monnify.verify_transaction"},
+        json={"question": "why?", "node_type": "roqqu.verify_transaction"},
     )
     assert res.status_code == 200
     body = res.json()
-    assert body["answer"] and body["sources"][0]["url"].startswith("https://developers.monnify.com")
+    assert body["answer"] and body["sources"][0]["url"].startswith("https://roqqu.com")
 
     assert (
         client.post(
@@ -114,5 +114,5 @@ def test_doc_fetch_failure_is_not_fatal(monkeypatch):
     monkeypatch.setattr(explain_mod, "select_provider", lambda p=None: _Answering())
     monkeypatch.setattr(explain_mod.httpx, "get", lambda *a, **k: (_ for _ in ()).throw(OSError()))
     explain_mod._DOC_CACHE.clear()
-    result, _ = explain("why verify?", node_type="monnify.verify_transaction")
+    result, _ = explain("why verify?", node_type="roqqu.verify_transaction")
     assert result.answer  # catalog grounding carried it

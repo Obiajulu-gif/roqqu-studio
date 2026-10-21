@@ -29,7 +29,7 @@ function pretty(value: unknown): string {
 }
 
 function adapterLabel(adapter: ExecutionRun["adapter"]): string {
-  return adapter === "monnify" ? "Monnify sandbox" : "Practice";
+  return adapter === "roqqu" ? "Roqqu sandbox" : "Practice";
 }
 
 function TraceEventDetail({ event }: { event: ExecutionEvent }) {

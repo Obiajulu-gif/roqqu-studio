@@ -10,15 +10,15 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-import monnify_studio.ai.composer as comp
-from monnify_studio.ai.composer import (
+import roqqu_studio.ai.composer as comp
+from roqqu_studio.ai.composer import (
     ComposeError,
     ComposeRefused,
     ComposeUnavailable,
     compose_flow,
 )
-from monnify_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
-from monnify_studio.api.main import app
+from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
+from roqqu_studio.api.main import app
 
 client = TestClient(app)
 
@@ -27,10 +27,10 @@ def _flow(**over) -> MoniFlow:
     base = dict(
         name="Sell online",
         nodes=[
-            MoniFlowNode(id="init", type="monnify.initialize_transaction"),
+            MoniFlowNode(id="init", type="roqqu.initialize_transaction"),
             MoniFlowNode(id="webhook", type="event.payment_webhook"),
             MoniFlowNode(id="vsig", type="safety.verify_signature"),
-            MoniFlowNode(id="verify", type="monnify.verify_transaction"),
+            MoniFlowNode(id="verify", type="roqqu.verify_transaction"),
             MoniFlowNode(id="vamt", type="safety.validate_amount"),
             MoniFlowNode(id="idem", type="safety.idempotency_guard"),
             MoniFlowNode(id="paid", type="app.mark_order_paid"),
@@ -70,7 +70,7 @@ def test_unclean_compose_refuses_and_returns_no_workflow(monkeypatch):
     """If Apply-Fix cannot make it clean, Moni must refuse, not hand it over."""
     monkeypatch.setattr(comp, "select_provider", lambda p=None: _Fake(_flow()))
     # Force the analyzer to always report a finding, so no proposal is ever clean.
-    from monnify_studio.analysis import Finding, Report
+    from roqqu_studio.analysis import Finding, Report
 
     def _always_dirty(_wf, _cat):
         return Report(
@@ -85,7 +85,7 @@ def test_unclean_compose_refuses_and_returns_no_workflow(monkeypatch):
 
 def test_endpoint_unclean_compose_is_422_with_no_workflow(monkeypatch):
     monkeypatch.setattr(comp, "select_provider", lambda p=None: _Fake(_flow()))
-    from monnify_studio.analysis import Finding, Report
+    from roqqu_studio.analysis import Finding, Report
 
     monkeypatch.setattr(
         comp, "analyze",
@@ -109,7 +109,7 @@ def test_clean_proposal_is_returned(monkeypatch):
 
 def test_infeasible_request_is_declined_not_fabricated(monkeypatch):
     refusal = MoniFlow(name="n/a", feasible=False,
-                       refusal="I build Monnify payment flows, not rockets.")
+                       refusal="I build Roqqu payment flows, not rockets.")
     monkeypatch.setattr(comp, "select_provider", lambda p=None: _Fake(refusal))
     with pytest.raises(ComposeRefused) as ei:
         compose_flow("build me a rocket to the moon")
@@ -151,7 +151,7 @@ def test_disconnected_graph_is_rejected(monkeypatch):
     islands = MoniFlow(
         name="islands",
         nodes=[
-            MoniFlowNode(id="a", type="monnify.initialize_transaction"),
+            MoniFlowNode(id="a", type="roqqu.initialize_transaction"),
             MoniFlowNode(id="b", type="app.notify"),
         ],
         edges=[],  # nothing connected: nothing reachable, would pass vacuously

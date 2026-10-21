@@ -1,6 +1,6 @@
 /**
  * Interim hand ports of templates / artifacts / credentials API contracts.
- * Mirrors monnify_studio.templates.TemplateInfo, artifacts.ArtifactConfig,
+ * Mirrors roqqu_studio.templates.TemplateInfo, artifacts.ArtifactConfig,
  * credentials.CredentialStatus (+ write body), store list_summaries.
  * Target: D6 JSON Schema codegen. Provenance: #55, #51, #52, #68, D17, D19.
  */
@@ -26,7 +26,7 @@ export interface CredentialStatus {
   source: "workflow" | "platform" | "none" | string;
 }
 
-export interface MonnifyCredentialInput {
+export interface RoqquCredentialInput {
   api_key: string;
   secret_key: string;
   contract_code: string;

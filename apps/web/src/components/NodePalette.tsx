@@ -103,7 +103,7 @@ function displayCategory(meta: NodeMeta): string {
   }
   if (hay.includes("wallet")) return "Wallets";
   if (hay.includes("bill")) return "Bills & Payments";
-  if (meta.category === "monnify") return "Accept Payments";
+  if (meta.category === "roqqu") return "Accept Payments";
   if (meta.category === "safety") return "Customer Verification";
   if (meta.category === "event") return "Events";
   if (meta.category === "control") return "Control";

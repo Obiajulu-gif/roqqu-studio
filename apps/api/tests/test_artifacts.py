@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.api.main import app
-from monnify_studio.artifacts import ArtifactConfig, generate_artifact
-from monnify_studio.fixtures import unsafe_marketplace
-from monnify_studio.templates import build_template
+from roqqu_studio.api.main import app
+from roqqu_studio.artifacts import ArtifactConfig, generate_artifact
+from roqqu_studio.fixtures import unsafe_marketplace
+from roqqu_studio.templates import build_template
 
 client = TestClient(app)
 

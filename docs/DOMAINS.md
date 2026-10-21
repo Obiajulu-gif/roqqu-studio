@@ -1,4 +1,4 @@
-# Monnify Studio - The map
+# Roqqu Studio - The map
 
 > Two maps, one system. The **team map** (§1) says who focuses where; it is the
 > half page everyone reads. The **engine map** (§3) says where the walls are;
@@ -22,7 +22,7 @@ already share a single model. So: doors for people, walls for the model.
 | **Business door** | Gloria, Godswill | onboarding, dashboard, shop / invoice / ajo surfaces, business-register copy |
 | **Developer door** | Claret, Israel | whiteboard, code tab, run and trace, deploy |
 | **Engine** | Claret owns, everyone reads | flows, runs, money, pages, accounts (§3) |
-| **Provider packs** | whoever integrates the next provider | Monnify today, Paystack next (§4) |
+| **Provider packs** | whoever integrates the next provider | Roqqu today, Paystack next (§4) |
 
 Two rules that hold in every area, no exceptions:
 
@@ -67,7 +67,7 @@ before these are pasted in. Tracked in #268.)
 | # | Decision | Rationale |
 |---|----------|-----------|
 | D22 | **Two maps: doors for people, walls for the model.** Top level is Business door, Developer door, Engine, Provider packs. Inside the Engine, five walls: Flows, Runs, Money, Pages, Accounts. | The team narrows focus by door; the bugs cluster at the engine walls (§6). Both needs are real and they answer different questions. Doors cannot be model boundaries because NAMING.md's dual-register rule already commits both doors to one shared model - one code symbol under two surface words. Separate models would mean two code symbols, which nobody wants. |
-| D23 | **A provider pack has six members**: node types, adapter, codegen, credentials schema, safety-tag bindings, buyer-facing copy. `register_pack` is the only seam. | Completes D13. Monnify knowledge currently lives in five modules that are not the pack (§4); a second provider today means five scattered edits. Six members is what it actually takes to add Paystack without touching the Engine. |
+| D23 | **A provider pack has six members**: node types, adapter, codegen, credentials schema, safety-tag bindings, buyer-facing copy. `register_pack` is the only seam. | Completes D13. Roqqu knowledge currently lives in five modules that are not the pack (§4); a second provider today means five scattered edits. Six members is what it actually takes to add Paystack without touching the Engine. |
 | D24 | **Pages are downstream of Flows.** A page spec is born from a flow (goal plus money pillars), then freely edited, stored as **generated base + user overrides** kept separate. Blank-canvas authoring exists but is the escape hatch, not the front door. | The dependency already runs this way in code. Bindings to verified money are the moat a generic page builder cannot copy. And a business owner must never meet a blank canvas - that is the gate we exist to remove (#105). Base plus overrides lets a flow change without clobbering edits or going stale. |
 | D25 | **Bindings are references, never values.** A page spec names a read-model field (`totals.money_in`); it may never carry a resolved number, a credential, or a row of data. The validator rejects literals in binding positions. | The free tier publishes specs. A spec that inlines real figures publishes a business's books. This makes the spec/data split a security boundary, not a style preference. |
 
@@ -79,7 +79,7 @@ Five walls. Plain words, same register as NAMING.md.
 
 | Wall | Owns | Invariant | Must never |
 |------|------|-----------|------------|
-| **Flows** | IR, node catalog, analyzer, remediation, codegen, Moni compose | a flow is well-typed and its safety properties are decidable *before* it runs | know what a naira is, or that Monnify is a live endpoint |
+| **Flows** | IR, node catalog, analyzer, remediation, codegen, Moni compose | a flow is well-typed and its safety properties are decidable *before* it runs | know what a naira is, or that Roqqu is a live endpoint |
 | **Runs** | engine, adapters, run records, events, code sandbox | every run yields an honest, ordered, replayable trace; an output never claims more than the adapter observed | invent a value it did not receive |
 | **Money** | orders, invoices, ajo pots, payouts, exact Decimal, provider client, credentials, read models | nothing is `verified` without provider confirmation; money is exact to the kobo (D21) | accept a status from anywhere but the provider |
 | **Pages** | page spec language, validator, widget catalog, React compiler, serving | a spec is authored intent, versioned, pure data | contain executable code or resolved data |
@@ -97,7 +97,7 @@ What crosses the walls, and what must not:
 | Pages → Money | commands (create invoice, record contribution) | direct writes |
 | Accounts → all | owner, visibility, plan | any wall keeping its own copy of "is this public" |
 
-`integrations/monnify/client.py` is the anti-corruption layer and lives inside
+`integrations/roqqu/client.py` is the anti-corruption layer and lives inside
 Money *(shipped)*.
 
 Shared plumbing that is mechanism, not a wall: the versioned spec store
@@ -110,21 +110,21 @@ type (D21), channels (WhatsApp, email), observability (D15).
 
 ## 4. Provider packs: finishing D13
 
-D13 locked "provider-agnostic core; Monnify is a rich provider pack." Current
-truth, by count of `monnify` mentions per module:
+D13 locked "provider-agnostic core; Roqqu is a rich provider pack." Current
+truth, by count of `roqqu` mentions per module:
 
 | Module | Mentions | Verdict |
 |---|---|---|
 | `providers/` | 44 | **correct** - this *is* the pack |
-| `integrations/monnify/` | 35 | **correct** - this *is* the ACL |
+| `integrations/roqqu/` | 35 | **correct** - this *is* the ACL |
 | `analysis/` | 6 | **clean** - the engine reasons only over capability tags, never `type` strings (D3) |
 | `ir/` | 8 | **clean** - a workflow declaring its provider is by design |
 | `remediation/` | 2 | **clean** |
-| `templates/` | 31 | leak - vetted flows wire `monnify.*` nodes directly |
-| `executor/adapter.py` | 30 | leak - `SandboxAdapter` branches on `monnify.*` types |
-| `codegen/python.py` | 27 | leak - emits Monnify base URL, auth, contract code |
-| `artifacts/` | 23 | leak - buyer copy says "verified with Monnify" |
-| `credentials.py` | 4 | leak - contract code, key, wallet are Monnify-shaped |
+| `templates/` | 31 | leak - vetted flows wire `roqqu.*` nodes directly |
+| `executor/adapter.py` | 30 | leak - `SandboxAdapter` branches on `roqqu.*` types |
+| `codegen/python.py` | 27 | leak - emits Roqqu base URL, auth, contract code |
+| `artifacts/` | 23 | leak - buyer copy says "verified with Roqqu" |
+| `credentials.py` | 4 | leak - contract code, key, wallet are Roqqu-shaped |
 
 **D13 is roughly two-thirds honoured, and the hard third is the done third.**
 The analyzer core is genuinely neutral - D3 bought that. The five leaks are all
@@ -145,7 +145,7 @@ ProviderPack
 `safety_bindings` is the subtle member and the reason the moat travels: safety
 rules ask "is a node carrying `VERIFIES_PAYMENT` reachable before one carrying
 `FULFILS_ORDER`", and the pack answers which of *its* nodes carry that tag. The
-rules are payment truths, not Monnify truths, so they port to the next provider
+rules are payment truths, not Roqqu truths, so they port to the next provider
 unchanged. That is the most valuable property in this document.
 
 Resolution is `pack_for(workflow_id)`, mirroring the shipped

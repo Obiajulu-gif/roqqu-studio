@@ -16,13 +16,13 @@ from __future__ import annotations
 
 import sys
 
-from monnify_studio.ai.composer import (
+from roqqu_studio.ai.composer import (
     ComposeError,
     ComposeRefused,
     ComposeUnavailable,
     compose_flow,
 )
-from monnify_studio.artifacts import flow_features
+from roqqu_studio.artifacts import flow_features
 
 # Non-templated needs spanning the pillars from the product model (#105). None of
 # these is a canned template; Moni must engineer each from the catalog.

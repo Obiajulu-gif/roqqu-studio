@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from monnify_studio.ai.moni import classify_intent
-from monnify_studio.analysis import analyze
-from monnify_studio.api.main import app
-from monnify_studio.providers import default_catalog
-from monnify_studio.templates import build_template
+from roqqu_studio.ai.moni import classify_intent
+from roqqu_studio.analysis import analyze
+from roqqu_studio.api.main import app
+from roqqu_studio.providers import default_catalog
+from roqqu_studio.templates import build_template
 
 client = TestClient(app)
 

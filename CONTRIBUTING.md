@@ -1,6 +1,6 @@
-# Contributing to Monnify Studio
+# Contributing to Roqqu Studio
 
-Thanks for being here. Monnify Studio turns a plain-language description of a payment
+Thanks for being here. Roqqu Studio turns a plain-language description of a payment
 product into a typed, safety-checked flow that becomes a real product: a shop link, an
 invoice, a dashboard. The thesis that shapes every pull request is one line:
 
@@ -29,7 +29,7 @@ run the tests:
 cd apps/api
 uv sync --all-extras
 uv run pytest -q          # 268 tests, no keys needed
-uv run uvicorn monnify_studio.api.main:app --port 8010 --host 127.0.0.1
+uv run uvicorn roqqu_studio.api.main:app --port 8010 --host 127.0.0.1
 ```
 
 ```bash
@@ -61,10 +61,10 @@ You do not have to write Python to move this project forward.
 
 | Track | What it looks like | Filter |
 |-------|--------------------|--------|
-| **Code** | New analyzer rules, catalog nodes, canvas behaviour, provider packs | [`good first issue` + `lane:core`](https://github.com/Greyisheep/monnify-studio/labels/good%20first%20issue) |
-| **Docs** | Quickstarts, rule explainers, worked examples, fixing what misled you | [`documentation`](https://github.com/Greyisheep/monnify-studio/labels/documentation) |
-| **Design** | Empty states, error states, plain-words copy, the flows a first-timer walks | [`lane:design`](https://github.com/Greyisheep/monnify-studio/labels/lane%3Adesign) |
-| **Testing** | Regression guards, template sweeps, edge cases around money and verification | [`good first issue`](https://github.com/Greyisheep/monnify-studio/labels/good%20first%20issue) |
+| **Code** | New analyzer rules, catalog nodes, canvas behaviour, provider packs | [`good first issue` + `lane:core`](https://github.com/Greyisheep/roqqu-studio/labels/good%20first%20issue) |
+| **Docs** | Quickstarts, rule explainers, worked examples, fixing what misled you | [`documentation`](https://github.com/Greyisheep/roqqu-studio/labels/documentation) |
+| **Design** | Empty states, error states, plain-words copy, the flows a first-timer walks | [`lane:design`](https://github.com/Greyisheep/roqqu-studio/labels/lane%3Adesign) |
+| **Testing** | Regression guards, template sweeps, edge cases around money and verification | [`good first issue`](https://github.com/Greyisheep/roqqu-studio/labels/good%20first%20issue) |
 
 Issues tagged **`good first issue`** are scoped so that one sitting is enough, and each
 one names the files to touch. Comment on the issue to claim it; if nobody replies within
@@ -81,7 +81,7 @@ Six things a reviewer will always check. The long version lives in
 [`docs/ENGINEERING_STANDARDS.md`](docs/ENGINEERING_STANDARDS.md).
 
 **1. Money is exact.** Every amount is a `Decimal` to the kobo, never a `float`. Compare
-with `covers()`, never a raw `>=`. `apps/api/monnify_studio/money.py` is the only place
+with `covers()`, never a raw `>=`. `apps/api/roqqu_studio/money.py` is the only place
 that decides what an amount means.
 
 **2. No model in the correctness path.** Moni can propose, explain, and refine. She
@@ -89,8 +89,8 @@ cannot decide whether a flow is safe, and she can never fabricate a `Money` valu
 your change lets a model output reach a financial decision without deterministic code in
 between, it will be sent back.
 
-**3. Nothing is paid until Monnify says so.** Client callbacks, redirects, and screenshots
-are claims. Only a server-side verify against Monnify is truth. This is the fraud the
+**3. Nothing is paid until Roqqu says so.** Client callbacks, redirects, and screenshots
+are claims. Only a server-side verify against Roqqu is truth. This is the fraud the
 product exists to defeat, so it is not negotiable anywhere in the codebase.
 
 **4. Code carries its own "why".** When a line encodes a non-obvious choice, cite the
@@ -132,7 +132,7 @@ security issue, email ibeawuchiclaret@gmail.com instead of opening a public issu
    `vitest` plus lint on the web app. Run them locally first and you will save a round trip:
 
    ```bash
-   cd apps/api && uv run ruff check monnify_studio tests && uv run pytest -q
+   cd apps/api && uv run ruff check roqqu_studio tests && uv run pytest -q
    ```
 
    ```bash

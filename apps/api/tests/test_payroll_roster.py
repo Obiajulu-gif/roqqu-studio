@@ -7,8 +7,8 @@ one is messaged.
 
 from __future__ import annotations
 
-from monnify_studio.executor.adapter import MockAdapter
-from monnify_studio.ir.models import Node
+from roqqu_studio.executor.adapter import MockAdapter
+from roqqu_studio.ir.models import Node
 
 ROWS = [
     {"name": "Ada Obi", "phone": "08030000001", "account_number": "0123456789", "bank_code": "058", "amount": "150000"},
@@ -27,7 +27,7 @@ def test_data_rows_outputs_the_typed_employees() -> None:
 
 def test_bulk_transfer_pays_each_employee_from_the_sheet() -> None:
     res = MockAdapter().invoke(
-        Node(id="bulk", type="monnify.bulk_transfer"), {"inputs": {"rows": ROWS}}
+        Node(id="bulk", type="roqqu.bulk_transfer"), {"inputs": {"rows": ROWS}}
     )
     assert res.outputs["paid_count"] == 2
     assert res.outputs["total_paid"] == "240000.00"
@@ -49,7 +49,7 @@ def test_empty_sheet_is_a_clean_no_op() -> None:
 
 
 def test_payroll_summary_message_is_specific() -> None:
-    from monnify_studio.executor.adapter import _employee_message, _notify_message
+    from roqqu_studio.executor.adapter import _employee_message, _notify_message
 
     msg = _notify_message({}, "0", roster=ROWS)
     assert "2 people paid" in msg and "NGN 240,000" in msg
@@ -60,13 +60,13 @@ def test_payroll_summary_message_is_specific() -> None:
 
 
 def test_payment_confirmation_message_when_no_roster() -> None:
-    from monnify_studio.executor.adapter import _notify_message
+    from roqqu_studio.executor.adapter import _notify_message
 
     msg = _notify_message({}, "5000")
     assert "Payment confirmed" in msg and "NGN 5,000" in msg
 
 
 def test_node_message_override_wins() -> None:
-    from monnify_studio.executor.adapter import _notify_message
+    from roqqu_studio.executor.adapter import _notify_message
 
     assert _notify_message({"message": "Custom hi"}, "5000", roster=ROWS) == "Custom hi"

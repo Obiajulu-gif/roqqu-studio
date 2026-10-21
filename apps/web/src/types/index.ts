@@ -29,7 +29,7 @@ export type {
   CredentialStatus,
   GenerateArtifactResult,
   GeneratedCode,
-  MonnifyCredentialInput,
+  RoqquCredentialInput,
   TemplateInfo,
   WorkflowSummary,
 } from "./studioApi";

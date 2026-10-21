@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from monnify_studio.analysis import analyze
-from monnify_studio.ir.models import Edge, Node, Workflow
-from monnify_studio.ir.types import CapabilityTag
-from monnify_studio.providers import default_catalog
+from roqqu_studio.analysis import analyze
+from roqqu_studio.ir.models import Edge, Node, Workflow
+from roqqu_studio.ir.types import CapabilityTag
+from roqqu_studio.providers import default_catalog
 
 
 def test_code_block_is_in_the_catalog_with_opaque_tags():
@@ -49,7 +49,7 @@ def test_code_block_between_safe_flow_stays_clean():
         nodes=[
             Node(id="hook", type="event.payment_webhook", label="Webhook"),
             Node(id="vsig", type="safety.verify_signature", label="Verify Sig"),
-            Node(id="verify", type="monnify.verify_transaction", label="Verify"),
+            Node(id="verify", type="roqqu.verify_transaction", label="Verify"),
             Node(id="vamt", type="safety.validate_amount", label="Amount"),
             Node(id="idem", type="safety.idempotency_guard", label="Idem"),
             Node(id="code", type="custom.code", label="My Fee Logic",

@@ -8,16 +8,16 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-import monnify_studio.api.main as api_main
-from monnify_studio.api.main import app
-from monnify_studio.executor import (
+import roqqu_studio.api.main as api_main
+from roqqu_studio.api.main import app
+from roqqu_studio.executor import (
     ExecutionEventType,
     MockAdapter,
     execution_store,
     run_workflow,
 )
-from monnify_studio.fixtures import safe_marketplace, unsafe_marketplace
-from monnify_studio.observability.redaction import REDACTED
+from roqqu_studio.fixtures import safe_marketplace, unsafe_marketplace
+from roqqu_studio.observability.redaction import REDACTED
 
 client = TestClient(app)
 
@@ -109,15 +109,15 @@ def test_sse_stream_replays_trace():
     assert "event: done" in body
 
 
-def test_monnify_adapter_requires_credentials(monkeypatch):
+def test_roqqu_adapter_requires_credentials(monkeypatch):
     """The sandbox-run adapter is available (sandbox-pinned) but refuses to run
-    without Monnify credentials, with a clear 422 rather than a fake trace (#9)."""
-    from monnify_studio.config import Settings
+    without Roqqu credentials, with a clear 422 rather than a fake trace (#9)."""
+    from roqqu_studio.config import Settings
 
-    empty = Settings(monnify_api_key="", monnify_secret_key="", monnify_contract_code="")
+    empty = Settings(roqqu_api_key="", roqqu_secret_key="", roqqu_contract_code="")
     monkeypatch.setattr(api_main.credential_store, "settings_for", lambda _wid: empty)
     workflow = client.get("/workflows/marketplace-unsafe").json()["workflow"]
-    res = client.post("/executions", json={"workflow": workflow, "adapter": "monnify"})
+    res = client.post("/executions", json={"workflow": workflow, "adapter": "roqqu"})
     assert res.status_code == 422
     assert "credential" in res.json()["detail"].lower()
 
@@ -131,7 +131,7 @@ def test_unknown_adapter_is_400():
 def test_cfg_prefers_edited_camelcase_and_skips_placeholders():
     """Request-body edits (camelCase) drive the real call; unedited template
     placeholders (<...>) fall back to the default, not a literal string (#Flow C)."""
-    from monnify_studio.executor.adapter import _cfg
+    from roqqu_studio.executor.adapter import _cfg
 
     # A dev edited customerName -> that value wins over the snake_case fallback.
     assert _cfg({"customerName": "Ada"}, "customerName", "customer_name", default="X") == "Ada"
@@ -146,7 +146,7 @@ def test_cfg_prefers_edited_camelcase_and_skips_placeholders():
 
 
 def test_cfg_bool_handles_text_backed_request_fields():
-    from monnify_studio.executor.adapter import _cfg_bool
+    from roqqu_studio.executor.adapter import _cfg_bool
 
     assert (
         _cfg_bool({"getAllAvailableBanks": "false"}, "getAllAvailableBanks", default=True) is False
@@ -157,9 +157,9 @@ def test_cfg_bool_handles_text_backed_request_fields():
 
 
 def test_live_reserved_account_node_calls_client_and_surfaces_real_account(monkeypatch):
-    from monnify_studio.config import Settings
-    from monnify_studio.executor.adapter import SandboxAdapter
-    from monnify_studio.ir.models import Node
+    from roqqu_studio.config import Settings
+    from roqqu_studio.executor.adapter import SandboxAdapter
+    from roqqu_studio.ir.models import Node
 
     class FakeClient:
         def create_reserved_account(self, **kwargs):
@@ -178,16 +178,16 @@ def test_live_reserved_account_node_calls_client_and_surfaces_real_account(monke
 
     adapter = SandboxAdapter(
         Settings(
-            monnify_api_key="key",
-            monnify_secret_key="secret",
-            monnify_contract_code="contract",
+            roqqu_api_key="key",
+            roqqu_secret_key="secret",
+            roqqu_contract_code="contract",
         )
     )
     monkeypatch.setattr(adapter, "_c", lambda: FakeClient())
     result = adapter.invoke(
         Node(
             id="account",
-            type="monnify.create_reserved_account",
+            type="roqqu.create_reserved_account",
             config={
                 "accountReference": "ajo-ada-1",
                 "accountName": "Ada Ajo Account",
@@ -207,9 +207,9 @@ def test_live_reserved_account_node_calls_client_and_surfaces_real_account(monke
 def test_notify_node_simulated_in_practice_and_recorded_live():
     """A notify block is a no-op-with-signal in Practice, and a real send path in
     a live run - never faked (#231)."""
-    from monnify_studio.executor.adapter import MockAdapter
-    from monnify_studio.ir.models import Node
-    from monnify_studio.notifications import notification_log, whatsapp_notifier
+    from roqqu_studio.executor.adapter import MockAdapter
+    from roqqu_studio.ir.models import Node
+    from roqqu_studio.notifications import notification_log, whatsapp_notifier
 
     res = MockAdapter().invoke(
         Node(id="n", type="app.notify_whatsapp", config={"message": "hi"}),

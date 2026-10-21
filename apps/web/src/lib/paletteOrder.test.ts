@@ -106,7 +106,7 @@ describe("palette order persistence __AC4", () => {
 
   it("round-trips an order per category", () => {
     expect(loadPaletteOrder()).toEqual({});
-    const order: PaletteOrder = { "Accept Payments": ["monnify.invoice", "monnify.sell"] };
+    const order: PaletteOrder = { "Accept Payments": ["roqqu.invoice", "roqqu.sell"] };
     savePaletteOrder(order);
     expect(loadPaletteOrder()).toEqual(order);
   });

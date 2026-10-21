@@ -1,0 +1,328 @@
+"""Provider-agnostic AI layer (#15, D16).
+
+One `AIProvider` protocol, three LLM adapters (Anthropic default, OpenAI, Google)
+plus a deterministic keyword fallback. Selection is by `AI_PROVIDER`, then first
+available, then the fallback, so Chat never hard-fails on stage even with no key
+(the D11 instinct). SDKs are imported lazily so the module works without them
+installed and without any key configured.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import Protocol
+
+from ..observability import get_logger, register_secret
+from pydantic import BaseModel
+
+from .schema import MoniIntent
+
+log = get_logger("ai")
+
+# Default model per the Claude API guidance; overridable via env for testing.
+_ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
+
+# Hard per-call timeout (#106). Without it the SDK default is ~600s, and on our
+# synchronous endpoints a provider hang would block the worker for minutes AND
+# defeat the fallbacks, which only fire on an exception, not a stall. But it must
+# sit ABOVE the legitimate slow tail (a large 10-14 node flow at 8192 tokens can
+# take 20-40s) so we never clip a working compose and mislabel it an outage.
+# 60s is that middle: generous for real calls, far below the ~600s hang budget.
+_TIMEOUT_S = float(os.getenv("AI_TIMEOUT_S", "60"))
+
+
+class AIProvider(Protocol):
+    name: str
+
+    def available(self) -> bool: ...
+
+    def structured(
+        self, *, system: str, user: str, message: str = "",
+        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+    ) -> BaseModel: ...
+
+
+class KeywordFallback:
+    """No network, always available. Keeps Chat working with no key (D11)."""
+
+    name = "keyword"
+
+    def available(self) -> bool:
+        return True
+
+    def structured(
+        self, *, system: str, user: str, message: str = "",
+        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+    ) -> BaseModel:
+        if schema is not MoniIntent:
+            # Composition needs a real model; the fallback only classifies (D18).
+            raise NotImplementedError("keyword fallback cannot compose flows")
+        text = message.lower()
+        sell = ("sell", "instagram", "whatsapp", "thrift", "store", "shop", "boutique")
+        invoice = ("invoice", "bill my client", "billing", "receipt for", "invoice link")
+        if any(w in text for w in invoice):
+            return MoniIntent(
+                template_id="invoice",
+                confidence=0.6,
+                explanation="This looks like billing a client. Create an invoice, share "
+                "the link, and it is only marked paid after Roqqu confirms the money "
+                "in your account.",
+            )
+        payroll = ("payroll", "salary", "salaries", "staff", "employee", "wages", "pay my")
+        if any(w in text for w in payroll):
+            return MoniIntent(
+                template_id="payroll",
+                confidence=0.5,
+                explanation="This looks like paying staff. Each beneficiary is validated "
+                "before any transfer, so money never goes to a wrong account.",
+            )
+        if any(w in text for w in sell):
+            return MoniIntent(
+                template_id="sell-online",
+                confidence=0.6,
+                explanation="This looks like selling online. Orders are only marked paid "
+                "after Roqqu confirms the money, so fake transfer screenshots never work.",
+            )
+        return MoniIntent(
+            template_id="unknown",
+            confidence=0.0,
+            clarifying_question="What do you want to set up? For example: a payment link "
+            "for your online shop, or staff payroll.",
+        )
+
+
+def _anthropic_key() -> str | None:
+    # The key may live under either name; CLAUDE_API_KEY is how it is provisioned here.
+    return os.getenv("ANTHROPIC_API_KEY") or os.getenv("CLAUDE_API_KEY")
+
+
+def _google_key() -> str | None:
+    return os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+
+
+class AnthropicProvider:
+    name = "anthropic"
+
+    def __init__(self) -> None:
+        register_secret(_anthropic_key())
+
+    def available(self) -> bool:
+        try:
+            import anthropic  # noqa: F401
+        except ImportError:
+            return False
+        return bool(_anthropic_key())
+
+    def structured(
+        self, *, system: str, user: str, message: str = "",
+        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+    ) -> BaseModel:
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=_anthropic_key(), timeout=_TIMEOUT_S)
+        resp = client.messages.parse(
+            model=_ANTHROPIC_MODEL,
+            max_tokens=max_tokens,
+            # Constrained extraction, not deep reasoning: disabling thinking frees
+            # the whole token budget for the JSON (so large flows do not truncate)
+            # and cuts latency from ~30s to a few seconds (#15 compose robustness).
+            thinking={"type": "disabled"},
+            system=system,
+            messages=[{"role": "user", "content": user}],
+            output_format=schema,
+        )
+        if resp.parsed_output is None:
+            raise ValueError("empty structured output")
+        return resp.parsed_output
+
+
+class OpenAIProvider:
+    name = "openai"
+
+    def __init__(self) -> None:
+        register_secret(os.getenv("OPENAI_API_KEY"))
+
+    def available(self) -> bool:
+        try:
+            import openai  # noqa: F401
+        except ImportError:
+            return False
+        return bool(os.getenv("OPENAI_API_KEY"))
+
+    def structured(
+        self, *, system: str, user: str, message: str = "",
+        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+    ) -> BaseModel:
+        from openai import OpenAI
+
+        client = OpenAI(timeout=_TIMEOUT_S)
+        completion = client.beta.chat.completions.parse(
+            model=os.getenv("OPENAI_MODEL", "gpt-5-mini"),
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            response_format=schema,
+        )
+        parsed = completion.choices[0].message.parsed
+        if parsed is None:
+            raise ValueError("empty structured output")
+        return parsed
+
+
+class NvidiaProvider:
+    """NVIDIA NIM (build.nvidia.com): OpenAI-compatible, free credits on signup."""
+
+    name = "nvidia"
+
+    def __init__(self) -> None:
+        register_secret(os.getenv("NVIDIA_API_KEY"))
+
+    def available(self) -> bool:
+        try:
+            import openai  # noqa: F401
+        except ImportError:
+            return False
+        return bool(os.getenv("NVIDIA_API_KEY"))
+
+    def structured(
+        self, *, system: str, user: str, message: str = "",
+        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+    ) -> BaseModel:
+        from openai import OpenAI
+
+        client = OpenAI(
+            base_url=os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
+            api_key=os.getenv("NVIDIA_API_KEY"),
+            timeout=_TIMEOUT_S,
+        )
+        completion = client.chat.completions.create(
+            model=os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            max_tokens=max_tokens,
+            temperature=0,
+            # NIM constrains decoding to the schema; validation below is the real gate.
+            extra_body={"nvext": {"guided_json": schema.model_json_schema()}},
+        )
+        return schema.model_validate_json(completion.choices[0].message.content or "")
+
+
+class GoogleProvider:
+    """Uses the current google-genai SDK (successor to google-generativeai)."""
+
+    name = "google"
+
+    def __init__(self) -> None:
+        register_secret(_google_key())
+
+    def available(self) -> bool:
+        try:
+            from google import genai  # noqa: F401
+        except ImportError:
+            return False
+        return bool(_google_key())
+
+    def structured(
+        self, *, system: str, user: str, message: str = "",
+        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+    ) -> BaseModel:
+        from google import genai
+
+        client = genai.Client(
+            api_key=_google_key(),
+            http_options={"timeout": int(_TIMEOUT_S * 1000)},  # genai timeout is ms
+        )
+        resp = client.models.generate_content(
+            # gemini-flash-latest tracks the newest Flash on this key (#15).
+            model=os.getenv("GOOGLE_MODEL", "gemini-flash-latest"),
+            contents=f"{system}\n\n{user}",
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": schema,
+            },
+        )
+        parsed = getattr(resp, "parsed", None)
+        if isinstance(parsed, schema):
+            return parsed
+        return schema.model_validate_json(resp.text)
+
+
+class FailoverProvider:
+    """Try each available provider in order; fall through on ANY failure (#15).
+
+    A single provider is a single point of failure - a key that is out of credit,
+    rate-limited, or briefly down 503s the whole feature (we felt exactly this).
+    So Chat runs a chain: the primary, then the next funded/available provider,
+    then the next. Only if EVERY real provider fails do we drop to the keyword
+    fallback (which classifies intent but cannot compose, D18). The error is a
+    fast BadRequest/RateLimit in practice, not a hang, so failover is quick; the
+    per-call timeout still guards a genuine stall.
+    """
+
+    def __init__(self, providers: list[AIProvider], fallback: "KeywordFallback") -> None:
+        self._providers = providers
+        self._fallback = fallback
+        # Report the primary's name so selection logs/tests see the intended provider.
+        self.name = providers[0].name if providers else fallback.name
+
+    def available(self) -> bool:
+        return True
+
+    def structured(
+        self, *, system: str, user: str, message: str = "",
+        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+    ) -> BaseModel:
+        last_error: Exception | None = None
+        for provider in self._providers:
+            try:
+                result = provider.structured(
+                    system=system, user=user, message=message,
+                    schema=schema, max_tokens=max_tokens,
+                )
+                if provider.name != self._providers[0].name:
+                    log.info("ai.provider.failover.served", provider=provider.name)
+                return result
+            except Exception as exc:  # any failure -> try the next provider
+                last_error = exc
+                log.warning(
+                    "ai.provider.failed",
+                    provider=provider.name,
+                    error=type(exc).__name__,
+                )
+        # Every real provider failed. Keyword can still classify intent; for
+        # compose it raises NotImplementedError, which the caller surfaces (D18).
+        log.warning("ai.provider.all_failed", last_error=type(last_error).__name__ if last_error else None)
+        return self._fallback.structured(
+            system=system, user=user, message=message, schema=schema, max_tokens=max_tokens,
+        )
+
+
+_ORDER = ["anthropic", "openai", "google", "nvidia"]
+_REGISTRY: dict[str, type] = {
+    "anthropic": AnthropicProvider,
+    "openai": OpenAIProvider,
+    "google": GoogleProvider,
+    "nvidia": NvidiaProvider,
+}
+
+
+def select_provider(preferred: str | None = None) -> AIProvider:
+    """Build a failover chain of available providers (preferred, then env default,
+    then order), falling back to keyword classification if none are available."""
+    order: list[str] = []
+    for candidate in (preferred, os.getenv("AI_PROVIDER"), *_ORDER):
+        if candidate and candidate in _REGISTRY and candidate not in order:
+            order.append(candidate)
+    available = [p for name in order if (p := _REGISTRY[name]()).available()]
+    if not available:
+        log.info("ai.provider.selected", provider="keyword")
+        return KeywordFallback()
+    log.info(
+        "ai.provider.selected",
+        provider=available[0].name,
+        chain=[p.name for p in available],
+    )
+    return FailoverProvider(available, KeywordFallback())

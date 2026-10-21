@@ -769,7 +769,7 @@ wheels = [
 ]
 
 [[package]]
-name = "monnify-studio"
+name = "roqqu-studio"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

@@ -2,22 +2,22 @@
 
 from __future__ import annotations
 
-from monnify_studio.analysis import analyze
-from monnify_studio.fixtures import safe_marketplace
-from monnify_studio.ir.models import Edge, Node, Workflow
-from monnify_studio.providers import default_catalog
-from monnify_studio.remediation import apply_fix
+from roqqu_studio.analysis import analyze
+from roqqu_studio.fixtures import safe_marketplace
+from roqqu_studio.ir.models import Edge, Node, Workflow
+from roqqu_studio.providers import default_catalog
+from roqqu_studio.remediation import apply_fix
 
 
 def _transfer_wf(with_validation: bool) -> Workflow:
     """A minimal payout: confirm → [validate?] → transfer."""
     nodes = [
         Node(id="confirm", type="event.fulfilment_confirmed"),
-        Node(id="transfer", type="monnify.initiate_transfer"),
+        Node(id="transfer", type="roqqu.initiate_transfer"),
     ]
     edges = [Edge(source="confirm", target="transfer", kind="event")]
     if with_validation:
-        nodes.insert(1, Node(id="validate", type="monnify.validate_bank_account"))
+        nodes.insert(1, Node(id="validate", type="roqqu.validate_bank_account"))
         edges = [
             Edge(source="confirm", target="validate", kind="event"),
             Edge(source="validate", target="transfer"),

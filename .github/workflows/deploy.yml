@@ -45,10 +45,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          MONNIFY_API_KEY: ${{ secrets.MONNIFY_API_KEY }}
-          MONNIFY_SECRET_KEY: ${{ secrets.MONNIFY_SECRET_KEY }}
-          MONNIFY_CONTRACT_CODE: ${{ secrets.MONNIFY_CONTRACT_CODE }}
-          MONNIFY_WALLET_ACCOUNT: ${{ secrets.MONNIFY_WALLET_ACCOUNT }}
+          ROQQU_API_KEY: ${{ secrets.ROQQU_API_KEY }}
+          ROQQU_SECRET_KEY: ${{ secrets.ROQQU_SECRET_KEY }}
+          ROQQU_CONTRACT_CODE: ${{ secrets.ROQQU_CONTRACT_CODE }}
+          ROQQU_WALLET_ACCOUNT: ${{ secrets.ROQQU_WALLET_ACCOUNT }}
           EVOLUTION_API_URL: ${{ secrets.EVOLUTION_API_URL }}
           EVOLUTION_API_KEY: ${{ secrets.EVOLUTION_API_KEY }}
           EVOLUTION_INSTANCE: ${{ secrets.EVOLUTION_INSTANCE }}

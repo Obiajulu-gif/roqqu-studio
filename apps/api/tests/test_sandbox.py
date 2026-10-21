@@ -2,16 +2,16 @@
 
 A snippet can compute over the flow's context, but it must never be able to
 import, open a file, reach an object's internals, or outrun a timeout - because
-it runs on the same box as our live Monnify credentials.
+it runs on the same box as our live Roqqu credentials.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from monnify_studio.executor import MockAdapter, run_workflow
-from monnify_studio.executor.sandbox import SandboxError, run_user_code
-from monnify_studio.ir.models import Edge, Node, Workflow
+from roqqu_studio.executor import MockAdapter, run_workflow
+from roqqu_studio.executor.sandbox import SandboxError, run_user_code
+from roqqu_studio.ir.models import Edge, Node, Workflow
 
 
 def test_safe_snippet_transforms_ctx() -> None:
@@ -53,7 +53,7 @@ def _code_workflow(snippet: str) -> Workflow:
     return Workflow(
         id="cb", name="code-block", entrypoint="seed",
         nodes=[
-            Node(id="seed", type="monnify.initialize_transaction", config={"amount": "5000"}),
+            Node(id="seed", type="roqqu.initialize_transaction", config={"amount": "5000"}),
             Node(id="calc", type="custom.code", config={"code": snippet}),
         ],
         edges=[Edge(source="seed", target="calc")],
@@ -66,7 +66,7 @@ def test_code_block_runs_in_a_full_flow() -> None:
         _code_workflow("ctx['platform_fee'] = str(Decimal(ctx['amount']) * Decimal('0.015'))"),
         adapter=MockAdapter(),
     )
-    from monnify_studio.executor import execution_store
+    from roqqu_studio.executor import execution_store
 
     calc = [e for e in execution_store.list_events(run.id) if e.node_id == "calc" and e.outputs]
     assert calc, "calc node produced no outputs"
@@ -77,6 +77,6 @@ def test_code_block_runs_in_a_full_flow() -> None:
 
 def test_malicious_code_block_fails_the_node() -> None:
     run = run_workflow(_code_workflow("import socket"), adapter=MockAdapter())
-    from monnify_studio.executor import RunStatus
+    from roqqu_studio.executor import RunStatus
 
     assert run.status is RunStatus.FAILED

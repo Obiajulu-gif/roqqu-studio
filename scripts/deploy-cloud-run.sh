@@ -12,8 +12,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REGION="africa-south1"       # Johannesburg: closest Cloud Run region to Lagos
 PROJECT="$(gcloud config get-value project 2>/dev/null)"
-API_SERVICE="monnify-studio-api"
-WEB_SERVICE="monnify-studio-web"
+API_SERVICE="roqqu-studio-api"
+WEB_SERVICE="roqqu-studio-web"
 
 if [ -z "$PROJECT" ]; then
   echo "No gcloud project set. Run: gcloud config set project <id>" >&2
@@ -48,8 +48,8 @@ trap 'rm -f "$ENV_FILE"' EXIT
 # (case-sensitive), unlike the Settings/WhatsApp pydantic-settings fields
 # below which match case-insensitively either way.
 for key in CLAUDE_API_KEY ANTHROPIC_API_KEY OPENAI_API_KEY GOOGLE_API_KEY \
-           MONNIFY_API_KEY MONNIFY_SECRET_KEY MONNIFY_CONTRACT_CODE \
-           MONNIFY_WALLET_ACCOUNT \
+           ROQQU_API_KEY ROQQU_SECRET_KEY ROQQU_CONTRACT_CODE \
+           ROQQU_WALLET_ACCOUNT \
            EVOLUTION_API_URL EVOLUTION_API_KEY EVOLUTION_INSTANCE \
            STUDIO_NOTIFY_NUMBER STUDIO_NOTIFY_EMAIL \
            ZEPTOMAIL_API_KEY ZEPTOMAIL_SENDER ZEPTOMAIL_REPLY_TO; do
@@ -121,7 +121,7 @@ gcloud run services update "$API_SERVICE" \
 
 echo ""
 echo "============================================================"
-echo " Monnify Studio is live:"
+echo " Roqqu Studio is live:"
 echo "   Web (canvas + generated products): $WEB_URL"
 echo "   API:                               $API_URL"
 echo "============================================================"

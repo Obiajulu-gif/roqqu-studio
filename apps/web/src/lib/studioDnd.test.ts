@@ -24,9 +24,9 @@ describe("studioDnd (#103)", () => {
       },
       effectAllowed: "none",
     } as DataTransfer;
-    writeDragNodeType(dt, "monnify.invoice");
-    expect(store.get(STUDIO_DND_MIME)).toBe("monnify.invoice");
-    expect(readDragNodeType(dt)).toBe("monnify.invoice");
+    writeDragNodeType(dt, "roqqu.invoice");
+    expect(store.get(STUDIO_DND_MIME)).toBe("roqqu.invoice");
+    expect(readDragNodeType(dt)).toBe("roqqu.invoice");
     expect(
       readDragNodeType({ getData: () => "" } as unknown as DataTransfer),
     ).toBeNull();
