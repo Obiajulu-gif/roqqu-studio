@@ -35,6 +35,13 @@ _ENDPOINTS: dict[str, tuple[str, str]] = {
     "roqqu.recharge_airtime": ("POST", "/user/recharge-airtime"),
     "roqqu.pay_electric": ("POST", "/user/pay-electric"),
     "roqqu.verify_meter": ("GET", "/verify-meter"),
+    "roqqu.all_prices": ("GET", "/prices"),
+    "roqqu.price_history": ("GET", "/history"),
+    "roqqu.get_banks": ("GET", "/banks"),
+    "roqqu.data_bundles": ("GET", "/data/subscriptions"),
+    "roqqu.buy_data": ("POST", "/user/pay-data"),
+    "roqqu.cable_bundles": ("GET", "/cable/subscriptions"),
+    "roqqu.verify_iuc": ("GET", "/verify-iuc"),
 }
 _SEND_TYPES = {"roqqu.send_token", "roqqu.split_send", "roqqu.refund_send"}
 

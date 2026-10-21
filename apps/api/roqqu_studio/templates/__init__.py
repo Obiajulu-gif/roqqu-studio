@@ -19,6 +19,7 @@ from ..ir.models import Workflow
 from .ajo import ajo
 from .bills import bills
 from .invoice import invoice
+from .more import kyc, price_alerts, sell_data, withdrawals
 from .payroll import payroll
 from .sell_online import sell_online
 
@@ -103,6 +104,54 @@ _TEMPLATES: dict[str, TemplateDef] = {
             ),
         ),
         builder=bills,
+    ),
+    "sell-data": TemplateDef(
+        info=TemplateInfo(
+            id="sell-data",
+            title="Sell data bundles",
+            persona="Vendor or app reselling mobile data",
+            description=(
+                "Live plans from Roqqu, each order paid once, and your balance checked "
+                "before the bundle is bought."
+            ),
+        ),
+        builder=sell_data,
+    ),
+    "withdrawals": TemplateDef(
+        info=TemplateInfo(
+            id="withdrawals",
+            title="Customer crypto withdrawals",
+            persona="App or exchange paying customers out in crypto",
+            description=(
+                "Each request is paid once, the destination address is checked on Roqqu "
+                "and your balance must cover it before Send Token runs."
+            ),
+        ),
+        builder=withdrawals,
+    ),
+    "kyc": TemplateDef(
+        info=TemplateInfo(
+            id="kyc",
+            title="Verify customers (KYC)",
+            persona="Any business that must know who it pays",
+            description=(
+                "BVN and NIN checks plus bank account resolve, all through Roqqu, before a "
+                "customer can transact."
+            ),
+        ),
+        builder=kyc,
+    ),
+    "price-alerts": TemplateDef(
+        info=TemplateInfo(
+            id="price-alerts",
+            title="Crypto price alerts",
+            persona="Merchants and traders watching coin prices",
+            description=(
+                "Roqqu prices checked on a schedule, with a WhatsApp alert when a coin "
+                "crosses your level."
+            ),
+        ),
+        builder=price_alerts,
     ),
 }
 

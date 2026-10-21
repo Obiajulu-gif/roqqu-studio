@@ -16,12 +16,17 @@ describe("template picker options match Figma contract", () => {
     );
   });
 
-  it("lists five options in order with stable ids", () => {
+  it("lists every template in order with stable ids", () => {
     expect(TEMPLATE_PICKER_OPTIONS.map((o) => o.id)).toEqual([
       "sell-online",
       "ajo",
       "invoice",
       "pay-bills",
+      "sell-data",
+      "payroll",
+      "withdrawals",
+      "kyc",
+      "price-alerts",
       "__other__",
     ]);
     expect(TEMPLATE_PICKER_OPTIONS.map((o) => o.title)).toEqual([
@@ -29,6 +34,11 @@ describe("template picker options match Figma contract", () => {
       "Start a savings group (Ajo)",
       "Send an invoice",
       "Pay bills",
+      "Sell data bundles",
+      "Pay staff in crypto",
+      "Customer withdrawals",
+      "Verify customers (KYC)",
+      "Crypto price alerts",
       "Something else",
     ]);
   });

@@ -137,3 +137,69 @@ def test_live_meter_check_returns_the_customer_name(monkeypatch):
         {"inputs": {}},
     )
     assert result.ok and result.outputs["account_name"] == "MRS ADA OKAFOR"
+
+
+ALL_TEMPLATES = [
+    "sell-online", "invoice", "ajo", "payroll", "pay-bills",
+    "sell-data", "withdrawals", "kyc", "price-alerts",
+]
+
+
+def test_every_template_is_clean_and_runs_in_practice():
+    from roqqu_studio.executor import run_workflow
+    from roqqu_studio.executor.adapter import MockAdapter
+
+    assert {t.id for t in list_templates()} == set(ALL_TEMPLATES)
+    for template_id in ALL_TEMPLATES:
+        wf = build_template(template_id)
+        assert analyze(wf, default_catalog()).findings == [], template_id
+        assert run_workflow(wf, adapter=MockAdapter()).status.value == "completed", template_id
+
+
+def test_withdrawal_without_address_check_is_flagged():
+    from roqqu_studio.ir.models import Edge
+
+    wf = build_template("withdrawals")
+    wf.nodes = [n for n in wf.nodes if n.id != "address"]
+    wf.edges = [e for e in wf.edges if "address" not in (e.source, e.target)]
+    wf.edges.append(Edge(source="once", target="balance"))
+    rules = {f.rule_id for f in analyze(wf, default_catalog()).findings}
+    assert "MON011" in rules
+
+
+def test_rooky_keyword_routes_cover_the_new_templates():
+    from roqqu_studio.ai.providers import KeywordFallback
+
+    fb = KeywordFallback()
+    cases = {
+        "I want to sell data bundles to students": "sell-data",
+        "Let customers withdraw their crypto": "withdrawals",
+        "I need KYC with BVN for new users": "kyc",
+        "Alert me when BTC crosses 70k": "price-alerts",
+        "Sell prepaid electricity units": "pay-bills",
+        "I sell thrift clothes on Instagram": "sell-online",
+    }
+    for message, expected in cases.items():
+        assert fb.structured(system="", user="", message=message).template_id == expected, message
+
+
+def test_live_data_bundles_run_through_the_playground(monkeypatch):
+    from roqqu_studio import playground
+    from roqqu_studio.executor.adapter import SandboxAdapter
+    from roqqu_studio.ir.models import Node
+
+    seen = {}
+
+    def fake_call(req, settings, transport=None):
+        seen["endpoint"], seen["params"] = req.endpoint, req.params
+        return {"status": 200, "elapsed_ms": 1,
+                "request": {"method": "GET", "url": "u", "query": req.params, "body": {}},
+                "response": {"status": "success", "data": [{"variation_code": "mtn-10mb-100"}]}}
+
+    monkeypatch.setattr(playground, "call", fake_call)
+    adapter = SandboxAdapter(Settings(_env_file=None, roqqu_secret_key="RQ-SEC-x"))
+    result = adapter.invoke(
+        Node(id="p", type="roqqu.data_bundles", config={"provider": "mtn"}), {"inputs": {}}
+    )
+    assert result.ok and seen == {"endpoint": "data-bundles", "params": {"provider": "mtn"}}
+    assert result.outputs["data"][0]["variation_code"] == "mtn-10mb-100"

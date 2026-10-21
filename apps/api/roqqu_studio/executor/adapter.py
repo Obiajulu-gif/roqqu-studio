@@ -12,6 +12,7 @@ from typing import Any, Protocol
 from uuid import uuid4
 
 from ..config import Settings
+from .. import playground
 from ..integrations.roqqu import RoqquClient, RoqquError, ngn_to_token, usd_to_ngn
 from ..ir.models import Node
 from ..money import covers, money
@@ -228,6 +229,15 @@ def _code_block_outputs(inputs: dict[str, Any], config: dict[str, Any]) -> dict[
 
 
 _COLLECT_TYPES = {"roqqu.generate_wallet", "roqqu.invoice_wallet"}
+_PLAYGROUND_IDS = {
+    "roqqu.all_prices": "get-prices",
+    "roqqu.price_history": "price-history",
+    "roqqu.get_banks": "get-banks",
+    "roqqu.data_bundles": "data-bundles",
+    "roqqu.buy_data": "buy-data",
+    "roqqu.cable_bundles": "cable-bundles",
+    "roqqu.verify_iuc": "verify-iuc",
+}
 _SEND_TYPES = {"roqqu.send_token", "roqqu.split_send", "roqqu.refund_send"}
 
 
@@ -560,6 +570,30 @@ class SandboxAdapter:
             elif node.type == "safety.balance_guard":
                 balance = str(money(config.get("balance", money(amount) * 2)))
                 outputs.update(balance=balance, covers_payout=covers(balance, amount))
+            elif node.type in _PLAYGROUND_IDS:
+                # Read-only and bill blocks run through the playground's
+                # allowlisted call, which owns key handling and the money gate.
+                params = {
+                    k: v for k, v in config.items() if not str(v).strip().startswith("<")
+                }
+                try:
+                    res = playground.call(
+                        playground.PlaygroundCall(endpoint=_PLAYGROUND_IDS[node.type], params=params),
+                        self._settings,
+                    )
+                except playground.PlaygroundError as exc:
+                    return self._failed(node, exc.detail, request=request)
+                request.update(
+                    method=res["request"]["method"],
+                    path=res["request"]["url"],
+                    body=res["request"]["body"] or res["request"]["query"],
+                )
+                body = res["response"] if isinstance(res["response"], dict) else {}
+                if res["status"] >= 400 or body.get("status") != "success":
+                    return self._failed(
+                        node, str(body.get("message") or f"HTTP {res['status']}"), request=request
+                    )
+                outputs.update(data=body.get("data"))
             elif is_wait:
                 outputs.update(paid_amount=amount, event="arrived")
             elif node.type == "custom.code":

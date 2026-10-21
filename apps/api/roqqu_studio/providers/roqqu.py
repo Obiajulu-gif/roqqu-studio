@@ -41,6 +41,13 @@ DOC_NIN = f"{_REF}/nin-verification"
 DOC_AIRTIME = f"{_REF}/airtime-recharge"
 DOC_ELECTRIC = f"{_REF}/electricity-meter-recharge"
 DOC_METER = f"{_REF}/verify-meter-number"
+DOC_ALL_PRICES = f"{_REF}/all-prices"
+DOC_HISTORY = f"{_REF}/history"
+DOC_BANKS = f"{_REF}/get-all-banks"
+DOC_DATA_BUNDLES = f"{_REF}/get-data-subscriptions"
+DOC_BUY_DATA = f"{_REF}/data-subscription"
+DOC_CABLE = f"{_REF}/get-cable-bundles"
+DOC_IUC = f"{_REF}/verify-iuc-number"
 
 _COLLECT_OUTPUTS = [
     PortSpec(name="payment_reference", type=D.PAYMENT_REFERENCE),  # the deposit address
@@ -192,14 +199,45 @@ ROQQU_NODE_TYPES: list[NodeTypeDef] = [
         category=C.ROQQU,
         title="Address Lookup (blockchain)",
         description="Live on-chain balance and transactions of an address.",
-        when_to_use="Reconcile a payout or deposit against the chain itself. Rate limited to "
-        "1 call per 100 seconds; more gets your IP blocked for 10 hours, so never poll it.",
+        when_to_use="Check a destination address is real before a payout (Roqqu rejects "
+        "invalid addresses), or reconcile against the chain. Rate limited to 1 call per "
+        "100 seconds; more gets your IP blocked for 10 hours, so never poll it.",
         doc_url=DOC_ADDRESS,
-        default_tags=[T.EXTERNAL_CALL, T.RECONCILIATION],
+        default_tags=[T.EXTERNAL_CALL, T.RECONCILIATION, T.BENEFICIARY_VALIDATION],
         inputs=[PortSpec(name="transfer_reference", type=D.TRANSFER_REFERENCE)],
         outputs=[PortSpec(name="status", type=D.TRANSACTION_STATUS)],
     ),
+    NodeTypeDef(
+        type="roqqu.all_prices",
+        category=C.ROQQU,
+        title="Get All Prices",
+        description="USD price and 24h change of every token on Roqqu.",
+        when_to_use="Rate boards, price alerts and portfolio values. Public, no key needed.",
+        doc_url=DOC_ALL_PRICES,
+        default_tags=[T.EXTERNAL_CALL],
+        outputs=[PortSpec(name="amount", type=D.ANY)],
+    ),
+    NodeTypeDef(
+        type="roqqu.price_history",
+        category=C.ROQQU,
+        title="Get Price History",
+        description="The last few hundred price points of a token, newest first.",
+        when_to_use="Charts and trend checks. Store your own copy for older history.",
+        doc_url=DOC_HISTORY,
+        default_tags=[T.EXTERNAL_CALL],
+        outputs=[PortSpec(name="amount", type=D.ANY)],
+    ),
     # --- Fiat ----------------------------------------------------------------
+    NodeTypeDef(
+        type="roqqu.get_banks",
+        category=C.ROQQU,
+        title="Get Banks",
+        description="Every bank active on Roqqu, by the exact name Account Resolve expects.",
+        when_to_use="Fill a bank picker before resolving an account number.",
+        doc_url=DOC_BANKS,
+        default_tags=[T.EXTERNAL_CALL],
+        outputs=[PortSpec(name="banks", type=D.BANK_LIST)],
+    ),
     NodeTypeDef(
         type="roqqu.account_resolve",
         category=C.ROQQU,
@@ -246,6 +284,48 @@ ROQQU_NODE_TYPES: list[NodeTypeDef] = [
         doc_url=DOC_AIRTIME,
         default_tags=[T.EXTERNAL_CALL, T.MONEY_MOVEMENT, T.SECRET_BOUNDARY],
         inputs=[PortSpec(name="amount", type=D.MONEY)],
+    ),
+    NodeTypeDef(
+        type="roqqu.data_bundles",
+        category=C.ROQQU,
+        title="Get Data Bundles",
+        description="Data plans for a network (mtn, airtel, glo, etisalat), with variation codes.",
+        when_to_use="Show plans before selling data. Each plan's variation_code is what Buy "
+        "Data needs.",
+        doc_url=DOC_DATA_BUNDLES,
+        default_tags=[T.EXTERNAL_CALL],
+        outputs=[PortSpec(name="plans", type=D.ANY)],
+    ),
+    NodeTypeDef(
+        type="roqqu.buy_data",
+        category=C.ROQQU,
+        title="Buy Data Bundle",
+        description="Activate a data plan on a phone number, paid from your Roqqu balance.",
+        when_to_use="Data resale and rewards. Pick the plan from Get Data Bundles first.",
+        doc_url=DOC_BUY_DATA,
+        default_tags=[T.EXTERNAL_CALL, T.MONEY_MOVEMENT, T.SECRET_BOUNDARY],
+        inputs=[PortSpec(name="amount", type=D.MONEY, required=False)],
+    ),
+    NodeTypeDef(
+        type="roqqu.cable_bundles",
+        category=C.ROQQU,
+        title="Get Cable Bundles",
+        description="TV subscription plans for a provider such as dstv or gotv.",
+        when_to_use="Show decoder plans to a customer. Roqqu's docs list plans and IUC checks, "
+        "not a cable payment endpoint.",
+        doc_url=DOC_CABLE,
+        default_tags=[T.EXTERNAL_CALL],
+        outputs=[PortSpec(name="plans", type=D.ANY)],
+    ),
+    NodeTypeDef(
+        type="roqqu.verify_iuc",
+        category=C.ROQQU,
+        title="Verify IUC Number",
+        description="Check a decoder's IUC (smartcard) number is valid for the provider.",
+        when_to_use="Before taking money for a TV subscription, confirm the decoder number.",
+        doc_url=DOC_IUC,
+        default_tags=[T.EXTERNAL_CALL, T.BENEFICIARY_VALIDATION],
+        outputs=[PortSpec(name="account_name", type=D.ANY)],
     ),
     NodeTypeDef(
         type="roqqu.verify_meter",
@@ -323,6 +403,17 @@ _REQUEST_TEMPLATES: dict[str, dict] = {
         "path": "/user/recharge-airtime",
         "body": {"phone_number": "080XXXXXXXX", "amount": 200},
     },
+    "roqqu.all_prices": {"method": "GET", "path": "/prices", "body": {}},
+    "roqqu.price_history": {"method": "GET", "path": "/history", "body": {"symbol": "btc"}},
+    "roqqu.get_banks": {"method": "GET", "path": "/banks", "body": {}},
+    "roqqu.data_bundles": {"method": "GET", "path": "/data/subscriptions", "body": {"provider": "mtn"}},
+    "roqqu.buy_data": {
+        "method": "POST",
+        "path": "/user/pay-data",
+        "body": {"provider": "mtn", "variation_code": "mtn-10mb-100", "phone_number": "080XXXXXXXX"},
+    },
+    "roqqu.cable_bundles": {"method": "GET", "path": "/cable/subscriptions", "body": {"provider": "dstv"}},
+    "roqqu.verify_iuc": {"method": "GET", "path": "/verify-iuc", "body": {"provider": "dstv", "iuc": "7029557786"}},
     "roqqu.verify_meter": {
         "method": "GET",
         "path": "/verify-meter",

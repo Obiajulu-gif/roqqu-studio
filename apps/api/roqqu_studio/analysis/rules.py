@@ -190,7 +190,7 @@ def mon011_beneficiary_not_validated(a: Analysis) -> list[Finding]:
                         "Validate the beneficiary account (Name Enquiry / KYC Match) before "
                         "initiating a transfer, to prevent misdirected or fraudulent payouts."
                     ),
-                    remediation="Insert Validate Bank Account before the transfer.",
+                    remediation="Insert Bank Account Resolve (or an Address Lookup for a crypto wallet) before the transfer.",
                     doc_url=DOCS_API,
                 )
             )
@@ -200,9 +200,8 @@ def mon011_beneficiary_not_validated(a: Analysis) -> list[Finding]:
 def mon012_transfer_without_balance_check(a: Analysis) -> list[Finding]:
     """A transfer is reachable without confirming the source balance covers it.
 
-    The live failure mode from Roqqu merchants: disbursements die at runtime
-    with "You do not have sufficient balance" - discovered only when payday
-    fires. Structural twin of MON011; balance math is exact-kobo (D21). (#108)"""
+    The classic payout failure: transfers die at runtime with an insufficient
+    balance error, discovered only when payday fires. Structural twin of MON011; balance math is exact-kobo (D21). (#108)"""
     findings: list[Finding] = []
     is_transfer = a.has_pred(T.BENEFICIARY_TRANSFER)
     is_check = a.has_pred(T.BALANCE_CHECK)

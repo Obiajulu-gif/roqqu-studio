@@ -42,6 +42,36 @@ class AIProvider(Protocol):
     ) -> BaseModel: ...
 
 
+_KEYWORD_ROUTES: list[tuple[str, tuple[str, ...], float, str]] = [
+    ("invoice", ("invoice", "bill my client", "billing", "receipt for", "invoice link"), 0.6,
+     "This looks like billing a client. Create an invoice, share the link, and it is only "
+     "marked paid after Roqqu confirms the money."),
+    ("sell-data", ("data bundle", "data plan", "sell data", "mobile data", "data subscription"), 0.6,
+     "This looks like selling data. Plans come live from Roqqu, each order is paid once, and "
+     "your balance is checked before the bundle is bought."),
+    ("withdrawals", ("withdraw", "cash out", "payout to customer", "send crypto to"), 0.6,
+     "This looks like paying customers out in crypto. Each request is paid once and the "
+     "destination address is checked before any coins move."),
+    ("kyc", ("kyc", "bvn", "nin", "verify customer", "verify my customer", "identity"), 0.6,
+     "This looks like verifying customers. BVN, NIN and bank account checks run through "
+     "Roqqu before anyone can transact."),
+    ("price-alerts", ("price alert", "alert me", "price watch", "notify me when", "crosses"), 0.6,
+     "This looks like a price alert. Roqqu prices are checked on a schedule and you get a "
+     "WhatsApp message when a coin crosses your level."),
+    ("pay-bills", ("electricity", "meter", "airtime", "light bill", "prepaid", "recharge"), 0.6,
+     "This looks like bill payments. The meter is checked by name before any money moves."),
+    ("ajo", ("ajo", "esusu", "savings group", "contribution", "cooperative"), 0.6,
+     "This looks like a savings group. Every member gets their own Roqqu wallet and every "
+     "contribution is checked."),
+    ("payroll", ("payroll", "salary", "salaries", "staff", "employee", "wages", "pay my"), 0.5,
+     "This looks like paying staff. Each payee is validated before any transfer, so money "
+     "never goes to a wrong account."),
+    ("sell-online", ("sell", "instagram", "whatsapp", "store", "shop", "boutique"), 0.6,
+     "This looks like selling online. Orders are only marked paid after Roqqu confirms the "
+     "money, so fake transfer screenshots never work."),
+]
+
+
 class KeywordFallback:
     """No network, always available. Keeps Chat working with no key (D11)."""
 
@@ -58,36 +88,18 @@ class KeywordFallback:
             # Composition needs a real model; the fallback only classifies (D18).
             raise NotImplementedError("keyword fallback cannot compose flows")
         text = message.lower()
-        sell = ("sell", "instagram", "whatsapp", "thrift", "store", "shop", "boutique")
-        invoice = ("invoice", "bill my client", "billing", "receipt for", "invoice link")
-        if any(w in text for w in invoice):
-            return RookyIntent(
-                template_id="invoice",
-                confidence=0.6,
-                explanation="This looks like billing a client. Create an invoice, share "
-                "the link, and it is only marked paid after Roqqu confirms the money "
-                "in your account.",
-            )
-        payroll = ("payroll", "salary", "salaries", "staff", "employee", "wages", "pay my")
-        if any(w in text for w in payroll):
-            return RookyIntent(
-                template_id="payroll",
-                confidence=0.5,
-                explanation="This looks like paying staff. Each beneficiary is validated "
-                "before any transfer, so money never goes to a wrong account.",
-            )
-        if any(w in text for w in sell):
-            return RookyIntent(
-                template_id="sell-online",
-                confidence=0.6,
-                explanation="This looks like selling online. Orders are only marked paid "
-                "after Roqqu confirms the money, so fake transfer screenshots never work.",
-            )
+        # First match wins, so specific intents ("sell data") come before broad ones ("sell").
+        for template_id, words, confidence, explanation in _KEYWORD_ROUTES:
+            if any(w in text for w in words):
+                return RookyIntent(
+                    template_id=template_id, confidence=confidence, explanation=explanation
+                )
         return RookyIntent(
             template_id="unknown",
             confidence=0.0,
             clarifying_question="What do you want to set up? For example: a payment link "
-            "for your online shop, or staff payroll.",
+            "for your shop, data or bill sales, customer withdrawals, KYC checks, price "
+            "alerts or staff payroll.",
         )
 
 
