@@ -6,7 +6,7 @@
  * UI-only shapes live in canvas.ts.
  *
  * Epic 1 canvas + review: #4, #27. Epic 2 execution trace: #28.
- * Epic 3 Moni + seller shell: #15, #55 (ComposeResult / IntentResult / studio API).
+ * Epic 3 Rooky + seller shell: #15, #55 (ComposeResult / IntentResult / studio API).
  */
 export type { NodeCategory, NodeMeta, PortMeta } from "./catalog";
 export type { StudioNodeData } from "./canvas";
@@ -23,7 +23,7 @@ export type {
   Severity,
   WorkflowPayload,
 } from "./analysis";
-export type { MoniAskResult } from "./assistant";
+export type { RookyAskResult } from "./assistant";
 export type {
   ArtifactConfigInput,
   CredentialStatus,

@@ -28,7 +28,7 @@ export interface TemplatePickerProps {
   onClose: () => void;
   onPick: (templateId: string) => void;
   onBlank?: () => void;
-  /** "Something else": hands off to Moni instead of a template. */
+  /** "Something else": hands off to Rooky instead of a template. */
   onOther?: () => void;
   onBack?: () => void;
 }

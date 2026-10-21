@@ -1,10 +1,10 @@
-"""Payroll template: MON011 made visible, and Moni routes it (#54, D17)."""
+"""Payroll template: MON011 made visible, and Rooky routes it (#54, D17)."""
 
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from roqqu_studio.ai.moni import classify_intent
+from roqqu_studio.ai.rooky import classify_intent
 from roqqu_studio.analysis import analyze
 from roqqu_studio.api.main import app
 from roqqu_studio.providers import default_catalog
@@ -52,7 +52,7 @@ def test_from_template_payroll_roundtrip():
     assert analysis.json()["findings"] == []
 
 
-def test_moni_now_routes_payroll(monkeypatch):
+def test_rooky_now_routes_payroll(monkeypatch):
     # The gap this closes: before #54, "build me a payroll" clamped to unknown.
     _no_keys(monkeypatch)
     intent, provider = classify_intent("Build me a payroll for my staff salaries")

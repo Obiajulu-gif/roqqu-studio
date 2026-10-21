@@ -1,4 +1,4 @@
-"""Moni is grounded in the Roqqu cheat sheet, not training memory (#25)."""
+"""Rooky is grounded in the Roqqu cheat sheet, not training memory (#25)."""
 
 from __future__ import annotations
 

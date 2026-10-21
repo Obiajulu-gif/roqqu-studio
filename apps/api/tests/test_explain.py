@@ -1,4 +1,4 @@
-"""Ask Moni "why": grounded answers with real doc references (#75, D20)."""
+"""Ask Rooky "why": grounded answers with real doc references (#75, D20)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 import importlib
 
-from roqqu_studio.ai.schema import MoniAnswer
+from roqqu_studio.ai.schema import RookyAnswer
 from roqqu_studio.api.main import app
 
 # The package exports the explain *function*, which shadows the submodule on
@@ -24,7 +24,7 @@ class _Answering:
         return True
 
     def structured(self, **_):
-        return MoniAnswer(answer="Split settles instantly, so payout-after-work needs Transfer.")
+        return RookyAnswer(answer="Split settles instantly, so payout-after-work needs Transfer.")
 
 
 class _Failing:
@@ -60,7 +60,7 @@ class _AnswersWithUrl:
 
     def structured(self, **_):
         # A model that slips an invented citation into the prose.
-        return MoniAnswer(answer="Verify the transaction. See https://evil.example/x for proof.")
+        return RookyAnswer(answer="Verify the transaction. See https://evil.example/x for proof.")
 
 
 def test_model_invented_url_is_stripped_from_answer(monkeypatch):

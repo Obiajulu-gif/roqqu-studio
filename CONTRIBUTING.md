@@ -25,7 +25,7 @@ To work on the code you will want the two servers directly, so you get reloads a
 run the tests:
 
 ```bash
-# Terminal 1: backend (analyzer, Moni, product API)
+# Terminal 1: backend (analyzer, Rooky, product API)
 cd apps/api
 uv sync --all-extras
 uv run pytest -q          # 268 tests, no keys needed
@@ -84,7 +84,7 @@ Six things a reviewer will always check. The long version lives in
 with `covers()`, never a raw `>=`. `apps/api/roqqu_studio/money.py` is the only place
 that decides what an amount means.
 
-**2. No model in the correctness path.** Moni can propose, explain, and refine. She
+**2. No model in the correctness path.** Rooky can propose, explain, and refine. She
 cannot decide whether a flow is safe, and she can never fabricate a `Money` value. If
 your change lets a model output reach a financial decision without deterministic code in
 between, it will be sent back.

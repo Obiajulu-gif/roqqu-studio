@@ -71,7 +71,7 @@ def test_apply_fix_mon012_inserts_guard_and_clears():
 
 def test_remediate_all_clears_a_bare_transfer_completely():
     # A totally unguarded payout trips several rules; the full loop ends clean,
-    # which is exactly what Moni's compose loop relies on (#106).
+    # which is exactly what Rooky's compose loop relies on (#106).
     catalog = default_catalog()
     bare = Workflow(
         id="b",

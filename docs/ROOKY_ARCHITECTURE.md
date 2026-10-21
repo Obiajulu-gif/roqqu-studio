@@ -1,12 +1,12 @@
-# Moni: system design
+# Rooky: system design
 
 How the assistant turns "build me a payroll" into a safe, editable flow, and how
-AI access is paid for. Decisions: D16 (tri-provider), D18 (Moni layers), D19
+AI access is paid for. Decisions: D16 (tri-provider), D18 (Rooky layers), D19
 (credential tiers). Issues: #15 (floor + ceiling), #54 (payroll template).
 
-The principle behind every diagram here: **Moni is trusted to be creative, never
+The principle behind every diagram here: **Rooky is trusted to be creative, never
 to be correct.** Correctness lives in the vetted templates, the typed catalog,
-and the analyzer. Whatever Moni produces passes through the same deterministic
+and the analyzer. Whatever Rooky produces passes through the same deterministic
 gates as a hand-built flow (D3, Principle 2).
 
 ## 1. The floor: intent to vetted template (shipped, #64 + #54)
@@ -18,7 +18,7 @@ sequenceDiagram
     participant U as User (Chat tab)
     participant A as API /assistant/intent
     participant P as Provider ladder (D16/D19)
-    participant M as Moni (classify only)
+    participant M as Rooky (classify only)
     participant G as Guardrail (sanitize)
     participant T as Template registry
     participant C as Canvas
@@ -37,20 +37,20 @@ sequenceDiagram
 
 Key properties:
 
-- Moni picks from a **menu of vetted templates**; she never emits nodes here.
+- Rooky picks from a **menu of vetted templates**; she never emits nodes here.
 - The guardrail clamps any template id she invents to `unknown`, which becomes a
   clarifying question, never a broken build. (Before #54 registered the payroll
   template, "payroll" itself was clamped; that gap is now closed.)
 - With **no key at all**, the keyword fallback still routes correctly, so the
   demo can never be taken down by a provider outage (D11 instinct).
 
-## 2. The ceiling: Moni composes a flow (next, #15)
+## 2. The ceiling: Rooky composes a flow (next, #15)
 
 When no template fits ("collect caution fees from tenants, refund on move-out"):
 
 ```mermaid
 flowchart LR
-    subgraph moni [Moni proposes]
+    subgraph rooky [Rooky proposes]
         A[Intent: no template fits] --> B[Compose from node CATALOG only\ntyped ports + capability tags]
     end
     subgraph gates [Studio disposes - deterministic]
@@ -68,7 +68,7 @@ flowchart LR
 
 Why this is safe to build:
 
-- Moni is fed the **catalog**, not prose docs: she can only use node types that
+- Rooky is fed the **catalog**, not prose docs: she can only use node types that
   exist, and edges must type-check. The catalog is already a typed graph (D13),
   so no RAG is needed for construction.
 - Every composed graph runs the **same analyzer** as hand-built ones; Apply-Fix
@@ -112,6 +112,6 @@ flowchart TD
 | 6 | Apply-Fix remediation | yes | repairable findings |
 | 7 | Visible findings on canvas | yes | anything that survives 1-6 |
 
-Moni is additionally fenced off from the money path: she cannot mark orders
+Rooky is additionally fenced off from the money path: she cannot mark orders
 paid, cannot call verify, and never sees secrets. The verification and orders
 flow (#53) has no AI in it at all.

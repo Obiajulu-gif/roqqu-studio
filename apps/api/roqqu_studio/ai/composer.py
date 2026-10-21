@@ -1,7 +1,7 @@
-"""Moni composes full flows from the catalog (#15, D18): the ceiling.
+"""Rooky composes full flows from the catalog (#15, D18): the ceiling.
 
 "I want an ajo app with Roqqu" comes in; a complete, editable Workflow comes
-out. Moni proposes freely, but only from real catalog node types, and every
+out. Rooky proposes freely, but only from real catalog node types, and every
 proposal passes the same deterministic gates as a hand-built flow: catalog
 validation (one retry with the errors), then the analyzer, then Apply-Fix.
 AI proposes, the analyzer disposes; correctness never rests on the model (D3).
@@ -24,12 +24,12 @@ from ..remediation import remediate_all
 from ..remediation.engine import RemediationStep
 from .fidelity import intent_gaps
 from .providers import AIProvider, select_provider
-from .schema import MoniFlow
+from .schema import RookyFlow
 
 log = get_logger("ai.composer")
 
 _SYSTEM = (
-    "You are Moni, the flow composer for Roqqu Studio. Design a payment "
+    "You are Rooky, the flow composer for Roqqu Studio. Design a payment "
     "workflow for the user's business need as a graph.\n"
     "Rules:\n"
     "- Use ONLY node types from the catalog given to you; invent nothing. The "
@@ -60,7 +60,7 @@ class ComposeUnavailable(Exception):
 
 
 class ComposeError(Exception):
-    """Moni tried but could not produce a verifiably safe flow (retries exhausted)."""
+    """Rooky tried but could not produce a verifiably safe flow (retries exhausted)."""
 
     def __init__(self, errors: list[str]) -> None:
         super().__init__("; ".join(errors))
@@ -68,7 +68,7 @@ class ComposeError(Exception):
 
 
 class ComposeRefused(Exception):
-    """Moni honestly declined: the request is not a Roqqu money flow (#106).
+    """Rooky honestly declined: the request is not a Roqqu money flow (#106).
 
     Distinct from ComposeError so the API can phrase it as a friendly decline
     rather than a failure.
@@ -89,7 +89,7 @@ class ComposeOutcome(BaseModel):
 
 
 # Internal breadcrumbs (issue/decision refs, dev caveats) that must never reach
-# the model; the catalog is authored for humans, Moni gets the clean version.
+# the model; the catalog is authored for humans, Rooky gets the clean version.
 _NOISE = re.compile(r"\s*\((?:#\d+|D\d+)[^)]*\)|Canvas \+ mock execution only for now\.?")
 
 
@@ -102,7 +102,7 @@ def _clean(text: str) -> str:
 
 
 def _catalog_prompt(catalog: Catalog) -> str:
-    """Grounded catalog for Moni: Roqqu's own 'when to use' + doc link (#25).
+    """Grounded catalog for Rooky: Roqqu's own 'when to use' + doc link (#25).
 
     We feed `when_to_use` (sourced from the Roqqu cheat sheet) over the terse
     internal description, so she composes from documented features, not memory.
@@ -116,7 +116,7 @@ def _catalog_prompt(catalog: Catalog) -> str:
     return "\n".join(lines)
 
 
-def _validate(flow: MoniFlow, catalog: Catalog) -> list[str]:
+def _validate(flow: RookyFlow, catalog: Catalog) -> list[str]:
     errors: list[str] = []
     if len(flow.nodes) < 2:
         errors.append("the flow needs at least 2 nodes")
@@ -144,7 +144,7 @@ def _validate(flow: MoniFlow, catalog: Catalog) -> list[str]:
     return errors
 
 
-def _layout(flow: MoniFlow) -> dict[str, Position]:
+def _layout(flow: RookyFlow) -> dict[str, Position]:
     """Simple layered layout; the canvas re-layouts after Apply-Fix anyway (#41)."""
     incoming = {n.id: 0 for n in flow.nodes}
     adj: dict[str, list[str]] = {n.id: [] for n in flow.nodes}
@@ -170,7 +170,7 @@ def _layout(flow: MoniFlow) -> dict[str, Position]:
     return positions
 
 
-def _to_workflow(flow: MoniFlow, catalog: Catalog, keep_id: str | None = None) -> Workflow:
+def _to_workflow(flow: RookyFlow, catalog: Catalog, keep_id: str | None = None) -> Workflow:
     positions = _layout(flow)
     nodes = [
         Node(
@@ -189,7 +189,7 @@ def _to_workflow(flow: MoniFlow, catalog: Catalog, keep_id: str | None = None) -
     return Workflow(
         # Refine (#148) revises the flow already on the whiteboard: it must keep
         # its id so the canvas and store update in place instead of forking.
-        id=keep_id or f"moni-{slug or 'flow'}",
+        id=keep_id or f"rooky-{slug or 'flow'}",
         name=flow.name,
         provider="roqqu",
         description=flow.description,
@@ -203,14 +203,14 @@ def _to_workflow(flow: MoniFlow, catalog: Catalog, keep_id: str | None = None) -
 # disabled on the provider side, the whole budget goes to the graph.
 _MAX_TOKENS = 8192
 
-# Generate -> verify -> refine rounds before Moni refuses (#106). Round 1 is the
+# Generate -> verify -> refine rounds before Rooky refuses (#106). Round 1 is the
 # first attempt; the rest are corrective, each fed the exact residual findings.
 # A hard cap is the safety valve against a model that never converges (the ADK
 # lesson: deterministic exit + bounded iterations, never a model-invoked stop).
-_MAX_ROUNDS = int(os.getenv("MONI_COMPOSE_ROUNDS", "3"))
+_MAX_ROUNDS = int(os.getenv("ROOKY_COMPOSE_ROUNDS", "3"))
 
 
-def _propose(chosen: AIProvider, user: str) -> tuple[MoniFlow | None, str | None]:
+def _propose(chosen: AIProvider, user: str) -> tuple[RookyFlow | None, str | None]:
     """One provider round. Returns (flow, None) on success, or (None, feedback)
     on RECOVERABLE malformed/truncated output (becomes a corrective retry).
 
@@ -220,7 +220,7 @@ def _propose(chosen: AIProvider, user: str) -> tuple[MoniFlow | None, str | None
     """
     try:
         flow = chosen.structured(
-            system=_SYSTEM, user=user, message="", schema=MoniFlow, max_tokens=_MAX_TOKENS
+            system=_SYSTEM, user=user, message="", schema=RookyFlow, max_tokens=_MAX_TOKENS
         )
         return flow, None  # type: ignore[return-value]
     except NotImplementedError as exc:
@@ -240,9 +240,9 @@ def _propose(chosen: AIProvider, user: str) -> tuple[MoniFlow | None, str | None
 
 
 def compose_flow(message: str, *, provider: str | None = None) -> ComposeOutcome:
-    """Generate -> verify -> refine -> refuse: the deterministic Moni loop (#106).
+    """Generate -> verify -> refine -> refuse: the deterministic Rooky loop (#106).
 
-    Moni proposes; OUR code runs the analyzer and decides. A flow is returned only
+    Rooky proposes; OUR code runs the analyzer and decides. A flow is returned only
     when the analyzer is clean after Apply-Fix. If the model declines the request
     as infeasible we refuse honestly (ComposeRefused); if it never converges within
     the round budget we refuse rather than ship an unclean flow (ComposeError). The
@@ -255,7 +255,7 @@ def compose_flow(message: str, *, provider: str | None = None) -> ComposeOutcome
 
 
 def _serialize_flow(workflow: Workflow) -> str:
-    """The current whiteboard flow, compact, for Moni to revise (#148)."""
+    """The current whiteboard flow, compact, for Rooky to revise (#148)."""
     lines = ["Nodes (id | type | label):"]
     lines += [f"- {n.id} | {n.type} | {n.label or ''}" for n in workflow.nodes]
     lines.append("Edges (source -> target | kind):")
@@ -266,7 +266,7 @@ def _serialize_flow(workflow: Workflow) -> str:
 def refine_flow(
     workflow: Workflow, instruction: str, *, provider: str | None = None
 ) -> ComposeOutcome:
-    """Moni corrects the flow already on the whiteboard (#148, dev item 7).
+    """Rooky corrects the flow already on the whiteboard (#148, dev item 7).
 
     Same deterministic generate -> verify -> refuse loop as compose (#106); the
     only differences are the prompt (current flow + the user's instruction) and
@@ -297,7 +297,7 @@ def _run_loop(
 ) -> ComposeOutcome:
 
     feedback = ""
-    last_errors: list[str] = ["Moni could not produce a verifiably safe flow"]
+    last_errors: list[str] = ["Rooky could not produce a verifiably safe flow"]
     # Intent fidelity (#113): a clean-but-incomplete flow earns ONE corrective
     # round; the clean original is kept as a fallback so fidelity can only ever
     # improve the result, never lose it. Safety stays the sole hard gate.
@@ -344,7 +344,7 @@ def _run_loop(
             )
             gaps = intent_gaps(fidelity_message, result.workflow)
             if gaps and fallback is None:
-                # Safe but not what was asked: keep it, ask Moni to cover the
+                # Safe but not what was asked: keep it, ask Rooky to cover the
                 # gaps, and allow exactly one extra round for it (#113).
                 fallback = outcome
                 max_rounds = round_no + 1
@@ -368,7 +368,7 @@ def _run_loop(
             return outcome
 
         # Still unclean after Apply-Fix: feed the exact residual findings back and
-        # let Moni revise. Structured diagnostics-as-feedback is what converges.
+        # let Rooky revise. Structured diagnostics-as-feedback is what converges.
         feedback = (
             "After auto-fix the analyzer STILL flags these; change the graph to "
             "resolve them:\n"

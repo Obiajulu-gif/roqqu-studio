@@ -64,7 +64,7 @@ import { WorkflowCanvas } from "./WorkflowCanvas";
 import type {
   BusinessGoal,
   ExecutionAdapter,
-  MoniAskResult,
+  RookyAskResult,
   ShopProduct,
   StudioPath,
   StudioProfile,
@@ -363,7 +363,7 @@ function CanvasInner() {
       return [
         "# Nothing to run yet",
         "",
-        "Describe a payment flow to Moni, or open a template.",
+        "Describe a payment flow to Rooky, or open a template.",
         "Your live execution trace will appear here once you press Run.",
       ].join("\n");
     }
@@ -578,7 +578,7 @@ function CanvasInner() {
     try {
       const workflow = await session.startBlank();
       // “Something else” starts with a generic business dashboard. The user can
-      // still open Workflow/Moni from the rail to refine this blank flow.
+      // still open Workflow/Rooky from the rail to refine this blank flow.
       const next = await putStudioProfile({
         path: "business",
         goal: "other",
@@ -597,7 +597,7 @@ function CanvasInner() {
     }
   }
 
-  /** Flow B (#70): a business user who composes a flow with Moni (e.g. via
+  /** Flow B (#70): a business user who composes a flow with Rooky (e.g. via
    *  "Something else") should land on a real dashboard, not a bare canvas. On a
    *  successful compose we generate the dashboard artifact and open it, so
    *  "describe any product" becomes a working product. Best-effort: if artifact
@@ -605,8 +605,8 @@ function CanvasInner() {
   async function onBusinessAsk(
     message: string,
     onStatus?: (text: string) => void,
-  ): Promise<MoniAskResult> {
-    const result = await session.askMoni(message, onStatus);
+  ): Promise<RookyAskResult> {
+    const result = await session.askRooky(message, onStatus);
     if (
       result.kind === "compose" &&
       result.workflowId &&
@@ -818,10 +818,10 @@ function CanvasInner() {
           ? `\n\nSources:\n${result.sources.map((s) => `- ${s.title}: ${s.url}`).join("\n")}`
           : "";
       setExplainNote(`${result.answer}${sources}`);
-      session.setDiffNote("Moni answered Why? — see the note under Preview.");
+      session.setDiffNote("Rooky answered Why? — see the note under Preview.");
     } catch (error) {
       setExplainNote(
-        error instanceof Error ? error.message : "Could not reach Moni explain.",
+        error instanceof Error ? error.message : "Could not reach Rooky explain.",
       );
     } finally {
       setExplainBusy(false);
@@ -1047,7 +1047,7 @@ function CanvasInner() {
               onToggleCollapsed={() => setPanelsCollapsed(true)}
               onAdd={(typeKey) => graph.addNode(typeKey)}
               onAsk={onBusinessAsk}
-              onRefine={session.refineWithMoni}
+              onRefine={session.refineWithRooky}
               hasOpenWorkflow={
                 profile?.path === "developer" && !!session.activeWorkflowId
               }
@@ -1140,10 +1140,10 @@ function CanvasInner() {
                       disabled={explainBusy || session.busy}
                       onClick={() => void askWhySelectedNode()}
                     >
-                      {explainBusy ? "Asking Moni…" : "Why?"}
+                      {explainBusy ? "Asking Rooky…" : "Why?"}
                     </button>
                     <span className="muted">
-                      Ask Moni why “{selectedIrNode.label || selectedIrNode.type}” is here
+                      Ask Rooky why “{selectedIrNode.label || selectedIrNode.type}” is here
                     </span>
                   </div>
                 ) : null}

@@ -1,7 +1,7 @@
-"""Moni's deterministic generate-verify-refine-refuse loop (#106).
+"""Rooky's deterministic generate-verify-refine-refuse loop (#106).
 
 The product thesis is "a 200 doesn't mean the integration is correct." These
-tests hold Moni to it: she may only ever hand over an analyzer-clean flow, and
+tests hold Rooky to it: she may only ever hand over an analyzer-clean flow, and
 must refuse honestly otherwise, never 500, never leak.
 """
 
@@ -17,41 +17,41 @@ from roqqu_studio.ai.composer import (
     ComposeUnavailable,
     compose_flow,
 )
-from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
+from roqqu_studio.ai.schema import RookyFlow, RookyFlowEdge, RookyFlowNode
 from roqqu_studio.api.main import app
 
 client = TestClient(app)
 
 
-def _flow(**over) -> MoniFlow:
+def _flow(**over) -> RookyFlow:
     base = dict(
         name="Sell online",
         nodes=[
-            MoniFlowNode(id="init", type="roqqu.generate_wallet"),
-            MoniFlowNode(id="webhook", type="event.payment_webhook"),
-            MoniFlowNode(id="vsig", type="safety.verify_signature"),
-            MoniFlowNode(id="verify", type="roqqu.get_wallets"),
-            MoniFlowNode(id="vamt", type="safety.validate_amount"),
-            MoniFlowNode(id="idem", type="safety.idempotency_guard"),
-            MoniFlowNode(id="paid", type="app.mark_order_paid"),
+            RookyFlowNode(id="init", type="roqqu.generate_wallet"),
+            RookyFlowNode(id="webhook", type="event.payment_webhook"),
+            RookyFlowNode(id="vsig", type="safety.verify_signature"),
+            RookyFlowNode(id="verify", type="roqqu.get_wallets"),
+            RookyFlowNode(id="vamt", type="safety.validate_amount"),
+            RookyFlowNode(id="idem", type="safety.idempotency_guard"),
+            RookyFlowNode(id="paid", type="app.mark_order_paid"),
         ],
         edges=[
-            MoniFlowEdge(source="init", target="webhook"),
-            MoniFlowEdge(source="webhook", target="vsig", kind="event"),
-            MoniFlowEdge(source="vsig", target="verify"),
-            MoniFlowEdge(source="verify", target="vamt"),
-            MoniFlowEdge(source="vamt", target="idem"),
-            MoniFlowEdge(source="idem", target="paid"),
+            RookyFlowEdge(source="init", target="webhook"),
+            RookyFlowEdge(source="webhook", target="vsig", kind="event"),
+            RookyFlowEdge(source="vsig", target="verify"),
+            RookyFlowEdge(source="verify", target="vamt"),
+            RookyFlowEdge(source="vamt", target="idem"),
+            RookyFlowEdge(source="idem", target="paid"),
         ],
     )
     base.update(over)
-    return MoniFlow(**base)
+    return RookyFlow(**base)
 
 
 class _Fake:
     name = "fake"
 
-    def __init__(self, flow: MoniFlow) -> None:
+    def __init__(self, flow: RookyFlow) -> None:
         self.flow = flow
         self.calls = 0
 
@@ -67,7 +67,7 @@ class _Fake:
 
 
 def test_unclean_compose_refuses_and_returns_no_workflow(monkeypatch):
-    """If Apply-Fix cannot make it clean, Moni must refuse, not hand it over."""
+    """If Apply-Fix cannot make it clean, Rooky must refuse, not hand it over."""
     monkeypatch.setattr(comp, "select_provider", lambda p=None: _Fake(_flow()))
     # Force the analyzer to always report a finding, so no proposal is ever clean.
     from roqqu_studio.analysis import Finding, Report
@@ -108,7 +108,7 @@ def test_clean_proposal_is_returned(monkeypatch):
 
 
 def test_infeasible_request_is_declined_not_fabricated(monkeypatch):
-    refusal = MoniFlow(name="n/a", feasible=False,
+    refusal = RookyFlow(name="n/a", feasible=False,
                        refusal="I build Roqqu payment flows, not rockets.")
     monkeypatch.setattr(comp, "select_provider", lambda p=None: _Fake(refusal))
     with pytest.raises(ComposeRefused) as ei:
@@ -117,7 +117,7 @@ def test_infeasible_request_is_declined_not_fabricated(monkeypatch):
 
 
 def test_infeasible_endpoint_is_422_friendly(monkeypatch):
-    refusal = MoniFlow(name="n/a", feasible=False, refusal="Not a payment flow.")
+    refusal = RookyFlow(name="n/a", feasible=False, refusal="Not a payment flow.")
     monkeypatch.setattr(comp, "select_provider", lambda p=None: _Fake(refusal))
     res = client.post("/assistant/compose", json={"message": "poem about the sea"})
     assert res.status_code == 422
@@ -148,11 +148,11 @@ def test_provider_outage_is_503_not_422(monkeypatch):
 
 
 def test_disconnected_graph_is_rejected(monkeypatch):
-    islands = MoniFlow(
+    islands = RookyFlow(
         name="islands",
         nodes=[
-            MoniFlowNode(id="a", type="roqqu.generate_wallet"),
-            MoniFlowNode(id="b", type="app.notify"),
+            RookyFlowNode(id="a", type="roqqu.generate_wallet"),
+            RookyFlowNode(id="b", type="app.notify"),
         ],
         edges=[],  # nothing connected: nothing reachable, would pass vacuously
     )

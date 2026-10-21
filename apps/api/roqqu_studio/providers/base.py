@@ -30,7 +30,7 @@ class NodeTypeDef(BaseModel):
     title: str
     description: str = ""
     # Grounding from Roqqu's own docs (#25): `when_to_use` is the cheat-sheet
-    # one-liner, `doc_url` the reference page. These are what Moni is fed, so she
+    # one-liner, `doc_url` the reference page. These are what Rooky is fed, so she
     # reasons from Roqqu's documented features, not from training memory.
     when_to_use: str = ""
     doc_url: str = ""

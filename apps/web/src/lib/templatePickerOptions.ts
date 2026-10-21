@@ -52,7 +52,7 @@ export const TEMPLATE_PICKER_OPTIONS: TemplatePickerOption[] = [
   {
     id: "__other__",
     title: "Something else",
-    description: "Describe what you want and let Moni build it",
+    description: "Describe what you want and let Rooky build it",
     image: null,
     kind: "other",
   },

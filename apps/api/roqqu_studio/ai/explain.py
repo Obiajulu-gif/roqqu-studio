@@ -1,6 +1,6 @@
-"""Ask Moni "why": answers grounded in the real Roqqu docs (#75, D20).
+"""Ask Rooky "why": answers grounded in the real Roqqu docs (#75, D20).
 
-When a user questions a node or pattern while building, Moni answers from two
+When a user questions a node or pattern while building, Rooky answers from two
 grounded inputs: the catalog's cheat-sheet grounding (#25) and a live fetch of
 the node's official doc page on developers.roqqu.com. Sources are assembled
 by US from the catalog, never taken from model output, so a reference can never
@@ -20,12 +20,12 @@ from pydantic import BaseModel, Field
 from ..observability import get_logger
 from ..providers import default_catalog
 from .providers import AIProvider, select_provider
-from .schema import MoniAnswer
+from .schema import RookyAnswer
 
 log = get_logger("ai.explain")
 
 _SYSTEM = (
-    "You are Moni, the assistant inside Roqqu Studio. The user is building a "
+    "You are Rooky, the assistant inside Roqqu Studio. The user is building a "
     "payment flow and asked a question. Answer plainly and concretely for a "
     "Nigerian small-business or developer audience, in at most three short "
     "paragraphs. Ground your answer ONLY in the provided catalog context and "
@@ -102,8 +102,8 @@ def explain(
     grounded = "\n\n".join(context) if context else "(no node context supplied)"
     user = f"{grounded}\n\nQuestion: {question.strip()}"
     try:
-        result = chosen.structured(system=_SYSTEM, user=user, message="", schema=MoniAnswer, max_tokens=1024)
-        answer = result.answer.strip() if isinstance(result, MoniAnswer) else ""
+        result = chosen.structured(system=_SYSTEM, user=user, message="", schema=RookyAnswer, max_tokens=1024)
+        answer = result.answer.strip() if isinstance(result, RookyAnswer) else ""
         # Citations only ever come from the catalog via `sources`; strip any URL
         # the model slipped into the prose so it cannot pass off an invented link.
         answer = _URL_RE.sub("", answer)

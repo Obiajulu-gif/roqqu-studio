@@ -6,7 +6,7 @@ cookie so we know which profile to load; path, goal, and products live here.
 Business flow:
   user_type → template picker ("What do you want to set up?")
   → products only for sell-online → dashboard → done.
-  Blank canvas → Moni (step done). Invoice / payroll → dashboard.
+  Blank canvas → Rooky (step done). Invoice / payroll → dashboard.
 """
 
 from __future__ import annotations

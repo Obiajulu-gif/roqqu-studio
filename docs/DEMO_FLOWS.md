@@ -12,7 +12,7 @@
 
 ## Flow 1 — Developer (the "is my integration correct?" gate)
 
-**Journey:** land → **I'm a developer** → type what to build → Moni generates a
+**Journey:** land → **I'm a developer** → type what to build → Rooky generates a
 correct, analyzed flow → **Run** hits the real Roqqu sandbox → the run asks
 *"where should the confirmation go?"* and delivers a **real WhatsApp + email** to
 the tester → edit an endpoint's **request body** → Run reflects the edit → **copy
@@ -21,7 +21,7 @@ the read-only Python** and go.
 | Step | Status | Notes |
 |---|---|---|
 | Land → developer door | ✅ | |
-| Type → Moni generates a correct flow | ✅ | ~30s (multi-round LLM + analyzer). Provider failover (openai → google → anthropic). |
+| Type → Rooky generates a correct flow | ✅ | ~30s (multi-round LLM + analyzer). Provider failover (openai → google → anthropic). |
 | **Code** is the default panel | ✅ | Read-only, syntax-highlighted Python (One Dark). The old debug-dump landing is gone (#212). |
 | Press **Run** → hits real Roqqu sandbox | ✅ | Default is **Sandbox** (demo key) with a one-click mode toggle. Honest `PENDING` until a human pays. |
 | Webhook-driven flow **completes** (not "failed") | ✅ | Verify falls back to the run's real payment_reference, so a card→webhook→verify→notify flow finishes. |
@@ -56,7 +56,7 @@ flows like a developer.
 | Reserved account per ajo member | ⚠️ | Live v2 call with BVN/NIN; honest fallback when Roqqu returns 503/`99` (#235). |
 | Money moves → dashboard updates | ✅ | Real collection + disbursement against sandbox. |
 | Whiteboard + business whiteboard tour | ✅ | Reachable via the rail; three-step plain-words tour (#233). |
-| "Something else" (no template) | ✅ | Describing a product to Moni generates a real dashboard artifact (#222). |
+| "Something else" (no template) | ✅ | Describing a product to Rooky generates a real dashboard artifact (#222). |
 | Onboarding **matches the design** everywhere | ⚠️ | Core screens fixed; broader polish ongoing. |
 
 ---
@@ -67,7 +67,7 @@ flows like a developer.
 |---|---|---|
 | Real Roqqu sandbox: collect + verify + disburse | ✅ | Proven live. OTP off, real source wallet. |
 | Webhook receiver (signature-verified, re-verifies) | ✅ | Live + configured (#178). |
-| Moni AI resilient (provider failover) | ✅ | openai default, falls through to google/anthropic. |
+| Rooky AI resilient (provider failover) | ✅ | openai default, falls through to google/anthropic. |
 | **Real WhatsApp works on prod** | ✅ | Evolution reached from Cloud Run via a cloudflared tunnel from the Carlofty box (see the prod-ops runbook). Keep the tunnel up during a live demo. |
 | Real email (ZeptoMail) | ✅ | Public API, no tunnel. |
 | Clean start (no seeded data) | ✅ | Boot seed off by default; testers start empty. |

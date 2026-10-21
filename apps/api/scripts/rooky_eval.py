@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-"""Moni reliability eval: can she engineer non-templated business ideas? (#106)
+"""Rooky reliability eval: can she engineer non-templated business ideas? (#106)
 
 Runs a battery of plain-language needs across the money pillars through the real
 compose loop and reports, for each: did it BUILD an analyzer-clean flow, REFUSE
 honestly, or hit an outage; how many nodes; which findings the analyzer caught
 and Apply-Fix cleared; and which pillars + primitives the flow actually covers
 (accept / payout / wallet-ledger / notify). This is measurement, not assertion:
-"a 200 doesn't mean it's correct", so we check what Moni ships, not that she ships.
+"a 200 doesn't mean it's correct", so we check what Rooky ships, not that she ships.
 
 Needs a real provider key (CLAUDE_API_KEY / OPENAI_API_KEY / GOOGLE_API_KEY).
-Run from apps/api:  uv run python scripts/moni_eval.py
+Run from apps/api:  uv run python scripts/rooky_eval.py
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from roqqu_studio.ai.composer import (
 from roqqu_studio.artifacts import flow_features
 
 # Non-templated needs spanning the pillars from the product model (#105). None of
-# these is a canned template; Moni must engineer each from the catalog.
+# these is a canned template; Rooky must engineer each from the catalog.
 BATTERY: list[tuple[str, str]] = [
     ("invoice", "A freelance brand designer who bills clients for logos and websites and wants to get paid online"),
     ("dedicated-account", "Collect monthly rent from my ten tenants, each paying into their own dedicated account"),

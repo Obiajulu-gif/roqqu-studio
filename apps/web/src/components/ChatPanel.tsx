@@ -1,5 +1,5 @@
 /**
- * Moni Chat tab — Figma Whiteboard/Chat/New (118:3740 / 118:3733).
+ * Rooky Chat tab — Figma Whiteboard/Chat/New (118:3740 / 118:3733).
  * Provenance: #15, #55, #110, D16, D18.
  */
 "use client";
@@ -14,7 +14,7 @@ import {
 } from "react";
 
 import { parseChatBlocks, stripCanvasSuffix } from "@/lib/chatMessage";
-import type { IntentResult, MoniAskResult, RemediationStep } from "@/types";
+import type { IntentResult, RookyAskResult, RemediationStep } from "@/types";
 
 export interface ChatMessage {
   id: string;
@@ -41,11 +41,11 @@ export interface ChatPanelProps {
   onAsk: (
     message: string,
     onStatus?: (text: string) => void,
-  ) => Promise<MoniAskResult>;
+  ) => Promise<RookyAskResult>;
   onRefine: (
     message: string,
     onStatus?: (text: string) => void,
-  ) => Promise<MoniAskResult>;
+  ) => Promise<RookyAskResult>;
   onSetupIntent: (
     templateId: string,
     config: IntentResult["config"],
@@ -57,7 +57,7 @@ const STARTER: ChatMessage[] = [
     id: "welcome",
     role: "assistant",
     text:
-      "Hi, I’m Moni. Describe what you want to set up. I’ll compose a flow when an AI key is available, or propose a vetted template you can confirm with Set this up.",
+      "Hi, I’m Rooky. Describe what you want to set up. I’ll compose a flow when an AI key is available, or propose a vetted template you can confirm with Set this up.",
   },
 ];
 
@@ -106,8 +106,8 @@ function RemediationMoment({
   steps: RemediationStep[];
 }) {
   return (
-    <section className="studio-remediation-moment" aria-label="Moni safety review">
-      <strong>Moni safety review</strong>
+    <section className="studio-remediation-moment" aria-label="Rooky safety review">
+      <strong>Rooky safety review</strong>
       <ol>
         <li><span>Proposed</span> Flow draft created</li>
         <li>
@@ -209,7 +209,7 @@ export function ChatPanel({
         text:
           error instanceof Error
             ? error.message
-            : "Could not reach Moni. Is the API running?",
+            : "Could not reach Rooky. Is the API running?",
       });
     }
   }
@@ -280,7 +280,7 @@ export function ChatPanel({
   }
 
   return (
-    <div className="studio-chat" aria-label="Moni chat">
+    <div className="studio-chat" aria-label="Rooky chat">
       <div className="studio-chat__messages">
         {messages.map((message) => (
           <div
@@ -291,7 +291,7 @@ export function ChatPanel({
           >
             {message.role === "assistant" && message.id !== "welcome" ? (
               <span className="studio-chat__avatar" aria-hidden>
-                M
+                R
               </span>
             ) : null}
             <div

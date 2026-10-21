@@ -1,5 +1,5 @@
 /**
- * Session orchestration: load/open workflows, templates, Moni, Apply Fix.
+ * Session orchestration: load/open workflows, templates, Rooky, Apply Fix.
  * Provenance: #4, #27, #6, #37, #15, #55, D16, D17.
  */
 "use client";
@@ -38,7 +38,7 @@ import type {
   ArtifactConfigInput,
   GenerateArtifactResult,
   IntentResult,
-  MoniAskResult,
+  RookyAskResult,
   NodeMeta,
   StudioNodeData,
   Workflow,
@@ -313,11 +313,11 @@ export function useStudioSession({ setNodes, setEdges }: UseStudioSessionOptions
     [reanalyze],
   );
 
-  const askMoni = useCallback(
+  const askRooky = useCallback(
     async (
       message: string,
       onStatus?: (text: string) => void,
-    ): Promise<MoniAskResult> => {
+    ): Promise<RookyAskResult> => {
       setBusy(true);
       setTypeError(null);
       try {
@@ -336,7 +336,7 @@ export function useStudioSession({ setNodes, setEdges }: UseStudioSessionOptions
               ? ` · caught ${composed.findings_caught.join(", ")}`
               : "";
           setDiffNote(
-            `Moni composed “${composed.workflow.name}” (${composed.provider})${caught}`,
+            `Rooky composed “${composed.workflow.name}” (${composed.provider})${caught}`,
           );
           await refreshWorkflows();
           return {
@@ -382,7 +382,7 @@ export function useStudioSession({ setNodes, setEdges }: UseStudioSessionOptions
         };
       } catch (error) {
         const text =
-          error instanceof Error ? error.message : "Moni request failed";
+          error instanceof Error ? error.message : "Rooky request failed";
         setTypeError(text);
         throw error;
       } finally {
@@ -392,11 +392,11 @@ export function useStudioSession({ setNodes, setEdges }: UseStudioSessionOptions
     [applyPayload, catalog, refreshWorkflows],
   );
 
-  const refineWithMoni = useCallback(
+  const refineWithRooky = useCallback(
     async (
       message: string,
       onStatus?: (text: string) => void,
-    ): Promise<MoniAskResult> => {
+    ): Promise<RookyAskResult> => {
       if (!activeWorkflowId) {
         return {
           kind: "refusal",
@@ -408,7 +408,7 @@ export function useStudioSession({ setNodes, setEdges }: UseStudioSessionOptions
       setBusy(true);
       setTypeError(null);
       try {
-        onStatus?.("Moni proposed a revision…");
+        onStatus?.("Rooky proposed a revision…");
         // Brief beat so the thesis is visible while the verify loop runs (#110).
         await new Promise((r) => setTimeout(r, 280));
         onStatus?.("Checker reviewing the Flow…");
@@ -429,7 +429,7 @@ export function useStudioSession({ setNodes, setEdges }: UseStudioSessionOptions
         setSource("api");
         setDiffNote(
           refined.explanation ||
-            `Moni updated “${refined.workflow.name}” (${refined.provider})${
+            `Rooky updated “${refined.workflow.name}” (${refined.provider})${
               refined.findings_caught.length
                 ? ` · caught ${refined.findings_caught.join(", ")}`
                 : ""
@@ -454,7 +454,7 @@ export function useStudioSession({ setNodes, setEdges }: UseStudioSessionOptions
           };
         }
         const text =
-          error instanceof Error ? error.message : "Moni could not change this Flow.";
+          error instanceof Error ? error.message : "Rooky could not change this Flow.";
         setTypeError(text);
         throw error;
       } finally {
@@ -550,8 +550,8 @@ export function useStudioSession({ setNodes, setEdges }: UseStudioSessionOptions
     save,
     applyFix,
     runAnalyze,
-    askMoni,
-    refineWithMoni,
+    askRooky,
+    refineWithRooky,
     setupFromIntent,
   };
 }

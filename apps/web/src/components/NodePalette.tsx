@@ -27,7 +27,7 @@ import {
   persistDragDropTipDismissed,
   writeDragNodeType,
 } from "@/lib/studioDnd";
-import type { IntentResult, MoniAskResult, NodeMeta } from "@/types";
+import type { IntentResult, RookyAskResult, NodeMeta } from "@/types";
 import { ChatPanel } from "./ChatPanel";
 
 export interface NodePaletteProps {
@@ -43,11 +43,11 @@ export interface NodePaletteProps {
   onAsk: (
     message: string,
     onStatus?: (text: string) => void,
-  ) => Promise<MoniAskResult>;
+  ) => Promise<RookyAskResult>;
   onRefine: (
     message: string,
     onStatus?: (text: string) => void,
-  ) => Promise<MoniAskResult>;
+  ) => Promise<RookyAskResult>;
   hasOpenWorkflow: boolean;
   onSetupIntent: (
     templateId: string,

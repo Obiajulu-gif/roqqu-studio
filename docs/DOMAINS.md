@@ -79,7 +79,7 @@ Five walls. Plain words, same register as NAMING.md.
 
 | Wall | Owns | Invariant | Must never |
 |------|------|-----------|------------|
-| **Flows** | IR, node catalog, analyzer, remediation, codegen, Moni compose | a flow is well-typed and its safety properties are decidable *before* it runs | know what a naira is, or that Roqqu is a live endpoint |
+| **Flows** | IR, node catalog, analyzer, remediation, codegen, Rooky compose | a flow is well-typed and its safety properties are decidable *before* it runs | know what a naira is, or that Roqqu is a live endpoint |
 | **Runs** | engine, adapters, run records, events, code sandbox | every run yields an honest, ordered, replayable trace; an output never claims more than the adapter observed | invent a value it did not receive |
 | **Money** | orders, invoices, ajo pots, payouts, exact Decimal, provider client, credentials, read models | nothing is `verified` without provider confirmation; money is exact to the kobo (D21) | accept a status from anywhere but the provider |
 | **Pages** | page spec language, validator, widget catalog, React compiler, serving | a spec is authored intent, versioned, pure data | contain executable code or resolved data |

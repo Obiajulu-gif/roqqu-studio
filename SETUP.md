@@ -7,7 +7,7 @@ Roqqu Studio runs with **zero keys**. Every key below only unlocks a live featur
 | Feature | Keyless behaviour |
 |---|---|
 | Templates, canvas, analyzer, Apply-Fix, code tab | Full |
-| Chat (Moni) | Classifies your request and proposes a template ("Set this up") |
+| Chat (Rooky) | Classifies your request and proposes a template ("Set this up") |
 | Chat: compose a new flow from free text | Needs an AI key (returns "composing flows needs an AI provider key") |
 | Run | Practice mode (simulated, the default) |
 | Shop link, invoice, dashboard pages | Render fully |

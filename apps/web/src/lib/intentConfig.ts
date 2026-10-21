@@ -1,5 +1,5 @@
 /**
- * Map Moni intent.config onto ArtifactConfig for generate (#55, #15, D17).
+ * Map Rooky intent.config onto ArtifactConfig for generate (#55, #15, D17).
  * Pure: no network. Keeps Chat setup and Seller form aligned.
  */
 import type { ArtifactConfigInput, IntentResult } from "@/types";

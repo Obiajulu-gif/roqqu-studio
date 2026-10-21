@@ -1,10 +1,10 @@
 /**
- * Moni Chat ask/setup result shapes (UI contract over /assistant/*).
+ * Rooky Chat ask/setup result shapes (UI contract over /assistant/*).
  * Interim until D6 codegen. Provenance: #15, #55, D16, D18.
  */
 import type { IntentResult, RemediationStep } from "./analysis";
 
-export type MoniAskResult =
+export type RookyAskResult =
   | {
       kind: "compose";
       explanation: string;

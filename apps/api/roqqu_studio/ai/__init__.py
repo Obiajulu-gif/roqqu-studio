@@ -1,4 +1,4 @@
-"""Moni, the Roqqu Studio assistant (#15, D16, D18)."""
+"""Rooky, the Roqqu Studio assistant (#15, D16, D18)."""
 
 from .composer import (
     ComposeError,
@@ -9,9 +9,9 @@ from .composer import (
     refine_flow,
 )
 from .explain import Explanation, Source, explain
-from .moni import classify_intent
+from .rooky import classify_intent
 from .providers import AIProvider, select_provider
-from .schema import MoniAnswer, MoniFlow, MoniIntent
+from .schema import RookyAnswer, RookyFlow, RookyIntent
 
 __all__ = [
     "AIProvider",
@@ -20,9 +20,9 @@ __all__ = [
     "ComposeRefused",
     "ComposeUnavailable",
     "Explanation",
-    "MoniAnswer",
-    "MoniFlow",
-    "MoniIntent",
+    "RookyAnswer",
+    "RookyFlow",
+    "RookyIntent",
     "Source",
     "classify_intent",
     "compose_flow",

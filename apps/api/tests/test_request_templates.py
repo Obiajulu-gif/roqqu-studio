@@ -40,7 +40,7 @@ def test_catalog_endpoint_ships_the_template_to_the_ui():
     assert init["path"] == "/user/generate-wallet"
     # Exact field from the Roqqu OpenAPI spec (developers.roqqu.com).
     assert init["request_template"] == {"token": "trx"}
-    # doc grounding travels too, so Moni/the dev reason from the real shape.
+    # doc grounding travels too, so Rooky/the dev reason from the real shape.
     assert init["doc_url"]
     assert init["when_to_use"]
 

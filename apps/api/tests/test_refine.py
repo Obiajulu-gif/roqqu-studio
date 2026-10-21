@@ -1,4 +1,4 @@
-"""Moni corrects the flow on the whiteboard: same verify-refuse loop (#148)."""
+"""Rooky corrects the flow on the whiteboard: same verify-refuse loop (#148)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 import roqqu_studio.ai.composer as composer_mod
 from roqqu_studio.ai.composer import ComposeRefused, refine_flow
-from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
+from roqqu_studio.ai.schema import RookyFlow, RookyFlowEdge, RookyFlowNode
 from roqqu_studio.api.main import app
 from roqqu_studio.store import store
 from roqqu_studio.templates import build_template
@@ -16,30 +16,30 @@ client = TestClient(app)
 
 # A revision that adds a refund path to the invoice flow, but lazily: the
 # refund is wired straight off the webhook with no verification homework.
-LAZY_REVISION = MoniFlow(
+LAZY_REVISION = RookyFlow(
     name="Invoices with Refunds",
     description="Invoice flow with a refund path.",
     explanation="Adds a refund path for disputed invoices.",
     nodes=[
-        MoniFlowNode(id="create", type="roqqu.invoice_wallet", label="Create Invoice"),
-        MoniFlowNode(id="webhook", type="event.payment_webhook", label="Payment Webhook"),
-        MoniFlowNode(id="paid", type="app.mark_order_paid", label="Mark Paid"),
-        MoniFlowNode(id="refund", type="roqqu.refund_send", label="Refund Dispute"),
+        RookyFlowNode(id="create", type="roqqu.invoice_wallet", label="Create Invoice"),
+        RookyFlowNode(id="webhook", type="event.payment_webhook", label="Payment Webhook"),
+        RookyFlowNode(id="paid", type="app.mark_order_paid", label="Mark Paid"),
+        RookyFlowNode(id="refund", type="roqqu.refund_send", label="Refund Dispute"),
     ],
     edges=[
-        MoniFlowEdge(source="create", target="webhook", kind="control"),
-        MoniFlowEdge(source="webhook", target="paid", kind="event"),
-        MoniFlowEdge(source="paid", target="refund", kind="control"),
+        RookyFlowEdge(source="create", target="webhook", kind="control"),
+        RookyFlowEdge(source="webhook", target="paid", kind="event"),
+        RookyFlowEdge(source="paid", target="refund", kind="control"),
     ],
 )
 
-REFUSAL = MoniFlow(name="n/a", feasible=False, refusal="I only revise payment flows.")
+REFUSAL = RookyFlow(name="n/a", feasible=False, refusal="I only revise payment flows.")
 
 
 class _FakeProvider:
     name = "fake"
 
-    def __init__(self, flows: list[MoniFlow]) -> None:
+    def __init__(self, flows: list[RookyFlow]) -> None:
         self._flows = list(flows)
         self.prompts: list[str] = []
 

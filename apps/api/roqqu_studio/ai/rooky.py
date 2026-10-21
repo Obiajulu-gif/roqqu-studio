@@ -1,6 +1,6 @@
-"""Moni: intent to vetted template (#15, D16, D18).
+"""Rooky: intent to vetted template (#15, D16, D18).
 
-The floor of the agent. Moni maps a seller's plain-language description onto one
+The floor of the agent. Rooky maps a seller's plain-language description onto one
 of the vetted templates and extracts config. She never designs a flow; the
 templates are already analyzer-clean, and the caller instantiates them through
 the same from-template path everything else uses.
@@ -10,10 +10,10 @@ from __future__ import annotations
 
 from ..templates import list_templates
 from .providers import AIProvider, select_provider
-from .schema import MoniIntent
+from .schema import RookyIntent
 
 _SYSTEM = (
-    "You are Moni, an assistant for Roqqu Studio. Map the user's description of "
+    "You are Rooky, an assistant for Roqqu Studio. Map the user's description of "
     "their business need onto exactly one available template, and extract config "
     "if present. You NEVER design payment logic; you only pick a vetted template. "
     "If nothing fits, set template_id to 'unknown' and ask one short clarifying "
@@ -26,7 +26,7 @@ def _template_menu() -> str:
     return "Available templates:\n" + "\n".join(lines) + "\n- unknown: nothing fits"
 
 
-def classify_intent(message: str, *, provider: str | None = None) -> tuple[MoniIntent, str]:
+def classify_intent(message: str, *, provider: str | None = None) -> tuple[RookyIntent, str]:
     """Return (intent, provider_name). template_id is coerced to a known id or 'unknown'."""
     chosen: AIProvider = select_provider(provider)
     user = f"{_template_menu()}\n\nUser: {message.strip()}"
@@ -40,7 +40,7 @@ def classify_intent(message: str, *, provider: str | None = None) -> tuple[MoniI
     return _sanitize(intent), chosen.name
 
 
-def _sanitize(intent: MoniIntent) -> MoniIntent:
+def _sanitize(intent: RookyIntent) -> RookyIntent:
     """Guardrail: the model may only name a real template; clamp everything else."""
     known = {t.id for t in list_templates()} | {"unknown"}
     if intent.template_id not in known:

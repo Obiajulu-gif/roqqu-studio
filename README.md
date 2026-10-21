@@ -25,7 +25,7 @@ You start on a clean slate - build your own flow from a template or plain words.
 docker compose up
 ```
 
-That builds and starts both services and opens the studio at **http://localhost:3000**. No database, no other setup - everything runs in memory. It works with **zero API keys** (the assistant routes by keyword, orders run on a mock adapter). To unlock the live features, drop keys into a `.env` file first:
+That builds and starts both services. The landing page is at **http://localhost:3000** and the studio at **http://localhost:3000/studio**. No database, no other setup - everything runs in memory. It works with **zero API keys** (the assistant routes by keyword, orders run on a mock adapter). To unlock the live features, drop keys into a `.env` file first:
 
 ```bash
 cp .env.example .env      # fill in only what you want, then:
@@ -38,7 +38,7 @@ docker compose up
 Needs Python 3.11+ and Node 20+.
 
 ```bash
-# Terminal 1 - backend (analyzer + Moni + product API)
+# Terminal 1 - backend (analyzer + Rooky + product API)
 cd apps/api
 uv sync --all-extras
 uv run pytest -q                                   # 268 tests, no keys needed
@@ -55,7 +55,7 @@ npm ci && npm run dev                              # http://localhost:3000
 
 ## What it is, in one minute
 
-A market woman, a freelancer, or a developer describes what they sell. **Moni** (the assistant) composes a complete Roqqu payment flow as a graph. A deterministic **analyzer** audits that graph for the bugs that only show up in production - unverified webhooks, missing idempotency, unvalidated payouts, insufficient-balance failures - and Moni is only allowed to hand over a flow that passes. The flow then becomes a real product: a shareable shop link, a proper invoice, and a plain-words dashboard. Nothing is ever marked *paid* until Roqqu itself confirms the money.
+A market woman, a freelancer, or a developer describes what they sell. **Rooky** (the assistant) composes a complete Roqqu payment flow as a graph. A deterministic **analyzer** audits that graph for the bugs that only show up in production - unverified webhooks, missing idempotency, unvalidated payouts, insufficient-balance failures - and Rooky is only allowed to hand over a flow that passes. The flow then becomes a real product: a shareable shop link, a proper invoice, and a plain-words dashboard. Nothing is ever marked *paid* until Roqqu itself confirms the money.
 
 The thesis, in one line: **AI proposes, the analyzer disposes. Correctness never rests on the model.**
 
@@ -69,9 +69,9 @@ The thesis, in one line: **AI proposes, the analyzer disposes. Correctness never
 
 ### 🧑‍💻 Engineer
 - The heart is a typed, event-driven **IR** (a node graph) + a **static analyzer** with deterministic tag-reachability rules - *no LLM in the correctness path* (see the rules table below).
-- Moni's compose is a **deterministic generate → verify → refine → refuse loop**: she proposes, our code runs the analyzer and Apply-Fix, and returns only a clean flow or refuses honestly.
+- Rooky's compose is a **deterministic generate → verify → refine → refuse loop**: she proposes, our code runs the analyzer and Apply-Fix, and returns only a clean flow or refuses honestly.
 - **268 backend + 57 frontend tests**, gated in CI on every PR - and the suite runs **keyless**, so green also proves the no-API-key fallbacks carry the product.
-- Money is exact `Decimal` to the kobo, never `float`. Start at [`docs/MONI_ARCHITECTURE.md`](docs/MONI_ARCHITECTURE.md) and [`apps/api/roqqu_studio/ai/composer.py`](apps/api/roqqu_studio/ai/composer.py).
+- Money is exact `Decimal` to the kobo, never `float`. Start at [`docs/ROOKY_ARCHITECTURE.md`](docs/ROOKY_ARCHITECTURE.md) and [`apps/api/roqqu_studio/ai/composer.py`](apps/api/roqqu_studio/ai/composer.py).
 
 ### 🧑‍💼 Product / business
 - No code. Usable by an 8-year-old or an 80-year-old: a run reads *"Waiting: customer pays"*, never `node.suspended`.
@@ -83,8 +83,8 @@ The thesis, in one line: **AI proposes, the analyzer disposes. Correctness never
 - Design system + screens: the team's [Figma](https://www.figma.com/design/yuXqT1qhA15L3v1jNdPobC/Roqqu-challenge) (onboarding, dashboard, canvas).
 
 ### 📣 DevRel
-- Moni is **grounded in Roqqu's own docs**, so she composes from documented features, not model memory - citations come from the catalog, never invented.
-- Ask Moni *"why?"* on any node and get a grounded answer with a real `developers.roqqu.com` reference.
+- Rooky is **grounded in Roqqu's own docs**, so she composes from documented features, not model memory - citations come from the catalog, never invented.
+- Ask Rooky *"why?"* on any node and get a grounded answer with a real `developers.roqqu.com` reference.
 - Every catalog node maps to a real Roqqu capability (Collections, Reserved Accounts, Disbursements, Verification/KYC, Reconciliation).
 
 ## The safety analyzer
@@ -107,7 +107,7 @@ Nothing is required to run the app or the tests. Copy [`.env.example`](.env.exam
 
 | Key | Unlocks | Get it |
 |-----|---------|--------|
-| `NVIDIA_API_KEY` (or `GOOGLE_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`) | Moni composing new flows from free text | [build.nvidia.com](https://build.nvidia.com) · [aistudio.google.com](https://aistudio.google.com/app/apikey) · [console.anthropic.com](https://console.anthropic.com) · [platform.openai.com](https://platform.openai.com) |
+| `NVIDIA_API_KEY` (or `GOOGLE_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`) | Rooky composing new flows from free text | [build.nvidia.com](https://build.nvidia.com) · [aistudio.google.com](https://aistudio.google.com/app/apikey) · [console.anthropic.com](https://console.anthropic.com) · [platform.openai.com](https://platform.openai.com) |
 | `ROQQU_SECRET_KEY`, `ROQQU_WEBHOOK_SECRET` (+ `ALLOW_PRODUCTION_EXECUTION=true`) | Real crypto deposits (Generate Wallet), verification (Get Wallets) and payouts (Send Token) | [app.roqqu.com](https://app.roqqu.com/signup) → dashboard → Security; API reference at [developers.roqqu.com](https://developers.roqqu.com) |
 | `ZEPTOMAIL_*` | Real email receipts | [zeptomail.zoho.com](https://zeptomail.zoho.com) |
 | `EVOLUTION_*` | Real WhatsApp nudges (the recipient comes from the run prompt or the node) | a self-hosted [Evolution API](https://github.com/EvolutionAPI/evolution-api) instance |
@@ -122,7 +122,7 @@ No server needed:
 cd apps/api
 uv run python scripts/demo_analyze.py     # unsafe hero: 3 critical + 1 high; safe hero: clean
 uv run python scripts/demo_remediate.py   # Apply-Fix drives the unsafe hero to zero findings
-uv run python scripts/moni_eval.py        # (needs an AI key) compose 9 non-templated ideas, live
+uv run python scripts/rooky_eval.py        # (needs an AI key) compose 9 non-templated ideas, live
 ```
 
 ## Layout
@@ -131,9 +131,9 @@ uv run python scripts/moni_eval.py        # (needs an AI key) compose 9 non-temp
 roqqu-studio/
 ├── docker-compose.yml   # the one command: `docker compose up`
 ├── apps/
-│   ├── api/   # FastAPI: IR · providers (Roqqu pack) · analysis · remediation · ai (Moni) · artifacts
-│   └── web/   # Next.js + React Flow canvas, Architecture Review, Moni chat, trace
-├── docs/      # DOMAINS (the map) · BUILD_PLAN · ENGINEERING_STANDARDS · MONI_ARCHITECTURE
+│   ├── api/   # FastAPI: IR · providers (Roqqu pack) · analysis · remediation · ai (Rooky) · artifacts
+│   └── web/   # Next.js + React Flow canvas, Architecture Review, Rooky chat, trace
+├── docs/      # DOMAINS (the map) · BUILD_PLAN · ENGINEERING_STANDARDS · ROOKY_ARCHITECTURE
 └── scripts/   # deploy-cloud-run.sh + apps/api/scripts demos
 ```
 

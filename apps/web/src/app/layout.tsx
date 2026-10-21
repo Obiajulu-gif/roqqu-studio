@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Roqqu Studio",
   description:
-    "AI-native development environment for building reliable Roqqu payment integrations.",
+    "Crypto payment links, invoices and bill-pay flows on Roqqu. Orders are marked paid only when Roqqu confirms the money.",
 };
 
 export default function RootLayout({

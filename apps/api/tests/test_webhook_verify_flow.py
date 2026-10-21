@@ -1,6 +1,6 @@
 """A deposit->webhook->verify->notify flow must COMPLETE against Roqqu (#Flow 1).
 
-When Moni composes a webhook-driven flow, `verify` hangs off the webhook island,
+When Rooky composes a webhook-driven flow, `verify` hangs off the webhook island,
 so no direct edge carries the initialize's payment_reference. Verify must still
 find the one real reference the run minted (from the initialize) and query it,
 instead of dead-ending at "no payment_reference" - which mislabels the run as

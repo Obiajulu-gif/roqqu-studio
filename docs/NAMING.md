@@ -1,6 +1,6 @@
 # Naming register (canonical)
 
-One name per concept, grounded in the product model ([#105](https://github.com/Greyisheep/roqqu-studio/issues/105)). Use these words in the UI, the code, Moni's replies, the README, and the pitch, so everyone says the same thing and we can explain each in a line.
+One name per concept, grounded in the product model ([#105](https://github.com/Greyisheep/roqqu-studio/issues/105)). Use these words in the UI, the code, Rooky's replies, the README, and the pitch, so everyone says the same thing and we can explain each in a line.
 
 ## The dual-register rule
 
@@ -14,7 +14,7 @@ The Business door must be usable by an 8-year-old and an 80-year-old; the Develo
 | A step in a flow | **Block** | one node on the whiteboard (an API call or a check) | `Node` |
 | The editor | **Whiteboard** | where you see and edit a flow as blocks (both doors share it) | `canvas` / Studio |
 | A ready-made flow | **Template** | a finished flow you pick and tweak | template id |
-| The assistant | **Moni** | composes and explains, grounded in the docs | `ai` / Moni |
+| The assistant | **Rooky** | composes and explains, grounded in the docs | `ai` / Rooky |
 | The money book | **Dashboard** | your inflow / outflow / profit ledger | dashboard |
 | The buyer page | **Shop link** | shareable storefront + QR | `shop` |
 | Seller's price list | **Catalog** (UI: "Products & services") | the list of what a business sells | `catalog` |
@@ -34,10 +34,10 @@ The Business door must be usable by an 8-year-old and an 80-year-old; the Develo
 
 ## Entry flow (business)
 
-`Path` (the door: Business or Developer) -> **Goal** ("What do you want to do?": Sell goods/services, Send an invoice, Pay staff, Savings group, Something else) -> the setup that fits (Catalog only for the Sell goal; everything else hands to Moni) -> Dashboard.
+`Path` (the door: Business or Developer) -> **Goal** ("What do you want to do?": Sell goods/services, Send an invoice, Pay staff, Savings group, Something else) -> the setup that fits (Catalog only for the Sell goal; everything else hands to Rooky) -> Dashboard.
 
 - **Path**: code `path`, values `business` / `developer`.
-- **Goal**: code `goal`; maps onto template ids (`sell-online`, `invoice`, `payroll`) plus Moni for "Something else".
+- **Goal**: code `goal`; maps onto template ids (`sell-online`, `invoice`, `payroll`) plus Rooky for "Something else".
 
 ## Dashboard labels
 
@@ -53,5 +53,5 @@ Business door softens the accountant words for the 8-to-80 bar; the developer/ex
 ## Rules of use
 
 1. Friendly names are **labels**; the code symbols (`Workflow`, `Node`, `canvas`) stay as they are. No renames.
-2. Moni speaks the **business** words on the Business path and the **developer** words on the Developer path.
+2. Rooky speaks the **business** words on the Business path and the **developer** words on the Developer path.
 3. New user-facing copy must use a name from this table. If a concept is missing, add it here first.

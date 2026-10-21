@@ -97,8 +97,8 @@ export const DEVELOPER_TOUR_STEPS: TourStep[] = [
   {
     id: "chat",
     target: "dev-chat",
-    title: "Moni chat",
-    body: "Describe what you want in plain words — Moni can compose or fix a Flow.",
+    title: "Rooky chat",
+    body: "Describe what you want in plain words — Rooky can compose or fix a Flow.",
     chrome: "hover",
   },
   {

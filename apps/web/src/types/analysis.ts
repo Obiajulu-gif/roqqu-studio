@@ -1,5 +1,5 @@
 /**
- * Analysis report + remediation + Moni compose/intent shapes.
+ * Analysis report + remediation + Rooky compose/intent shapes.
  * Interim hand port until D6 JSON Schema codegen.
  * Mirrors analysis/remediation APIs and roqqu_studio.ai response models.
  * Provenance: #27, #6, #15, #55, D6, D16, D18.

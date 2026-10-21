@@ -6,7 +6,7 @@ only file that must be re-authored to add another payment provider.
 
 Source of truth: the Roqqu API reference, https://developers.roqqu.com
 (base URL https://api.roqqu.com/prod/v1, `Authorization: Bearer RQ-SEC-...`).
-`when_to_use` lines are condensed from those pages, so Moni reasons from
+`when_to_use` lines are condensed from those pages, so Rooky reasons from
 Roqqu's documented features rather than from training memory.
 
 Roqqu is crypto wallet infrastructure (BTC, ETH, TRX addresses, send and

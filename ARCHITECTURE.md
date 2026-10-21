@@ -8,7 +8,7 @@ Roqqu Studio is a two-service app: a **Next.js canvas** (`apps/web`) and a **Fas
 Browser (React Flow canvas)
   └─ fetch  /studio-backend/*            (same-origin, keeps the session cookie first-party)
        └─ Next.js rewrite (next.config.ts) ──► FastAPI  (STUDIO_API_ORIGIN, default http://127.0.0.1:8010)
-            ├─ /assistant/*      Moni (AI) ─► ai/composer ─► ai/providers (Anthropic | OpenAI | Google | keyword fallback)
+            ├─ /assistant/*      Rooky (AI) ─► ai/composer ─► ai/providers (Anthropic | OpenAI | Google | keyword fallback)
             │                                  └─ output is validated by analysis/ and remediation/ before being returned
             ├─ /workflows, /analyze, /remediate   ─► store.py (in-memory versions) + analysis/ (deterministic rules)
             ├─ /executions       ─► executor/engine.py ─► adapter (MockAdapter | SandboxAdapter) ─► integrations/roqqu/client.py ─► sandbox.roqqu.com
@@ -39,7 +39,7 @@ In production the web and API are separate Cloud Run services. The browser then 
 | `providers/` | Node catalog (`base.py`, `core.py`, `roqqu.py`) |
 | `analysis/` | Rule engine and rules |
 | `remediation/` | Apply-Fix graph operations |
-| `ai/` | Moni: `providers.py` (LLM adapters + failover), `composer.py`, `explain.py`, `moni.py` (intent), `fidelity.py`, `schema.py` |
+| `ai/` | Rooky: `providers.py` (LLM adapters + failover), `composer.py`, `explain.py`, `rooky.py` (intent), `fidelity.py`, `schema.py` |
 | `executor/` | `engine.py` (interpreter), `adapter.py` (`MockAdapter`, `SandboxAdapter`), `sandbox.py` (custom code node), `events.py`, `store.py` |
 | `integrations/roqqu/client.py` | `RoqquSandboxClient`: authenticate, initialize_transaction, initiate_transfer, create_reserved_account, query_transaction |
 | `integrations/email.py`, `whatsapp.py`, `notifications.py` | ZeptoMail email and Evolution API WhatsApp |
@@ -57,7 +57,7 @@ In production the web and API are separate Cloud Run services. The browser then 
 | `app/layout.tsx`, `app/page.tsx` | Root layout (title "Roqqu Studio") and single page rendering `<StudioApp />` |
 | `components/StudioApp.tsx` | Top-level container: onboarding path, canvas, panels |
 | `components/WorkflowCanvas.tsx`, `StudioNode.tsx`, `NodePalette.tsx` | React Flow canvas and palette |
-| `components/ChatPanel.tsx` | Moni chat |
+| `components/ChatPanel.tsx` | Rooky chat |
 | `components/ReviewPanel.tsx`, `TracePanel.tsx` | Analyzer findings and execution trace |
 | `components/BusinessDashboard.tsx`, `AjoPanel.tsx`, `PreviewArtifactPanel.tsx` | Business-owner outputs |
 | `components/PathGate.tsx`, `TemplatePicker.tsx`, `ProductsStep.tsx`, `OnboardingTour.tsx` | Onboarding |
@@ -84,7 +84,7 @@ All of it is lost on API restart.
 | Service | Used for | Env |
 |---|---|---|
 | Roqqu API (production only) | Deposit addresses, deposit verification, crypto payouts, prices, KYC, bills | `ROQQU_SECRET_KEY`, `ROQQU_WEBHOOK_SECRET`, `ROQQU_PAY_TOKEN`, `ROQQU_NGN_PER_USD`, `ROQQU_BASE_URL`, `ALLOW_PRODUCTION_EXECUTION` |
-| Anthropic / OpenAI / Google | Moni | `AI_PROVIDER`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, plus `*_MODEL`, `AI_TIMEOUT_S`, `MONI_COMPOSE_ROUNDS` |
+| Anthropic / OpenAI / Google | Rooky | `AI_PROVIDER`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, plus `*_MODEL`, `AI_TIMEOUT_S`, `ROOKY_COMPOSE_ROUNDS` |
 | ZeptoMail | Email receipts | `ZEPTOMAIL_API_KEY`, `ZEPTOMAIL_SENDER`, `ZEPTOMAIL_REPLY_TO` |
 | Evolution API | WhatsApp | `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE` |
 | OTLP collector (optional) | Tracing | `OTEL_EXPORTER_OTLP_ENDPOINT` |

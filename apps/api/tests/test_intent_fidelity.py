@@ -5,34 +5,34 @@ from __future__ import annotations
 import roqqu_studio.ai.composer as comp
 from roqqu_studio.ai.composer import compose_flow
 from roqqu_studio.ai.fidelity import intent_gaps
-from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
+from roqqu_studio.ai.schema import RookyFlow, RookyFlowEdge, RookyFlowNode
 
 # A clean accept-only flow: collects and fulfils, but tells nobody and pays nobody.
-_ACCEPT_ONLY = MoniFlow(
+_ACCEPT_ONLY = RookyFlow(
     name="Collect",
     nodes=[
-        MoniFlowNode(id="init", type="roqqu.generate_wallet"),
-        MoniFlowNode(id="webhook", type="event.payment_webhook"),
-        MoniFlowNode(id="vsig", type="safety.verify_signature"),
-        MoniFlowNode(id="verify", type="roqqu.get_wallets"),
-        MoniFlowNode(id="vamt", type="safety.validate_amount"),
-        MoniFlowNode(id="idem", type="safety.idempotency_guard"),
-        MoniFlowNode(id="paid", type="app.mark_order_paid"),
+        RookyFlowNode(id="init", type="roqqu.generate_wallet"),
+        RookyFlowNode(id="webhook", type="event.payment_webhook"),
+        RookyFlowNode(id="vsig", type="safety.verify_signature"),
+        RookyFlowNode(id="verify", type="roqqu.get_wallets"),
+        RookyFlowNode(id="vamt", type="safety.validate_amount"),
+        RookyFlowNode(id="idem", type="safety.idempotency_guard"),
+        RookyFlowNode(id="paid", type="app.mark_order_paid"),
     ],
     edges=[
-        MoniFlowEdge(source="init", target="webhook"),
-        MoniFlowEdge(source="webhook", target="vsig", kind="event"),
-        MoniFlowEdge(source="vsig", target="verify"),
-        MoniFlowEdge(source="verify", target="vamt"),
-        MoniFlowEdge(source="vamt", target="idem"),
-        MoniFlowEdge(source="idem", target="paid"),
+        RookyFlowEdge(source="init", target="webhook"),
+        RookyFlowEdge(source="webhook", target="vsig", kind="event"),
+        RookyFlowEdge(source="vsig", target="verify"),
+        RookyFlowEdge(source="verify", target="vamt"),
+        RookyFlowEdge(source="vamt", target="idem"),
+        RookyFlowEdge(source="idem", target="paid"),
     ],
 )
 
 # The same flow with a receipt at the end.
 _WITH_NOTIFY = _ACCEPT_ONLY.model_copy(deep=True)
-_WITH_NOTIFY.nodes.append(MoniFlowNode(id="receipt", type="app.notify"))
-_WITH_NOTIFY.edges.append(MoniFlowEdge(source="paid", target="receipt"))
+_WITH_NOTIFY.nodes.append(RookyFlowNode(id="receipt", type="app.notify"))
+_WITH_NOTIFY.edges.append(RookyFlowEdge(source="paid", target="receipt"))
 
 
 class _Seq:
@@ -52,7 +52,7 @@ class _Seq:
         return self._flows.pop(0) if len(self._flows) > 1 else self._flows[0]
 
 
-def _wf(flow: MoniFlow):
+def _wf(flow: RookyFlow):
     from roqqu_studio.providers import default_catalog
 
     return comp._to_workflow(flow, default_catalog())

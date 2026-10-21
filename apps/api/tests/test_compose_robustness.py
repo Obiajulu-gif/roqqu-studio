@@ -12,18 +12,18 @@ from fastapi.testclient import TestClient
 
 import roqqu_studio.ai.composer as comp
 from roqqu_studio.ai.composer import ComposeError, compose_flow
-from roqqu_studio.ai.schema import MoniFlow, MoniFlowEdge, MoniFlowNode
+from roqqu_studio.ai.schema import RookyFlow, RookyFlowEdge, RookyFlowNode
 from roqqu_studio.api.main import app
 
 client = TestClient(app)
 
-_GOOD = MoniFlow(
+_GOOD = RookyFlow(
     name="Minimal",
     nodes=[
-        MoniFlowNode(id="sched", type="event.scheduled"),
-        MoniFlowNode(id="audit", type="safety.audit_event"),
+        RookyFlowNode(id="sched", type="event.scheduled"),
+        RookyFlowNode(id="audit", type="safety.audit_event"),
     ],
-    edges=[MoniFlowEdge(source="sched", target="audit", kind="event")],
+    edges=[RookyFlowEdge(source="sched", target="audit", kind="event")],
 )
 
 

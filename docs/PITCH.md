@@ -52,7 +52,7 @@ The heart of the pitch is three people, and the exact moment their gate falls on
 
 ### 3. The new developer experimenting with Roqqu
 **Gate:** the docs wall.
-**Walkthrough:** one sentence — "take a card payment and pay out to a vendor after it's confirmed." → Moni composes a correct graph grounded in the real Roqqu docs and cheat sheet, they press Run, and see a **real sandbox response**, learning the API by doing instead of reading.
+**Walkthrough:** one sentence — "take a card payment and pay out to a vendor after it's confirmed." → Rooky composes a correct graph grounded in the real Roqqu docs and cheat sheet, they press Run, and see a **real sandbox response**, learning the API by doing instead of reading.
 **The aha:** a sentence becomes a correct, running integration in seconds.
 
 ---

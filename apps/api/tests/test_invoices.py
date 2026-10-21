@@ -30,12 +30,12 @@ def test_invoice_template_is_registered_and_clean():
     assert "invoice" in ids
 
 
-def test_moni_routes_invoice_talk(monkeypatch):
-    import roqqu_studio.ai.moni as moni_mod
+def test_rooky_routes_invoice_talk(monkeypatch):
+    import roqqu_studio.ai.rooky as rooky_mod
     from roqqu_studio.ai import classify_intent
     from roqqu_studio.ai.providers import KeywordFallback
 
-    monkeypatch.setattr(moni_mod, "select_provider", lambda p=None: KeywordFallback())
+    monkeypatch.setattr(rooky_mod, "select_provider", lambda p=None: KeywordFallback())
     intent, _ = classify_intent("I need to invoice my client for a logo")
     assert intent.template_id == "invoice"
 

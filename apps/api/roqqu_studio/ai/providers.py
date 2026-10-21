@@ -15,7 +15,7 @@ from typing import Protocol
 from ..observability import get_logger, register_secret
 from pydantic import BaseModel
 
-from .schema import MoniIntent
+from .schema import RookyIntent
 
 log = get_logger("ai")
 
@@ -38,7 +38,7 @@ class AIProvider(Protocol):
 
     def structured(
         self, *, system: str, user: str, message: str = "",
-        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+        schema: type[BaseModel] = RookyIntent, max_tokens: int = 1024,
     ) -> BaseModel: ...
 
 
@@ -52,16 +52,16 @@ class KeywordFallback:
 
     def structured(
         self, *, system: str, user: str, message: str = "",
-        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+        schema: type[BaseModel] = RookyIntent, max_tokens: int = 1024,
     ) -> BaseModel:
-        if schema is not MoniIntent:
+        if schema is not RookyIntent:
             # Composition needs a real model; the fallback only classifies (D18).
             raise NotImplementedError("keyword fallback cannot compose flows")
         text = message.lower()
         sell = ("sell", "instagram", "whatsapp", "thrift", "store", "shop", "boutique")
         invoice = ("invoice", "bill my client", "billing", "receipt for", "invoice link")
         if any(w in text for w in invoice):
-            return MoniIntent(
+            return RookyIntent(
                 template_id="invoice",
                 confidence=0.6,
                 explanation="This looks like billing a client. Create an invoice, share "
@@ -70,20 +70,20 @@ class KeywordFallback:
             )
         payroll = ("payroll", "salary", "salaries", "staff", "employee", "wages", "pay my")
         if any(w in text for w in payroll):
-            return MoniIntent(
+            return RookyIntent(
                 template_id="payroll",
                 confidence=0.5,
                 explanation="This looks like paying staff. Each beneficiary is validated "
                 "before any transfer, so money never goes to a wrong account.",
             )
         if any(w in text for w in sell):
-            return MoniIntent(
+            return RookyIntent(
                 template_id="sell-online",
                 confidence=0.6,
                 explanation="This looks like selling online. Orders are only marked paid "
                 "after Roqqu confirms the money, so fake transfer screenshots never work.",
             )
-        return MoniIntent(
+        return RookyIntent(
             template_id="unknown",
             confidence=0.0,
             clarifying_question="What do you want to set up? For example: a payment link "
@@ -115,7 +115,7 @@ class AnthropicProvider:
 
     def structured(
         self, *, system: str, user: str, message: str = "",
-        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+        schema: type[BaseModel] = RookyIntent, max_tokens: int = 1024,
     ) -> BaseModel:
         import anthropic
 
@@ -151,7 +151,7 @@ class OpenAIProvider:
 
     def structured(
         self, *, system: str, user: str, message: str = "",
-        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+        schema: type[BaseModel] = RookyIntent, max_tokens: int = 1024,
     ) -> BaseModel:
         from openai import OpenAI
 
@@ -187,7 +187,7 @@ class NvidiaProvider:
 
     def structured(
         self, *, system: str, user: str, message: str = "",
-        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+        schema: type[BaseModel] = RookyIntent, max_tokens: int = 1024,
     ) -> BaseModel:
         from openai import OpenAI
 
@@ -227,7 +227,7 @@ class GoogleProvider:
 
     def structured(
         self, *, system: str, user: str, message: str = "",
-        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+        schema: type[BaseModel] = RookyIntent, max_tokens: int = 1024,
     ) -> BaseModel:
         from google import genai
 
@@ -273,7 +273,7 @@ class FailoverProvider:
 
     def structured(
         self, *, system: str, user: str, message: str = "",
-        schema: type[BaseModel] = MoniIntent, max_tokens: int = 1024,
+        schema: type[BaseModel] = RookyIntent, max_tokens: int = 1024,
     ) -> BaseModel:
         last_error: Exception | None = None
         for provider in self._providers:

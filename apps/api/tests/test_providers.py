@@ -10,7 +10,7 @@ from roqqu_studio.ai.providers import (
     _REGISTRY,
     select_provider,
 )
-from roqqu_studio.ai.schema import MoniFlow, MoniIntent
+from roqqu_studio.ai.schema import RookyFlow, RookyIntent
 
 
 def _no_providers_available(monkeypatch):
@@ -64,17 +64,17 @@ class _Works:
 
 def test_failover_skips_a_broken_provider_to_a_working_one():
     """A dead primary (e.g. out of credit) must fail over, not 503 the feature."""
-    good = MoniIntent(template_id="payroll", confidence=0.9)
+    good = RookyIntent(template_id="payroll", confidence=0.9)
     chain = FailoverProvider([_Boom(), _Works(good)], KeywordFallback())
     assert chain.name == "boom"  # reports the primary
-    out = chain.structured(system="", user="", message="pay staff", schema=MoniIntent)
+    out = chain.structured(system="", user="", message="pay staff", schema=RookyIntent)
     assert out is good  # served by the working provider after the primary failed
 
 
 def test_failover_all_real_fail_then_keyword_classifies():
     chain = FailoverProvider([_Boom(), _Boom()], KeywordFallback())
-    out = chain.structured(system="", user="", message="invoice my client", schema=MoniIntent)
-    assert isinstance(out, MoniIntent) and out.template_id == "invoice"
+    out = chain.structured(system="", user="", message="invoice my client", schema=RookyIntent)
+    assert isinstance(out, RookyIntent) and out.template_id == "invoice"
 
 
 def test_select_provider_returns_a_failover_chain_when_available(monkeypatch):
@@ -91,8 +91,8 @@ def test_keyword_fallback_classifies_but_cannot_compose():
     assert kw.available() is True
     # It can classify intent...
     intent = kw.structured(system="", user="", message="pay my staff salaries",
-                           schema=MoniIntent)
-    assert isinstance(intent, MoniIntent) and intent.template_id == "payroll"
+                           schema=RookyIntent)
+    assert isinstance(intent, RookyIntent) and intent.template_id == "payroll"
     # ...but must refuse to compose a full flow (only a real model may, D18).
     with pytest.raises(NotImplementedError):
-        kw.structured(system="", user="", message="ajo", schema=MoniFlow)
+        kw.structured(system="", user="", message="ajo", schema=RookyFlow)

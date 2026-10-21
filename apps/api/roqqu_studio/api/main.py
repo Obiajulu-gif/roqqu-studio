@@ -188,7 +188,7 @@ class NodeMeta(BaseModel):
     title: str
     description: str = ""
     # Grounding shipped to the UI (#176): where the call goes, its editable
-    # request body, and the doc line so a dev/Moni edits from Roqqu's real
+    # request body, and the doc line so a dev/Rooky edits from Roqqu's real
     # request shape, not guesswork.
     when_to_use: str = ""
     doc_url: str = ""
@@ -368,12 +368,12 @@ class AssistantResponse(BaseModel):
 
 @app.post("/assistant/intent", response_model=AssistantResponse)
 def assistant_intent(body: AssistantRequest) -> AssistantResponse:
-    """Moni maps a plain-language need onto a vetted template (#15, D16, D18).
+    """Rooky maps a plain-language need onto a vetted template (#15, D16, D18).
 
-    Moni never designs a flow; the frontend takes template_id + config into the
+    Rooky never designs a flow; the frontend takes template_id + config into the
     existing from-template + generate path (human stays in the loop for money).
     """
-    with correlation(request_id=new_id("moni")):
+    with correlation(request_id=new_id("rooky")):
         intent, provider = classify_intent(body.message, provider=body.provider)
         config = {
             k: v
@@ -399,7 +399,7 @@ class ComposeResponse(BaseModel):
     workflow: Workflow
     node_types: dict[str, NodeMeta]
     analysis: Report  # final state, after Apply-Fix
-    findings_caught: list[str] = Field(default_factory=list)  # rule ids Moni tripped
+    findings_caught: list[str] = Field(default_factory=list)  # rule ids Rooky tripped
     steps: list[RemediationStep] = Field(default_factory=list)
     provider: str
     explanation: str = ""
@@ -407,12 +407,12 @@ class ComposeResponse(BaseModel):
 
 @app.post("/assistant/compose", response_model=ComposeResponse)
 def assistant_compose(body: AssistantRequest) -> ComposeResponse:
-    """Moni composes a full flow from the catalog; the analyzer disposes (#15, D18).
+    """Rooky composes a full flow from the catalog; the analyzer disposes (#15, D18).
 
     The result is saved to the store and returned in the same shape the canvas
     already loads, so it appears as a normal, fully editable workflow.
     """
-    with correlation(request_id=new_id("moni")):
+    with correlation(request_id=new_id("rooky")):
         try:
             outcome = compose_flow(body.message, provider=body.provider)
         except ComposeUnavailable as exc:
@@ -421,20 +421,20 @@ def assistant_compose(body: AssistantRequest) -> ComposeResponse:
         except ComposeRefused as exc:
             # Honest decline: the request is not a Roqqu money flow (#106).
             raise HTTPException(
-                status_code=422, detail=f"Moni can't build that: {exc.reason}"
+                status_code=422, detail=f"Rooky can't build that: {exc.reason}"
             ) from None
         except ComposeError as exc:
             # Tried, but could not make it verifiably safe within the round budget.
             raise HTTPException(
                 status_code=422,
-                detail="Moni could not produce a verifiably safe flow: " + "; ".join(exc.errors),
+                detail="Rooky could not produce a verifiably safe flow: " + "; ".join(exc.errors),
             ) from None
         except HTTPException:
             raise
         except Exception as exc:  # noqa: BLE001 - never leak a raw 500 (keeps CORS)
             log.error("assistant.compose.unexpected", error=type(exc).__name__)
             raise HTTPException(
-                status_code=500, detail="Moni hit an unexpected error composing this flow."
+                status_code=500, detail="Rooky hit an unexpected error composing this flow."
             ) from None
         saved = store.save(outcome.workflow)
         payload = _enrich(saved)
@@ -464,13 +464,13 @@ class RefineRequest(BaseModel):
 
 @app.post("/assistant/refine", response_model=ComposeResponse)
 def assistant_refine(body: RefineRequest) -> ComposeResponse:
-    """Moni corrects the flow on the whiteboard (#148, dev item 7).
+    """Rooky corrects the flow on the whiteboard (#148, dev item 7).
 
     Same verify-refuse loop and same response shape as compose, so the canvas
     updates in place; the revised flow keeps its id. An unclean revision never
     ships; a non-payment ask gets an honest decline.
     """
-    with correlation(request_id=new_id("moni")):
+    with correlation(request_id=new_id("rooky")):
         current = store.get(body.workflow_id)
         if current is None:
             raise HTTPException(status_code=404, detail=f"unknown workflow: {body.workflow_id}")
@@ -480,17 +480,17 @@ def assistant_refine(body: RefineRequest) -> ComposeResponse:
             raise HTTPException(status_code=503, detail=str(exc)) from None
         except ComposeRefused as exc:
             raise HTTPException(
-                status_code=422, detail=f"Moni can't do that here: {exc.reason}"
+                status_code=422, detail=f"Rooky can't do that here: {exc.reason}"
             ) from None
         except ComposeError as exc:
             raise HTTPException(
                 status_code=422,
-                detail="Moni could not make that change verifiably safe: " + "; ".join(exc.errors),
+                detail="Rooky could not make that change verifiably safe: " + "; ".join(exc.errors),
             ) from None
         except Exception as exc:  # noqa: BLE001 - typed 500 keeps CORS (#106)
             log.info("assistant.refine.unexpected", error=type(exc).__name__)
             raise HTTPException(
-                status_code=500, detail="Moni hit an unexpected error; try again."
+                status_code=500, detail="Rooky hit an unexpected error; try again."
             ) from None
         saved = store.save(outcome.workflow)
         payload = _enrich(saved)
@@ -526,7 +526,7 @@ class ExplainResponse(BaseModel):
 
 @app.post("/assistant/explain", response_model=ExplainResponse)
 def assistant_explain(body: ExplainRequest) -> ExplainResponse:
-    """Ask Moni "why" while building; answers cite the real Roqqu docs (#75, D20)."""
+    """Ask Rooky "why" while building; answers cite the real Roqqu docs (#75, D20)."""
     with correlation(request_id=new_id("why")):
         summary = ""
         if body.workflow_id:

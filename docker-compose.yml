@@ -2,10 +2,10 @@
 #
 #     docker compose up
 #
-# Opens the studio at http://localhost:3000. Works with ZERO keys (Moni routes
+# Opens the studio at http://localhost:3000. Works with ZERO keys (Rooky routes
 # by keyword, orders run on the mock adapter). Drop keys into a .env file next
-# to this one (copy .env.example) to unlock real compose + the live Roqqu
-# sandbox + real notifications. No database, no extra services - all in memory.
+# to this one (copy .env.example) to unlock real compose + the live Roqqu API
+# + real notifications. No database, no extra services - all in memory.
 services:
   api:
     build: ./apps/api
