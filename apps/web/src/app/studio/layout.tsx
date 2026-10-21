@@ -1,6 +1,7 @@
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 
 import "./console.css";
+import "./workspace.css";
 
 const plex = IBM_Plex_Sans({
   subsets: ["latin"],

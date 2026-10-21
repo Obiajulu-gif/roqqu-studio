@@ -143,7 +143,7 @@ export function ApiPlayground() {
   return (
     <div className="pg-shell">
       <header className="pg-top">
-        <Link href="/studio" className="pg-brand">
+        <Link href="/studio/developer" className="pg-brand">
           <Image src="/figma/roqqu-logo.svg" alt="" width={22} height={22} />
           <span>Roqqu Studio</span>
         </Link>
@@ -159,8 +159,8 @@ export function ApiPlayground() {
           <button type="button" className="pg-btn" onClick={downloadClient}>
             Download roqqu.js
           </button>
-          <Link href="/studio" className="pg-btn pg-btn--ghost">
-            Back to studio
+          <Link href="/studio/developer" className="pg-btn pg-btn--ghost">
+            Developer tools
           </Link>
         </div>
       </header>

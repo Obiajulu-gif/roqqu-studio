@@ -79,7 +79,7 @@ class ArtifactConfig(BaseModel):
     business_name: str = "My Business"
     product_name: str = "Product"
     price_ngn: int = Field(default=5000, ge=100)
-    accent_color: str = "#0f6b57"
+    accent_color: str = "#2764FF"
     tagline: str = "Pay securely. Every order is verified with Roqqu."
     # Seller branding (#61): hosted image URL, or a data URL produced client-side
     # from a file upload (#55). Empty keeps the letter mark. Capped so a data

@@ -1050,7 +1050,7 @@ def shop_qr(artifact_id: str, request: Request) -> Response:
     base = str(request.base_url).rstrip("/")
     url = f"{base}/preview/{artifact_id}/shop"
     buf = io.BytesIO()
-    segno.make(url, error="m").save(buf, kind="svg", scale=5, border=2, dark="#0f6b57")
+    segno.make(url, error="m").save(buf, kind="svg", scale=5, border=2, dark="#1C2127")
     return Response(content=buf.getvalue(), media_type="image/svg+xml")
 
 

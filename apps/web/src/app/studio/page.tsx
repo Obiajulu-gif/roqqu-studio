@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
-import { StudioApp } from "@/components/StudioApp";
+import { StudioHome } from "@/components/StudioHome";
 
 export const metadata: Metadata = { title: "Studio · Roqqu Studio" };
 
 export default function StudioPage() {
-  return <StudioApp />;
+  return <StudioHome />;
 }

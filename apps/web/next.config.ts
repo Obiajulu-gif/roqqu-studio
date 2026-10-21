@@ -20,6 +20,12 @@ const nextConfig: NextConfig = {
         source: "/studio-backend/:path*",
         destination: `${apiOrigin}/:path*`,
       },
+      // Buyer-facing shop, invoice and deposit pages live on the API and call
+      // /preview/* from the page itself, so serve them from this origin too.
+      {
+        source: "/preview/:path*",
+        destination: `${apiOrigin}/preview/:path*`,
+      },
     ];
   },
 };

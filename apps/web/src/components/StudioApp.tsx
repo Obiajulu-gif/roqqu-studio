@@ -105,7 +105,7 @@ function goalFromTemplate(templateId: string): BusinessGoal {
   return "other";
 }
 
-function CanvasInner() {
+function CanvasInner({ forceDeveloper = false }: { forceDeveloper?: boolean }) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<StudioNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [leftTab, setLeftTab] = useState<"api" | "chat">("api");
@@ -184,6 +184,15 @@ function CanvasInner() {
         }
         setProfile(loaded);
         setProfileError(null);
+        // /studio/canvas is the developer workspace: skip onboarding there.
+        if (forceDeveloper && (loaded.path !== "developer" || loaded.step !== "done")) {
+          void putStudioProfile({ path: "developer", step: "done" }).then((next) => {
+            if (cancelled) return;
+            setProfile(next);
+            setProfileReady(true);
+          });
+          return;
+        }
         // "intent" was a brief wrong step — treat it as the template picker.
         if (loaded.path === "business" && loaded.step === "intent") {
           void putStudioProfile({ step: "template" }).then((next) => {
@@ -218,7 +227,7 @@ function CanvasInner() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [forceDeveloper]);
 
   const currentIr = useMemo(() => {
     if (!session.workflow) return null;
@@ -1286,10 +1295,10 @@ function CanvasInner() {
   );
 }
 
-export function StudioApp() {
+export function StudioApp({ forceDeveloper = false }: { forceDeveloper?: boolean }) {
   return (
     <ReactFlowProvider>
-      <CanvasInner />
+      <CanvasInner forceDeveloper={forceDeveloper} />
     </ReactFlowProvider>
   );
 }
