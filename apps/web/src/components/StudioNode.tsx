@@ -52,9 +52,9 @@ function fieldValue(value: unknown): string {
 function MenuIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <circle cx="8" cy="3" r="1.3" fill="#737373" />
-      <circle cx="8" cy="8" r="1.3" fill="#737373" />
-      <circle cx="8" cy="13" r="1.3" fill="#737373" />
+      <circle cx="8" cy="3" r="1.3" fill="#4a5670" />
+      <circle cx="8" cy="8" r="1.3" fill="#4a5670" />
+      <circle cx="8" cy="13" r="1.3" fill="#4a5670" />
     </svg>
   );
 }

@@ -60,12 +60,12 @@ function GripIcon() {
   return (
     <span className="studio-sidebar__grip" aria-hidden>
       <svg width="12" height="16" viewBox="0 0 12 16" fill="none">
-        <circle cx="4" cy="3" r="1.25" fill="#A3A3A3" />
-        <circle cx="8" cy="3" r="1.25" fill="#A3A3A3" />
-        <circle cx="4" cy="8" r="1.25" fill="#A3A3A3" />
-        <circle cx="8" cy="8" r="1.25" fill="#A3A3A3" />
-        <circle cx="4" cy="13" r="1.25" fill="#A3A3A3" />
-        <circle cx="8" cy="13" r="1.25" fill="#A3A3A3" />
+        <circle cx="4" cy="3" r="1.25" fill="#4a5670" />
+        <circle cx="8" cy="3" r="1.25" fill="#4a5670" />
+        <circle cx="4" cy="8" r="1.25" fill="#4a5670" />
+        <circle cx="8" cy="8" r="1.25" fill="#4a5670" />
+        <circle cx="4" cy="13" r="1.25" fill="#4a5670" />
+        <circle cx="8" cy="13" r="1.25" fill="#4a5670" />
       </svg>
     </span>
   );
@@ -347,19 +347,19 @@ export function NodePalette({
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                 <path
                                   d="M8 13V6.5a1.5 1.5 0 0 1 3 0V11"
-                                  stroke="#0A0A0A"
+                                  stroke="currentColor"
                                   strokeWidth="1.6"
                                   strokeLinecap="round"
                                 />
                                 <path
                                   d="M11 11V5.5a1.5 1.5 0 0 1 3 0V11"
-                                  stroke="#0A0A0A"
+                                  stroke="currentColor"
                                   strokeWidth="1.6"
                                   strokeLinecap="round"
                                 />
                                 <path
                                   d="M14 11V7.5a1.5 1.5 0 0 1 3 0V14c0 3.5-2 6-5.5 6S6 17 6 14v-3.5a1.5 1.5 0 0 1 3 0V13"
-                                  stroke="#0A0A0A"
+                                  stroke="currentColor"
                                   strokeWidth="1.6"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"

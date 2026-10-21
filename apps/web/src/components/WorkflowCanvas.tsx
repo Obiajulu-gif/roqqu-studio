@@ -107,6 +107,7 @@ export function WorkflowCanvas({
         <div className="studio-banner studio-banner--ok">{diffNote}</div>
       )}
       <ReactFlow
+        colorMode="dark"
         nodes={nodes}
         edges={edges}
         onNodesChange={(nodeChanges) => {
@@ -143,7 +144,8 @@ export function WorkflowCanvas({
         connectionLineStyle={{ stroke: connectionStroke, strokeWidth: 2 }}
       >
         <FitViewOnLayout layoutNonce={layoutNonce} />
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1.1} color="#d0d0d0" />
+        <Background id="minor" variant={BackgroundVariant.Lines} gap={24} lineWidth={0.5} color="#162038" />
+        <Background id="major" variant={BackgroundVariant.Lines} gap={120} lineWidth={0.8} color="#1e2b4a" />
         <StudioZoomControls />
         {showMiniMap ? <MiniMap pannable zoomable /> : null}
       </ReactFlow>

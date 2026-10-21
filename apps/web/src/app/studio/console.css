@@ -1,0 +1,378 @@
+/*
+ * Roqqu Console: the studio's dark, technical skin layered over globals.css.
+ * Plex Sans for the interface, JetBrains Mono only for machine values
+ * (block type ids, addresses, amounts, request bodies).
+ */
+.rq-console {
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jbm), ui-monospace, monospace;
+  --glow: 0 0 0 1px rgba(39, 100, 255, 0.55), 0 0 18px rgba(39, 100, 255, 0.25);
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--paper);
+  min-height: 100vh;
+  color-scheme: dark;
+  font-feature-settings: "tnum" 1;
+}
+
+.rq-console ::selection {
+  background: rgba(39, 100, 255, 0.45);
+  color: #fff;
+}
+
+.rq-console * {
+  scrollbar-width: thin;
+  scrollbar-color: #2f3c58 transparent;
+}
+
+.rq-console :focus-visible {
+  outline: 2px solid #5b8cff;
+  outline-offset: 2px;
+}
+
+.rq-console input,
+.rq-console textarea,
+.rq-console select {
+  background: #0d1422;
+  color: var(--ink);
+  border-color: #2f3c58;
+}
+
+.rq-console input::placeholder,
+.rq-console textarea::placeholder {
+  color: #5d6a84;
+}
+
+/* Monochrome Figma icons were drawn dark-on-light: flip them for the console. */
+.rq-console img[src*="/figma/icon-"],
+.rq-console img[src*="/figma/dashboard/"] {
+  filter: invert(0.86) hue-rotate(180deg) brightness(1.15);
+}
+
+/* Machine values read as code. */
+.rq-console code,
+.rq-console pre,
+.rq-console .studio-node__type,
+.rq-console .biz-money {
+  font-family: var(--font-mono);
+}
+
+/* --- canvas ---------------------------------------------------------- */
+.rq-console .react-flow {
+  --xy-background-color: #0b111d;
+  --xy-edge-stroke: #3d4a66;
+  --xy-edge-stroke-selected: #5b8cff;
+  --xy-handle-background-color: #0d1422;
+  --xy-handle-border-color: #5b8cff;
+  --xy-minimap-background-color: #121a2a;
+  --xy-controls-button-background-color: #121a2a;
+  --xy-controls-button-color: #e6eaf3;
+  --xy-attribution-background-color: transparent;
+  background: #0b111d;
+}
+
+.rq-console .react-flow__edge-path {
+  stroke: #3d4a66;
+  stroke-width: 1.6;
+}
+
+.rq-console .react-flow__edge.selected .react-flow__edge-path,
+.rq-console .react-flow__edge:hover .react-flow__edge-path {
+  stroke: #5b8cff;
+}
+
+.rq-console .react-flow__handle {
+  background: #0d1422;
+  border: 1.5px solid #5b8cff;
+}
+
+.rq-console .react-flow__node.selected > *,
+.rq-console .react-flow__node:focus-visible > * {
+  box-shadow: var(--glow);
+}
+
+.rq-console .react-flow__minimap {
+  background: #121a2a;
+}
+
+.rq-console .react-flow__attribution {
+  background: transparent;
+  color: #4a5670;
+}
+
+.rq-console .react-flow__attribution a {
+  color: #4a5670;
+}
+
+/* Blocks: a category stripe down the left edge identifies each layer at a glance. */
+.rq-console .studio-node {
+  background: #121a2a;
+  border: 1px solid #2a3550;
+  border-left: 3px solid var(--cat-roqqu);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.rq-console .studio-node.cat-safety {
+  border-left-color: var(--cat-safety);
+}
+
+.rq-console .studio-node.cat-event {
+  border-left-color: var(--cat-event);
+}
+
+.rq-console .studio-node.cat-control {
+  border-left-color: var(--cat-control);
+}
+
+.rq-console .studio-node.cat-application {
+  border-left-color: var(--cat-application);
+}
+
+/* --- side panels ------------------------------------------------------ */
+.rq-console .studio-sidebar,
+.rq-console .studio-rail,
+.rq-console .biz-sidebar {
+  background: #0f1625;
+  border-color: #1e2840;
+}
+
+.rq-console .studio-float {
+  background: rgba(18, 26, 42, 0.92);
+  border: 1px solid #232e45;
+  backdrop-filter: blur(8px);
+}
+
+/* --- status bar ------------------------------------------------------- */
+.rq-status {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  background: #0a0f1a;
+  border-top: 1px solid #1e2840;
+  color: #8d98ae;
+  font-size: 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.rq-status__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 100%;
+}
+
+.rq-status__item + .rq-status__item {
+  border-left: 1px solid #1a2338;
+}
+
+.rq-status__item i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4a5670;
+}
+
+.rq-status__item code {
+  color: #e6eaf3;
+}
+
+.rq-status .is-live i,
+.rq-status .is-up i {
+  background: #2bd49a;
+  box-shadow: 0 0 8px #2bd49a;
+}
+
+.rq-status .is-practice i {
+  background: #5b8cff;
+}
+
+.rq-status .is-down i {
+  background: #ff6b6b;
+}
+
+.rq-status .is-checking i {
+  background: #f5b544;
+}
+
+.rq-status .is-ok {
+  color: #2bd49a;
+}
+
+.rq-status .is-warn {
+  color: #f5b544;
+}
+
+.rq-status__run {
+  margin-left: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rq-console * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* --- business dashboard: console layout ------------------------------- */
+.rq-console .biz-main {
+  background: #0d1422;
+}
+
+.rq-console .biz-main__head {
+  align-items: flex-end;
+  border-bottom: 1px solid #1e2840;
+}
+
+.rq-console .biz-main__title h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.rq-console .biz-main__title p {
+  margin: 4px 0 0;
+  color: #8d98ae;
+  font-size: 13px;
+}
+
+.rq-console .biz-overview__grid {
+  gap: 1px;
+  background: #1e2840;
+  border: 1px solid #1e2840;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rq-console .biz-overview__grid article {
+  background: #121a2a;
+  border: 0;
+  border-radius: 0;
+  padding: 18px 20px;
+}
+
+.rq-console .biz-overview__grid article > span {
+  color: #8d98ae;
+  font-size: 13px;
+}
+
+.rq-console .biz-money {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.biz-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
+  margin-top: 20px;
+}
+
+.biz-grid__main,
+.biz-grid__side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.biz-grid__side {
+  position: sticky;
+  top: 16px;
+}
+
+.rq-console .biz-grid__side .biz-rates {
+  margin: 0;
+  background: linear-gradient(180deg, rgba(39, 100, 255, 0.1), rgba(39, 100, 255, 0) 60%), #121a2a;
+  border-color: #263457;
+}
+
+.rq-console .biz-grid__side .biz-rates__list {
+  grid-template-columns: 1fr;
+}
+
+.rq-console .biz-grid__side .biz-rates__list li {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  background: #0d1422;
+  border: 1px solid #1e2840;
+}
+
+.rq-console .biz-rates__list span {
+  font-family: var(--font-mono);
+}
+
+.rq-console .biz-table th {
+  font-weight: 500;
+  color: #8d98ae;
+  background: #0f1625;
+}
+
+.rq-console .biz-table td {
+  border-color: #1a2338;
+}
+
+.rq-console .biz-mono {
+  font-family: var(--font-mono);
+  color: #8d98ae;
+}
+
+@media (max-width: 1100px) {
+  .biz-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .biz-grid__side {
+    position: static;
+  }
+}
+
+/* Grid children drop their old full-width section chrome. */
+.biz-grid {
+  padding: 0 20px 24px;
+}
+
+.rq-console .biz-grid .biz-tools,
+.rq-console .biz-grid .biz-activity,
+.rq-console .biz-grid .biz-table-card {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.rq-console .biz-grid .biz-table-card__title {
+  padding: 0 0 12px;
+}
+
+.rq-console .biz-overview__grid {
+  padding: 0;
+}
+
+.rq-console .biz-overview__grid article + article {
+  border-left: 0;
+}
+
+.rq-console .biz-grid__side .biz-activity__card {
+  background: #121a2a;
+}
+
+.rq-console img[src*="template-picker-plus-icon"] {
+  filter: invert(0.86) hue-rotate(180deg) brightness(1.15);
+}
+
+.rq-console .biz-overview__grid article::before,
+.rq-console .biz-overview__grid article::after {
+  display: none;
+}

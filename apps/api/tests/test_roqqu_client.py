@@ -156,3 +156,17 @@ def test_fx_helpers_are_exact() -> None:
     assert usd_to_ngn("3.25", s) == Decimal("4875.00")
     # NGN 1,500 = USD 1 = 4 TRX at USD 0.25
     assert ngn_to_token("1500", Decimal("0.25"), s) == Decimal("4.00000000")
+
+
+def test_public_prices_caches_failures_so_a_down_api_is_not_hammered(monkeypatch) -> None:
+    monkeypatch.setattr(client_mod, "_price_cache", {"at": 0.0, "data": None, "error": ""})
+    calls = []
+
+    def down(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(502, text="error code: 502")
+
+    for _ in range(3):
+        with pytest.raises(RoqquError, match="prices unavailable"):
+            client_mod.public_prices("https://api.roqqu.com/prod/v1", transport=httpx.MockTransport(down))
+    assert len(calls) == 1

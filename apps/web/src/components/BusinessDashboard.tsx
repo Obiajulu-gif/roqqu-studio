@@ -503,7 +503,10 @@ export function BusinessDashboard({
 
       <main className="biz-main" data-tour="biz-main">
         <header className="biz-main__head">
-          <h1>Dashboard</h1>
+          <div className="biz-main__title">
+            <h1>Business overview</h1>
+            <p>Payments are marked paid only after Roqqu confirms them.</p>
+          </div>
           <div className="biz-main__actions">
             <div className="biz-notify-wrap">
               <button
@@ -558,8 +561,8 @@ export function BusinessDashboard({
           </div>
         </section>
 
-        <CryptoRates />
-
+        <div className="biz-grid">
+          <div className="biz-grid__main">
         <div className="biz-tools" data-tour="biz-tools">
         <div
           className="biz-product-tabs"
@@ -751,49 +754,6 @@ export function BusinessDashboard({
         </section>
         </div>
 
-        <section className="biz-activity" aria-label="Activity" data-tour="biz-activity">
-          <div className="biz-activity__card">
-            <header className="biz-activity__head">
-              <div>
-                <h2>Activity</h2>
-                <p>Recent payments and payouts</p>
-              </div>
-              <button
-                type="button"
-                className="biz-activity__all"
-                onClick={() => {
-                  setOpenMenu(null);
-                  transactionsRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                  });
-                }}
-              >
-                View all activities
-              </button>
-            </header>
-            {activityPreview.length === 0 ? (
-              <p className="biz-activity__empty">No activity yet — payments appear here when money moves.</p>
-            ) : (
-              <ul className="biz-activity__list">
-                {activityPreview.map((item) => (
-                  <li key={item.id}>
-                    <span
-                      className={`biz-activity__mark is-${item.kind}`}
-                      aria-hidden
-                    >
-                      {item.kind === "outflow" ? "↗" : "↙"}
-                    </span>
-                    <div>
-                      <p>{item.text}</p>
-                      <time>{item.when}</time>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
 
         <section
           className="biz-table-card"
@@ -976,6 +936,55 @@ export function BusinessDashboard({
             )}
           </div>
         </section>
+
+          </div>
+          <aside className="biz-grid__side" aria-label="Market and activity">
+            <CryptoRates />
+        <section className="biz-activity" aria-label="Activity" data-tour="biz-activity">
+          <div className="biz-activity__card">
+            <header className="biz-activity__head">
+              <div>
+                <h2>Activity</h2>
+                <p>Recent payments and payouts</p>
+              </div>
+              <button
+                type="button"
+                className="biz-activity__all"
+                onClick={() => {
+                  setOpenMenu(null);
+                  transactionsRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }}
+              >
+                View all activities
+              </button>
+            </header>
+            {activityPreview.length === 0 ? (
+              <p className="biz-activity__empty">No activity yet — payments appear here when money moves.</p>
+            ) : (
+              <ul className="biz-activity__list">
+                {activityPreview.map((item) => (
+                  <li key={item.id}>
+                    <span
+                      className={`biz-activity__mark is-${item.kind}`}
+                      aria-hidden
+                    >
+                      {item.kind === "outflow" ? "↗" : "↙"}
+                    </span>
+                    <div>
+                      <p>{item.text}</p>
+                      <time>{item.when}</time>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+          </aside>
+        </div>
 
         <footer className="biz-footer">
           <BizIcon name="clock" size={14} />

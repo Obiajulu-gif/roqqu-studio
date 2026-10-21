@@ -242,7 +242,7 @@ class RoqquClient:
 
 
 _PRICE_TTL_S = 60.0
-_price_cache: dict[str, Any] = {"at": 0.0, "data": None}
+_price_cache: dict[str, Any] = {"at": 0.0, "data": None, "error": ""}
 
 
 def public_prices(base_url: str, *, transport: httpx.BaseTransport | None = None) -> dict[str, Any]:
@@ -251,17 +251,22 @@ def public_prices(base_url: str, *, transport: httpx.BaseTransport | None = None
     Public market data (no key, no money), so it works before any Roqqu account
     is connected. Cached for a minute so a busy dashboard stays polite."""
     now = time.monotonic()
-    if _price_cache["data"] is not None and now - _price_cache["at"] < _PRICE_TTL_S:
-        return _price_cache["data"]
+    if now - _price_cache["at"] < _PRICE_TTL_S:
+        if _price_cache["error"]:
+            raise RoqquError(_price_cache["error"])  # don't hammer a down API
+        if _price_cache["data"] is not None:
+            return _price_cache["data"]
     try:
-        with httpx.Client(base_url=base_url.rstrip("/"), timeout=10.0, transport=transport) as http:
+        with httpx.Client(base_url=base_url.rstrip("/"), timeout=6.0, transport=transport) as http:
             resp = http.get("/prices")
         body = resp.json()
-    except (httpx.HTTPError, ValueError) as exc:
-        raise RoqquError(f"Roqqu prices unavailable: {type(exc).__name__}") from exc
-    if resp.status_code >= 400 or body.get("status") != "success":
-        raise RoqquError(body.get("message") or f"HTTP {resp.status_code}")
-    _price_cache.update(at=now, data=dict(body.get("data") or {}))
+        if resp.status_code >= 400 or body.get("status") != "success":
+            raise RoqquError(body.get("message") or f"HTTP {resp.status_code}")
+    except (httpx.HTTPError, ValueError, RoqquError) as exc:
+        message = str(exc) if isinstance(exc, RoqquError) else type(exc).__name__
+        _price_cache.update(at=now, data=None, error=f"Roqqu prices unavailable: {message}")
+        raise RoqquError(_price_cache["error"]) from exc
+    _price_cache.update(at=now, data=dict(body.get("data") or {}), error="")
     return _price_cache["data"]
 
 

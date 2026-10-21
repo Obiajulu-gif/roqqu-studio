@@ -17,6 +17,7 @@ import type {
   StudioNodeData,
 } from "@/types";
 import { useExecutionTrace } from "@/hooks/useExecutionTrace";
+import { StudioStatusBar } from "@/components/StudioStatusBar";
 import { useOnboardingTour } from "@/hooks/useOnboardingTour";
 import { useSidebarWidths } from "@/hooks/useSidebarWidths";
 import { useStudioGraph } from "@/hooks/useStudioGraph";
@@ -1245,6 +1246,15 @@ function CanvasInner() {
         onPick={(templateId) => void handleTemplatePick(templateId)}
         onOther={() => void handleTemplateOther()}
       />
+      {!showOnboarding && (
+        <StudioStatusBar
+          live={executionAdapter === "roqqu"}
+          blockCount={nodes.length}
+          findingCount={session.report ? session.report.findings.length : null}
+          running={trace.running}
+          runStatus={trace.run?.status ?? null}
+        />
+      )}
       {tour.active && tour.step ? (
         <OnboardingTour
           step={tour.step}

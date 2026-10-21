@@ -1,58 +1,56 @@
-import { Bricolage_Grotesque } from "next/font/google";
+import { Bricolage_Grotesque, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 
 import styles from "./landing.module.css";
+import { UnderTheHood } from "./UnderTheHood";
 
-const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["500", "700", "800"] });
+const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["600", "700", "800"] });
+const body = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--lp-body" });
+const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--lp-mono" });
 
-const SLIP = [
-  { text: "Customer sends 16.00 TRX to your Roqqu address", state: "ok" },
-  { text: "Roqqu webhook arrives, secret matches", state: "ok" },
-  { text: "Get Wallets shows ₦6,000 received", state: "ok" },
-  { text: "Transfer screenshot from the customer", state: "ignored" },
-] as const;
+/* The hero flow: the real blocks of the sell-online template, in order. */
+const FLOW = [
+  { id: "wallet", x: 30, y: 40, title: "Generate Wallet", type: "roqqu.generate_wallet", cat: "roqqu" },
+  { id: "hook", x: 250, y: 40, title: "Deposit webhook", type: "event.payment_webhook", cat: "event" },
+  { id: "secret", x: 470, y: 40, title: "Check secret", type: "safety.verify_signature", cat: "safety" },
+  { id: "verify", x: 250, y: 170, title: "Get Wallets", type: "roqqu.get_wallets", cat: "roqqu" },
+  { id: "amount", x: 470, y: 170, title: "Amount covers total", type: "safety.validate_amount", cat: "safety" },
+  { id: "paid", x: 360, y: 290, title: "Mark order paid", type: "app.mark_order_paid", cat: "app" },
+];
+const WIRES =
+  "M190 70 H250 M410 70 H470 M550 100 V130 Q550 150 530 150 H350 Q330 150 330 165 M410 200 H470 M550 230 V255 Q550 270 530 270 H450 Q440 270 440 290";
 
-const USES = [
-  {
-    title: "Sell goods and services",
-    body: "A shop link you share on WhatsApp. Orders turn green only when the coins land.",
-    image: "/figma/templates/template-sell-goods.png",
-  },
-  {
-    title: "Send an invoice",
-    body: "Bill a client in naira. They pay in BTC, ETH or TRX at Roqqu's live price.",
-    image: "/figma/templates/template-send-invoice.png",
-  },
-  {
-    title: "Run a savings group",
-    body: "Every ajo member gets their own Roqqu wallet, and every contribution is checked.",
-    image: "/figma/templates/template-ajo.png",
-  },
-  {
-    title: "Pay bills",
-    body: "Sell electricity units and airtime. The meter is checked by name before money moves.",
-    image: "/figma/templates/template-payments.png",
-  },
+const ENDPOINTS = [
+  "POST /user/generate-wallet",
+  "POST /user/wallets",
+  "POST /user/send-{token}",
+  "GET /prices",
+  "POST /user/account-resolve",
+  "GET /verify-meter",
+  "POST /user/pay-electric",
 ];
 
 const STEPS = [
-  { title: "You pick a template", body: "Or describe your business to Rooky in plain words." },
-  { title: "Studio checks the flow", body: "A safety review blocks payouts that skip verification." },
-  { title: "Your customer pays in crypto", body: "A fresh Roqqu address and the exact amount, with a QR code." },
-  { title: "Roqqu confirms it", body: "The order is marked paid only after Roqqu shows the money arrived." },
+  { title: "Pick a template", body: "Or tell Rooky what your business does in plain words." },
+  { title: "Studio reviews the flow", body: "Payouts that skip verification are blocked before they can run." },
+  { title: "Your customer pays in crypto", body: "A fresh Roqqu address, the exact amount and a QR code." },
+  { title: "Roqqu confirms it", body: "The order turns paid only after Roqqu shows the coins arrived." },
 ];
 
 export default function Landing() {
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${body.variable} ${mono.variable}`}>
+      <div className={styles.glow} aria-hidden />
+
       <nav className={styles.nav} aria-label="Main">
         <Link href="/" className={styles.brand}>
-          <Image src="/figma/roqqu-logo.svg" alt="" width={26} height={26} />
+          <Image src="/figma/roqqu-logo.svg" alt="" width={28} height={28} />
           <span className={display.className}>Roqqu Studio</span>
         </Link>
         <div className={styles.navLinks}>
-          <a href="#how">How it works</a>
+          <a href="#build">What you can build</a>
+          <a href="#hood">Under the hood</a>
           <a href="https://github.com/Obiajulu-gif/roqqu-studio">GitHub</a>
           <Link href="/studio" className={styles.navCta}>
             Get started
@@ -62,73 +60,148 @@ export default function Landing() {
 
       <header className={styles.hero}>
         <div className={styles.heroText}>
+          <p className={styles.pill}>
+            <span aria-hidden />
+            Built on the Roqqu API
+          </p>
           <h1 className={display.className}>Stop trusting screenshots.</h1>
           <p className={styles.lede}>
-            Roqqu Studio turns what you sell into a crypto payment link, invoice or bill-pay
-            flow. An order is marked paid only when Roqqu shows the coins in your wallet.
+            Build crypto payment links, invoices, savings groups and bill payments on Roqqu.
+            Every order is marked paid only when Roqqu shows the coins in your wallet.
           </p>
           <div className={styles.actions}>
             <Link href="/studio" className={styles.primary}>
               Get started
             </Link>
-            <a href="#how" className={styles.secondary}>
-              See how a payment is checked
+            <a href="#hood" className={styles.secondary}>
+              See the generated code
             </a>
           </div>
-          <p className={styles.fine}>Free to try. Practice mode needs no keys and moves no money.</p>
+          <ul className={styles.coins} aria-label="Coins customers can pay with">
+            <li><b>BTC</b> Bitcoin</li>
+            <li><b>ETH</b> Ethereum</li>
+            <li><b>TRX</b> Tron</li>
+          </ul>
         </div>
 
-        <figure className={styles.slip} aria-label="Example payment check">
-          <figcaption>
-            <span className={display.className}>Order #INV-2041</span>
-            <span>₦6,000</span>
-          </figcaption>
-          <ol>
-            {SLIP.map((line, i) => (
-              <li
-                key={line.text}
-                className={line.state === "ok" ? styles.ok : styles.ignored}
-                style={{ animationDelay: `${0.35 + i * 0.45}s` }}
-              >
-                <span aria-hidden>{line.state === "ok" ? "✓" : "✕"}</span>
-                <span className={styles.claim}>{line.text}</span>
-                {line.state === "ignored" && <em>Not proof of payment</em>}
-              </li>
-            ))}
-          </ol>
-          <p className={`${styles.stamp} ${display.className}`}>Paid, confirmed by Roqqu</p>
+        <div className={styles.heroVisual}>
+        <figure className={styles.window} aria-label="A payment flow in Roqqu Studio">
+          <div className={styles.windowBar}>
+            <span className={styles.windowTab}>sell-online.flow</span>
+            <span className={styles.windowStatus}>
+              <i aria-hidden /> Safety review passed
+            </span>
+          </div>
+          <div className={styles.canvas}>
+            <svg
+              viewBox="0 0 640 360"
+              className={styles.graph}
+              role="img"
+              aria-label="Generate Wallet, deposit webhook, check secret, Get Wallets, amount check, mark order paid"
+            >
+              <path d={WIRES} className={styles.wire} />
+              <path d={WIRES} className={styles.pulse} pathLength={100} />
+              {FLOW.map((n) => (
+                <g key={n.id} transform={`translate(${n.x} ${n.y})`} className={styles[`node_${n.cat}`]}>
+                  <rect width="160" height="60" rx="7" className={styles.nodeBox} />
+                  <rect width="3" height="60" rx="1.5" className={styles.nodeStripe} />
+                  <text x="16" y="26" className={styles.nodeTitle}>{n.title}</text>
+                  <text x="16" y="45" className={styles.nodeType}>{n.type}</text>
+                </g>
+              ))}
+            </svg>
+          </div>
         </figure>
+          <div className={styles.slip}>
+            <div className={styles.slipHead}>
+              <span>Order INV-2041</span>
+              <b>₦6,000</b>
+            </div>
+            <p><span className={styles.tick}>✓</span> 16.00 TRX received</p>
+            <p className={styles.struck}><span className={styles.cross}>✕</span> <s>Transfer screenshot</s></p>
+            <p className={`${styles.stamp} ${display.className}`}>Paid, confirmed by Roqqu</p>
+          </div>
+        </div>
       </header>
 
-      <section className={styles.coins} aria-label="Accepted coins">
-        <p>Customers pay with</p>
+      <section className={styles.endpoints} aria-label="Roqqu API endpoints Studio uses">
+        <p>Every block maps to a documented Roqqu endpoint</p>
         <ul>
-          <li>Bitcoin</li>
-          <li>Ethereum</li>
-          <li>Tron</li>
+          {ENDPOINTS.map((e) => (
+            <li key={e}><code>{e}</code></li>
+          ))}
         </ul>
-        <p>through the Roqqu API.</p>
       </section>
 
-      <section className={styles.uses} aria-labelledby="uses-title">
-        <h2 id="uses-title" className={display.className}>
-          What you can set up today
-        </h2>
-        <div className={styles.useGrid}>
-          {USES.map((use) => (
-            <article key={use.title}>
-              <Image src={use.image} alt="" width={240} height={150} />
-              <h3 className={display.className}>{use.title}</h3>
-              <p>{use.body}</p>
-            </article>
-          ))}
+      <section id="build" className={styles.section} aria-labelledby="build-title">
+        <h2 id="build-title" className={display.className}>What you can build today</h2>
+        <p className={styles.sectionLede}>
+          Four vetted templates. Each one passes the safety review before it can take money.
+        </p>
+        <div className={styles.bento}>
+          <article className={`${styles.tile} ${styles.tileWide}`}>
+            <div>
+              <h3 className={display.className}>Sell goods and services</h3>
+              <p>Share one link on WhatsApp. Orders turn green only when the coins land.</p>
+            </div>
+            <div className={styles.shopMock} aria-hidden>
+              <div className={styles.shopLink}>
+                <code>pay.roqqu.studio/mama-nkechi</code>
+                <span>Copy link</span>
+              </div>
+              <div className={styles.shopRows}>
+                <p><span>Jollof rice tray</span><b>₦12,500</b><em className={styles.ok}>Paid</em></p>
+                <p><span>Small chops x2</span><b>₦8,000</b><em className={styles.wait}>Waiting</em></p>
+                <p><span>Zobo, 5 litres</span><b>₦4,000</b><em className={styles.ok}>Paid</em></p>
+              </div>
+            </div>
+          </article>
+          <article className={styles.tile}>
+            <h3 className={display.className}>Send an invoice</h3>
+            <p>Bill in naira. Your client pays in BTC, ETH or TRX at Roqqu&apos;s live price.</p>
+            <div className={styles.invoiceMock} aria-hidden>
+              <p><span>Logo design</span><b>₦150,000</b></p>
+              <p className={styles.muted}><span>Pay with</span><b>0.0017 BTC</b></p>
+            </div>
+          </article>
+          <article className={styles.tile}>
+            <h3 className={display.className}>Run a savings group</h3>
+            <p>Each ajo member gets their own Roqqu wallet. Every contribution is checked.</p>
+            <ul className={styles.members} aria-hidden>
+              <li><i>AO</i> Ada <em className={styles.ok}>Paid</em></li>
+              <li><i>BK</i> Bayo <em className={styles.ok}>Paid</em></li>
+              <li><i>CE</i> Chika <em className={styles.wait}>Due Friday</em></li>
+            </ul>
+          </article>
+          <article className={`${styles.tile} ${styles.tileWide}`}>
+            <div>
+              <h3 className={display.className}>Pay bills</h3>
+              <p>Sell electricity units and airtime. The meter is checked by name before money moves.</p>
+            </div>
+            <div className={styles.meterMock} aria-hidden>
+              <p><code>45055844760</code><span>Ikeja Electric, prepaid</span></p>
+              <p className={styles.meterOk}>✓ Meter belongs to MR BETHEL LAWSON</p>
+              <p><span>Units bought</span><b>₦5,000</b></p>
+            </div>
+          </article>
         </div>
       </section>
 
-      <section id="how" className={styles.how} aria-labelledby="how-title">
-        <h2 id="how-title" className={display.className}>
-          How a payment is checked
-        </h2>
+      <section id="hood" className={styles.section} aria-labelledby="hood-title">
+        <div className={styles.hoodGrid}>
+          <div>
+            <h2 id="hood-title" className={display.className}>Under the hood, it is real code</h2>
+            <p className={styles.sectionLede}>
+              Developers get a typed flow, a safety analyzer that never relies on AI, and runnable
+              Python generated from the canvas. Copy it, run it, own it.
+            </p>
+          </div>
+          <UnderTheHood />
+        </div>
+      </section>
+
+      <section className={styles.section} aria-labelledby="how-title">
+        <h2 id="how-title" className={display.className}>How a payment is checked</h2>
         <ol className={styles.steps}>
           {STEPS.map((step) => (
             <li key={step.title}>
@@ -139,14 +212,12 @@ export default function Landing() {
         </ol>
       </section>
 
-      <section className={styles.rooky} aria-labelledby="rooky-title">
+      <section className={`${styles.section} ${styles.rooky}`} aria-labelledby="rooky-title">
         <div>
-          <h2 id="rooky-title" className={display.className}>
-            Meet Rooky, your setup assistant
-          </h2>
-          <p>
-            Tell Rooky what your business does. Rooky picks a safe template, or builds a new
-            flow from Roqqu&apos;s own documentation and refuses anything it cannot make safe.
+          <h2 id="rooky-title" className={display.className}>Meet Rooky, your setup assistant</h2>
+          <p className={styles.sectionLede}>
+            Tell Rooky what your business does. Rooky picks a safe template, or builds a new flow
+            from Roqqu&apos;s own documentation and refuses anything it cannot make safe.
           </p>
         </div>
         <div className={styles.chat} aria-label="Example chat with Rooky">
@@ -156,14 +227,21 @@ export default function Landing() {
             This looks like selling online. Orders are only marked paid after Roqqu confirms the
             money, so fake transfer screenshots never work.
           </p>
+          <p className={styles.you}>Build me a rocket to the moon.</p>
+          <p className={styles.bot}>
+            <span aria-hidden>R</span>
+            That isn&apos;t a payment flow I can build. I can set up a shop link, an invoice, a
+            savings group or bill payments.
+          </p>
         </div>
       </section>
 
       <section className={styles.final}>
-        <h2 className={display.className}>Set up your first payment flow in minutes.</h2>
-        <Link href="/studio" className={styles.primaryLight}>
+        <h2 className={display.className}>Your first verified payment flow is a few clicks away.</h2>
+        <Link href="/studio" className={styles.primary}>
           Get started
         </Link>
+        <p>Practice mode needs no keys and moves no money.</p>
       </section>
 
       <footer className={styles.footer}>
