@@ -45,7 +45,7 @@ from roqqu_studio.artifacts import (
     render_storefront,
 )
 from roqqu_studio.ajo import AjoMember, ajo_store
-from roqqu_studio.codegen import generate_python
+from roqqu_studio.codegen import generate_javascript, generate_python
 from roqqu_studio.credentials import (
     CredentialStatus,
     RoqquCredentials,
@@ -1669,14 +1669,17 @@ def workflow_code(workflow_id: str, lang: str = "python") -> GeneratedCode:
     workflow = store.get(workflow_id)
     if workflow is None:
         raise HTTPException(status_code=404, detail=f"unknown workflow: {workflow_id}")
-    if lang != "python":
-        raise HTTPException(status_code=400, detail="only lang=python is supported today")
     slug = re.sub(r"[^a-z0-9]+", "_", workflow.name.lower()).strip("_") or "flow"
-    return GeneratedCode(
-        language="python",
-        filename=f"{slug}.py",
-        code=generate_python(workflow),
-    )
+    if lang == "python":
+        return GeneratedCode(language="python", filename=f"{slug}.py", code=generate_python(workflow))
+    if lang == "javascript":
+        filename = f"{slug.replace('_', '-')}.mjs"
+        return GeneratedCode(
+            language="javascript",
+            filename=filename,
+            code=generate_javascript(workflow, filename=filename),
+        )
+    raise HTTPException(status_code=400, detail="lang must be python or javascript")
 
 
 @app.post("/preview/{artifact_id}/orders/{reference}/verify", response_model=Order)

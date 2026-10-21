@@ -9,11 +9,13 @@ import { useState, type ReactNode } from "react";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import json from "react-syntax-highlighter/dist/esm/languages/prism/json";
 import markdown from "react-syntax-highlighter/dist/esm/languages/prism/markdown";
+import javascript from "react-syntax-highlighter/dist/esm/languages/prism/javascript";
 import python from "react-syntax-highlighter/dist/esm/languages/prism/python";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 // Only the languages we render, so the bundle stays small (#211).
 SyntaxHighlighter.registerLanguage("python", python);
+SyntaxHighlighter.registerLanguage("javascript", javascript);
 SyntaxHighlighter.registerLanguage("json", json);
 SyntaxHighlighter.registerLanguage("markdown", markdown);
 
@@ -36,6 +38,10 @@ export interface InspectDocumentPanelProps {
   /** Shown in the header row (e.g. generated Python filename). */
   subtitle?: string | null;
   busy?: boolean;
+  /** Show a Download button that saves `content` as `subtitle`. */
+  downloadable?: boolean;
+  /** One-line, copyable "how to run this" shown under the header. */
+  runHint?: string;
 }
 
 export function InspectDocumentPanel({
@@ -48,12 +54,25 @@ export function InspectDocumentPanel({
   languagesNote,
   subtitle,
   busy = false,
+  downloadable = false,
+  runHint,
 }: InspectDocumentPanelProps) {
   const [copied, setCopied] = useState(false);
   const text = content.trim();
   const langKey = (activeFormat ?? formatLabel).toLowerCase();
   const language =
-    langKey === "python" ? "python" : langKey === "json" ? "json" : "markdown";
+    langKey === "python" || langKey === "javascript" || langKey === "json" ? langKey : "markdown";
+  const isCode = language !== "markdown";
+
+  function onDownload() {
+    if (!text) return;
+    const url = URL.createObjectURL(new Blob([`${text}\n`], { type: "text/plain" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = subtitle || (language === "javascript" ? "flow.mjs" : "flow.py");
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function onCopy() {
     if (!text) return;
@@ -109,7 +128,7 @@ export function InspectDocumentPanel({
       <div className="studio-doc__head">
         <div className="studio-doc__head-start">
           {headLeft}
-          {subtitle ? (
+          {subtitle && !runHint ? (
             <span className="studio-doc__filename">{subtitle}</span>
           ) : null}
         </div>
@@ -143,7 +162,25 @@ export function InspectDocumentPanel({
           </svg>
           {copied ? "Copied" : "Copy"}
         </button>
+        {downloadable ? (
+          <button
+            type="button"
+            className="studio-doc__copy"
+            onClick={onDownload}
+            disabled={!text || busy}
+          >
+            Download
+          </button>
+        ) : null}
       </div>
+      {runHint && text ? (
+        <div className="studio-doc__meta">
+          {subtitle ? <code className="studio-doc__file">{subtitle}</code> : null}
+          <p className="studio-doc__run">
+            <span>Run it:</span> <code>{runHint}</code>
+          </p>
+        </div>
+      ) : null}
       <div className="studio-doc__body">
         {busy && !text ? (
           <p className="studio-doc__empty">Generating…</p>
@@ -151,16 +188,19 @@ export function InspectDocumentPanel({
           <SyntaxHighlighter
             language={language}
             style={oneDark}
-            showLineNumbers
-            wrapLongLines
-            className="studio-doc__code"
+            /* Line numbers + wrapping makes every token a flex item and breaks
+               the layout; code scrolls sideways instead, prose wraps. */
+            showLineNumbers={isCode}
+            wrapLongLines={!isCode}
+            className={`studio-doc__code${isCode ? " is-code" : ""}`}
             customStyle={{
               margin: 0,
-              padding: "20px 18px",
+              padding: "16px 0 16px 4px",
               borderRadius: "10px",
-              fontSize: "13px",
-              lineHeight: "1.75",
-              background: "#282c34",
+              fontSize: "12.5px",
+              lineHeight: "1.65",
+              background: "#0a0f1a",
+              overflowX: "auto",
             }}
             codeTagProps={{
               style: {

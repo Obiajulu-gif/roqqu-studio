@@ -49,13 +49,27 @@ export interface WorkflowCanvasProps {
   onDropNode?: (typeKey: string, flow: { x: number; y: number }) => void;
 }
 
+/** Side panels float over the canvas: fit the flow into the strip between them. */
+function visiblePadding() {
+  const width = (selector: string) =>
+    document.querySelector(selector)?.getBoundingClientRect().width ?? 0;
+  const left = width(".studio-panels__left");
+  const right = width(".studio-sidebar--right");
+  return {
+    left: `${Math.round(left + 32)}px`,
+    right: `${Math.round(right + 32)}px`,
+    top: "96px",
+    bottom: "56px",
+  } as const;
+}
+
 function FitViewOnLayout({ layoutNonce }: { layoutNonce: number }) {
   const { fitView } = useReactFlow();
 
   useEffect(() => {
     if (layoutNonce === 0) return;
     const frame = requestAnimationFrame(() => {
-      void fitView({ padding: 0.2, duration: 220 });
+      void fitView({ padding: visiblePadding(), duration: 220 });
     });
     return () => cancelAnimationFrame(frame);
   }, [layoutNonce, fitView]);

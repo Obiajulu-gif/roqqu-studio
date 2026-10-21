@@ -1263,3 +1263,70 @@
 .biz-activity__svc {
   padding: 4px 16px 12px;
 }
+
+/* --- code panel (InspectDocumentPanel) ------------------------------------------ */
+.rq-console .studio-doc {
+  gap: 10px;
+}
+
+.rq-console .studio-doc__head {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rq-console .studio-doc__head-start {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+
+.rq-console .studio-doc__formats {
+  flex-shrink: 0;
+}
+
+.rq-console .studio-doc__format-tab {
+  white-space: nowrap;
+}
+
+.rq-console .studio-doc__formats {
+  background: #0d1422;
+  border: 1px solid #232e45;
+}
+
+.studio-doc__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.studio-doc__file {
+  font-size: 12.5px;
+  color: #7aa0ff;
+  overflow-wrap: anywhere;
+}
+
+.studio-doc__run {
+  margin: 0;
+  font-size: 12px;
+  color: #8d98ae;
+  line-height: 1.5;
+}
+
+.studio-doc__run span {
+  color: #b8c1d3;
+}
+
+.studio-doc__run code {
+  font-size: 11.5px;
+  color: #c9d3e6;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.rq-console .studio-doc__code.is-code {
+  border: 1px solid #1e2840;
+}
+
+.rq-console .studio-doc__code.is-code code {
+  white-space: pre !important;
+}

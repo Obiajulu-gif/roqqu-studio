@@ -117,7 +117,7 @@ function CanvasInner({ forceDeveloper = false }: { forceDeveloper?: boolean }) {
   /** Code tab format (#152): JSON from canvas IR; Python from GET /workflows/{id}/code. */
   // Python is the default and only visible code output for now (JSON + more
   // languages coming soon), so a dev copies runnable code, not raw graph JSON.
-  const [codeFormat] = useState<"json" | "python">("python");
+  const [codeFormat, setCodeFormat] = useState<"python" | "javascript">("python");
   const [pythonFilename, setPythonFilename] = useState<string | null>(null);
   const [pythonSource, setPythonSource] = useState("");
   const [pythonBusy, setPythonBusy] = useState(false);
@@ -418,7 +418,7 @@ function CanvasInner({ forceDeveloper = false }: { forceDeveloper?: boolean }) {
 
   // Python Code tab: debounced save + codegen when Flow changes (#152).
   useEffect(() => {
-    if (rightTab !== "code" || codeFormat !== "python") return;
+    if (rightTab !== "code") return;
     if (!currentIr?.id) {
       setPythonSource("");
       setPythonFilename(null);
@@ -438,7 +438,7 @@ function CanvasInner({ forceDeveloper = false }: { forceDeveloper?: boolean }) {
           if (controller.signal.aborted) return;
           const generated = await fetchWorkflowCode(
             currentIr.id,
-            "python",
+            codeFormat,
             controller.signal,
           );
           if (controller.signal.aborted) return;
@@ -451,7 +451,7 @@ function CanvasInner({ forceDeveloper = false }: { forceDeveloper?: boolean }) {
           setPythonError(
             error instanceof Error
               ? error.message
-              : "Could not generate Python for this Flow.",
+              : "Could not generate code for this Flow.",
           );
         } finally {
           if (!controller.signal.aborted) setPythonBusy(false);
@@ -1135,14 +1135,24 @@ function CanvasInner({ forceDeveloper = false }: { forceDeveloper?: boolean }) {
               />
             ) : rightTab === "code" ? (
               <InspectDocumentPanel
-                formatLabel="Python"
-                activeFormat="python"
-                languagesNote="JSON & more coming soon"
+                formatLabel={codeFormat === "python" ? "Python" : "JavaScript"}
+                formats={[
+                  { id: "python", label: "Python" },
+                  { id: "javascript", label: "JavaScript" },
+                ]}
+                activeFormat={codeFormat}
+                onFormatChange={(id) => setCodeFormat(id as "python" | "javascript")}
                 subtitle={pythonFilename}
                 content={pythonError ? "" : pythonSource}
                 busy={pythonBusy}
+                downloadable
+                runHint={
+                  codeFormat === "python"
+                    ? "pip install httpx, then ROQQU_SECRET_KEY=RQ-SEC-… python " + (pythonFilename ?? "flow.py")
+                    : "Node 18+, no installs: ROQQU_SECRET_KEY=RQ-SEC-… node " + (pythonFilename ?? "flow.mjs")
+                }
                 emptyHint={
-                  pythonError ?? "Compose or open a Flow to generate Python."
+                  pythonError ?? "Open a template or add blocks to generate code."
                 }
               />
             ) : trace.running || trace.run || trace.events.length > 0 ? (
