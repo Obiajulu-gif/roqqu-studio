@@ -472,6 +472,12 @@ export function BusinessDashboard({
             <BizIcon name="workflow" />
             {!collapsed && <span>Workflow</span>}
           </button>
+          <a className="biz-sidebar__link" href="/studio/playground">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+              <path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {!collapsed && <span>API playground</span>}
+          </a>
         </nav>
         <div className="biz-sidebar__user">
           <div className="biz-sidebar__avatar" aria-hidden>

@@ -39,6 +39,16 @@ _address_lock = threading.Lock()
 _last_address_lookup = 0.0
 
 
+def claim_address_lookup() -> None:
+    """Reserve this process's one /blockchain/address call per 100 s, or raise."""
+    global _last_address_lookup
+    with _address_lock:
+        wait = _ADDRESS_LOOKUP_GAP_S - (time.monotonic() - _last_address_lookup)
+        if _last_address_lookup and wait > 0:
+            raise RoqquError(f"address lookup is rate limited; retry in {int(wait) + 1}s")
+        _last_address_lookup = time.monotonic()
+
+
 class RoqquError(RuntimeError):
     """A Roqqu request failed or returned status != success."""
 
@@ -155,12 +165,7 @@ class RoqquClient:
 
         Roqqu bans the caller's IP for 10 hours above 1 call per 100 s, so this
         process refuses a second call inside that window instead of risking it."""
-        global _last_address_lookup
-        with _address_lock:
-            wait = _ADDRESS_LOOKUP_GAP_S - (time.monotonic() - _last_address_lookup)
-            if _last_address_lookup and wait > 0:
-                raise RoqquError(f"address lookup is rate limited; retry in {int(wait) + 1}s")
-            _last_address_lookup = time.monotonic()
+        claim_address_lookup()
         with traced("roqqu.blockchain_address", symbol=symbol):
             return dict(
                 self._call("GET", "/blockchain/address", params={"symbol": symbol, "addr": address})

@@ -101,6 +101,12 @@ Deterministic, no LLM. Apply-Fix rewrites a flawed graph to a clean one in front
 | MON011 | Beneficiary account not validated before a transfer |
 | MON012 | Balance not checked before a payout (the live "insufficient balance" failure) |
 
+## Roqqu API playground
+
+Open **/studio/playground** (or the `</>` button in the studio) to try every endpoint in the [Roqqu API reference](https://developers.roqqu.com): market prices, address lookup, wallets, send token, BVN/NIN, banks, account resolve, airtime, data, cable, meter and electricity, plus the deposit webhook. Each endpoint shows its parameters, live JavaScript (axios in the same shape as the docs, fetch, or the generated client), the documented example responses, and a **Send request** button that calls Roqqu through the API server so your secret key never reaches the browser. **Download roqqu.js** gives you a dependency-free client with one function per endpoint.
+
+Public market endpoints work without keys. Endpoints that need auth use `ROQQU_SECRET_KEY`; anything that moves money, costs money or creates/deletes wallets also needs `ALLOW_PRODUCTION_EXECUTION=true`.
+
 ## Configuration (all optional)
 
 Nothing is required to run the app or the tests. Copy [`.env.example`](.env.example) to `.env` and fill in only what you want; `docker compose up` picks it up automatically.

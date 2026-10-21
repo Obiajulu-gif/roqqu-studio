@@ -80,6 +80,16 @@ export function StudioIconRail({
             unoptimized
           />
         </button>
+        <a
+          href="/studio/playground"
+          className="studio-rail__btn studio-rail__btn--code"
+          title="Roqqu API playground"
+          aria-label="Roqqu API playground"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </a>
       </div>
     </nav>
   );

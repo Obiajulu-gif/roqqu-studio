@@ -65,6 +65,7 @@ from roqqu_studio.integrations.roqqu import (
     public_prices,
     usd_to_ngn,
 )
+from roqqu_studio import playground
 from roqqu_studio.money import money
 from roqqu_studio.notifications import (
     Notification,
@@ -770,6 +771,26 @@ def _deposit_order(artifact_id: str, reference: str) -> Order:
     if order is None or order.artifact_id != artifact_id or not order.payment_reference:
         raise HTTPException(status_code=404, detail=f"unknown payment: {reference}")
     return order
+
+
+@app.get("/playground/endpoints")
+def playground_endpoints() -> dict:
+    """Every documented Roqqu endpoint, plus what this server is allowed to run."""
+    settings = credential_store.settings_for(None)
+    return {
+        **playground.catalog(),
+        "live_key": bool(settings.roqqu_secret_key),
+        "production_allowed": settings.allow_production_execution,
+    }
+
+
+@app.post("/playground/call")
+def playground_call(body: playground.PlaygroundCall) -> dict:
+    """Run one catalog endpoint against Roqqu with the server-side key."""
+    try:
+        return playground.call(body, credential_store.settings_for(None))
+    except playground.PlaygroundError as exc:
+        raise HTTPException(status_code=exc.status, detail=exc.detail) from None
 
 
 @app.get("/roqqu/prices")

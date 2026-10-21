@@ -128,7 +128,7 @@ def test_live_meter_check_returns_the_customer_name(monkeypatch):
     class Fake:
         def verify_meter(self, *, provider, meter_type, meter_number):
             assert (provider, meter_type, meter_number) == ("ikeja", "prepaid", "45055844760")
-            return {"cust_name": "MR BETHEL LAWSON", "address": "x"}
+            return {"cust_name": "MRS ADA OKAFOR", "address": "x"}
 
     adapter = SandboxAdapter(Settings(_env_file=None, roqqu_secret_key="RQ-SEC-x"))
     monkeypatch.setattr(adapter, "_c", lambda: Fake())
@@ -136,4 +136,4 @@ def test_live_meter_check_returns_the_customer_name(monkeypatch):
         Node(id="m", type="roqqu.verify_meter", config={"meter_number": "45055844760"}),
         {"inputs": {}},
     )
-    assert result.ok and result.outputs["account_name"] == "MR BETHEL LAWSON"
+    assert result.ok and result.outputs["account_name"] == "MRS ADA OKAFOR"

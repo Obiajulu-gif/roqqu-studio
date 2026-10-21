@@ -1,0 +1,741 @@
+{
+ "base_url": "https://api.roqqu.com/prod/v1",
+ "auth": "Authorization: Bearer <secret key>  (Roqqu dashboard, Security section)",
+ "endpoints": [
+  {
+   "id": "get-prices",
+   "section": "Market",
+   "title": "Get price of all tokens",
+   "summary": "Gets the current prices of all tokens on roqqu",
+   "method": "GET",
+   "path": "/prices",
+   "auth": false,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "",
+   "params": [],
+   "examples": {
+    "200": "{\n   \"status\":\"success\",\n   \"message\":\"prices retrieved\",\n   \"data\":{\n      \"btc\":{\n         \"price\":14153.1551,\n         \"change\":0.15227819664215672\n      },\n      \"eth\":{\n         \"price\":452.57239999999996,\n         \"change\":-0.2725594208845099\n      },\n      \"eos\":{\n         \"price\":3.434991,\n         \"change\":-2.2962850873874583\n      }...\n   }\n}",
+    "400": {
+     "status": "fail",
+     "message": "invalid token supplied"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/all-prices"
+  },
+  {
+   "id": "get-price",
+   "section": "Market",
+   "title": "Get specific token price",
+   "summary": "For retrieving a single token's price",
+   "method": "GET",
+   "path": "/price",
+   "auth": false,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "",
+   "params": [
+    {
+     "name": "symbol",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "btc",
+     "description": "This is the token symbol of the token you intend to retrieve data for"
+    }
+   ],
+   "examples": {
+    "200": {
+     "status": "success",
+     "message": "price retrieved",
+     "data": 14121.41
+    },
+    "400": {
+     "status": "fail",
+     "message": "invalid token symbol"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/token-price"
+  },
+  {
+   "id": "price-history",
+   "section": "Market",
+   "title": "Get price history of token",
+   "summary": "Gets the entire price history of a token on roqqu",
+   "method": "GET",
+   "path": "/history",
+   "auth": false,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "Returns roughly the last 100 to 500 price points, newest first. Store your own copy for older history.",
+   "params": [
+    {
+     "name": "symbol",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "btc",
+     "description": "This is the token symbol of the token you intend to retrieve data for"
+    }
+   ],
+   "examples": {
+    "200": "{\n    \"status\": \"success\",\n    \"message\": \"price history retrieved successfully\",\n    \"data\": [\n        {\n            \"token\": \"btc\",\n            \"price\": 11547.250000000002,\n            \"currency\": \"USD\",\n            \"created_at\": \"2020-10-12T20:00:06.000Z\"\n        },\n        {\n            \"token\": \"btc\",\n            \"price\": 11571.63,\n            \"currency\": \"USD\",\n            \"created_at\": \"2020-10-12T19:30:06.000Z\"\n        },\n        {\n            \"token\": \"btc\",\n            \"price\": 11548.16,\n            \"currency\": \"USD\",\n            \"created_at\": \"2020-10-12T19:00:06.000Z\"\n        },...\n    ]\n}",
+    "400": {
+     "status": "fail",
+     "message": "invalid token symbol"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/history"
+  },
+  {
+   "id": "address-lookup",
+   "section": "Blockchain",
+   "title": "Addresses and accounts",
+   "summary": "",
+   "method": "GET",
+   "path": "/blockchain/address",
+   "auth": false,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "Rate limited to 1 call per 100 seconds. Going faster gets your IP blocked for 10 hours. EOS, HIVE and STEEM use an account name in place of an address.",
+   "params": [
+    {
+     "name": "symbol",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "btc",
+     "description": "This is the token symbol of the token you intend to retrieve data for"
+    },
+    {
+     "name": "addr",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "3EEhPSkNM86N755DgTdSgkJN4AFaZCC5jU",
+     "description": "This is the address of the wallet that you wish to retrieve data for"
+    }
+   ],
+   "examples": {
+    "200": "{\n    \"status\": \"success\",\n    \"message\": \"blockchain data retrieved successfully\",\n    \"data\": {\n        \"address\": \"3EEhPSkNM86N755DgTdSgkJN4AFaZCC5jU\",\n        \"network\": \"bitcoin\",\n        \"symbol\": \"btc\",\n        \"balance\": 8.23893879,\n        \"total_received\": 1268.86325725,\n        \"transactions\": [\n            {\n                \"ver\": 2,\n                \"inputs\": [\n                    {\n                        \"sequence\": 4294967295,\n                        \"witness\": \"30440220489cd83e2f876e0c281384a603c732dca8d047097cb72d47c3dedbecb7dd7d19022079fae2d420efe1c0dc1876ee69c3096b9038b836109f4d716a0a2e5a3df29c1c01\",\n                        \"prev_out\": {\n                            \"spent\": true,\n                            \"spending_outpoints\": [\n                                {\n                                    \"tx_index\": 0,\n                                    \"n\": 0\n                                }\n                            ],\n                            \"tx_index\": 0,\n                            \"type\": 0,\n                            \"addr\": \"3FJzrHy1rpCvMmc9E4niUyooeECp5j96Jx\",\n                            \"value\": 1305300,\n                            \"n\": 1,\n                            \"script\": \"a9149567b6c0f6071447dc5fa7049ae62a43a5c91d4287\"\n                        },\n                        \"script\": \"160014ab57e955f3b092bfaa865a91170851c1c2f59acf\"\n                    }\n                ],\n                \"weight\": 661,\n                \"block_height\": 652564,\n                \"relayed_by\": \"0.0.0.0\"\n              \t...\n            },...\n        ]\n    }\n}",
+    "400": {
+     "status": "success",
+     "message": "invalid Bitcoin address supplied"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/bitcoin"
+  },
+  {
+   "id": "generate-wallet",
+   "section": "Wallet",
+   "title": "Generate Wallet Address",
+   "summary": "Document that explains how to generate a new wallet address for a token",
+   "method": "POST",
+   "path": "/user/generate-wallet",
+   "auth": true,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "Supports btc, eth and trx only.",
+   "params": [
+    {
+     "name": "token",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "btc",
+     "description": "This is the token symbol of the token you intend to generate a new address for"
+    }
+   ],
+   "examples": {
+    "200": {
+     "status": "success",
+     "message": "wallet created successfully",
+     "data": {
+      "address": "3HXoGuAFe64N1jpXo4wsjpriJKP56MPUsP",
+      "type": "btc",
+      "total_received": 0,
+      "genesis": 0,
+      "created_at": "2018-01-22 16:26:21"
+     }
+    },
+    "400": {
+     "status": "success",
+     "message": "wallet generation for token not supported"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/generate-wallet"
+  },
+  {
+   "id": "get-wallets",
+   "section": "Wallet",
+   "title": "Get Wallets",
+   "summary": "Document that explains how to retrieve all wallets addresses for a specific token",
+   "method": "POST",
+   "path": "/user/wallets",
+   "auth": true,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "Returns every wallet ever generated for the token, with no paging. Call it sparingly.",
+   "params": [
+    {
+     "name": "token",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "btc",
+     "description": "This is the symbol of the token with the type of wallet you want to retrieve"
+    }
+   ],
+   "examples": {
+    "200": "{\n   \"status\":\"success\",\n   \"message\":\"wallets retrieved successfully\",\n   \"data\":[\n     \t{\n          \"address\": \"3HXoGuAFe64N1jpXo4wsjpriJKP56MPUsP\",\n          \"type\": \"btc\",\n          \"total_received\": 0.2283739,\n          \"total_received_usdt\": 1400.7728,\n          \"genesis\": 1,\n          \"created_at\": \"2018-01-22 16:26:21\"\n       },\n     \t {\n          \"address\": \"3AjRaoDCA5EbhJgc7G56dBRKzU4gd7cj97\",\n          \"type\": \"btc\",\n          \"total_received\": 11.83734,\n          \"total_received_usdt\": 0,\n          \"genesis\": 0,\n          \"created_at\": \"2018-01-22 19:11:01\"\n       }...\n     ]\n}",
+    "400": {
+     "status": "success",
+     "message": "unsupported token supplied"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/get-wallets-1"
+  },
+  {
+   "id": "delete-wallet",
+   "section": "Wallet",
+   "title": "Delete Wallet",
+   "summary": "Document that explains how to delete a particular wallet",
+   "method": "POST",
+   "path": "/user/delete-wallet",
+   "auth": true,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "Supports btc, eth and trx. Roqqu still credits coins sent to a deleted address, so never share it again.",
+   "params": [
+    {
+     "name": "token",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "btc",
+     "description": "This is the token symbol of the type of wallet you want to delete"
+    },
+    {
+     "name": "address",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "3EEhPSkNM86N755DgTdSgkJN4AFaZCC5jU",
+     "description": "This is the wallet address you intend to delete from your account"
+    }
+   ],
+   "examples": {
+    "200": {
+     "status": "success",
+     "message": "wallet deleted successfully"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/delete-wallet-1"
+  },
+  {
+   "id": "send-token",
+   "section": "Wallet",
+   "title": "Send Token",
+   "summary": "Document that explains how to send tokens to wallet addresses",
+   "method": "POST",
+   "path": "/user/send-{token}",
+   "auth": true,
+   "moves_money": true,
+   "paid_lookup": false,
+   "note": "Moves real crypto. Swap the symbol in the path for other coins, e.g. /user/send-btc. memo is only for BNB, EOS, HIVE and STEEM; tag is for Ripple.",
+   "params": [
+    {
+     "name": "token",
+     "in": "path",
+     "required": true,
+     "type": "string",
+     "default": "eth",
+     "description": "Coin symbol, e.g. btc, eth, trx"
+    },
+    {
+     "name": "amount",
+     "in": "body",
+     "required": true,
+     "type": "number",
+     "default": 0.1,
+     "description": "This is the amount of token you want to send"
+    },
+    {
+     "name": "wallet",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "",
+     "description": "This is the recipient wallet address that will receive the token"
+    },
+    {
+     "name": "memo",
+     "in": "body",
+     "required": false,
+     "type": "string",
+     "default": "",
+     "description": "This is only used for BNB, EOS, HIVE and STEEM, these tokens use the optional memo system"
+    },
+    {
+     "name": "tag",
+     "in": "body",
+     "required": false,
+     "type": "string",
+     "default": "",
+     "description": "This is only required for XRP transfers"
+    }
+   ],
+   "examples": {
+    "200": {
+     "status": "success",
+     "message": "sent successfully"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/send-token-1"
+  },
+  {
+   "id": "bvn-verify",
+   "section": "Fiat",
+   "title": "BVN Verification",
+   "summary": "Document that explains how to verify user's BVN information from the banking system",
+   "method": "POST",
+   "path": "/user/bvn-verify",
+   "auth": true,
+   "moves_money": false,
+   "paid_lookup": true,
+   "note": "Costs NGN 20 per successful lookup, taken from your Roqqu wallet.",
+   "params": [
+    {
+     "name": "bvn",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "2012345678",
+     "description": "This is the user BVN number you want to retrieve the data for"
+    }
+   ],
+   "examples": {
+    "200": {
+     "status": "success",
+     "message": "BVN data retrieved successfully",
+     "data": {
+      "bvn": "----------",
+      "first_name": "-------",
+      "middle_name": "--------",
+      "last_name": "---------",
+      "date_of_birth": "04-Mar-1992",
+      "phone_number": "080XXXXXXX",
+      "registration_date": "",
+      "enrollment_bank": "035",
+      "enrollment_branch": "---",
+      "image_base_64": null,
+      "address": null,
+      "gender": "Male",
+      "email": null,
+      "watch_listed": null,
+      "nationality": "Nigeria",
+      "marital_status": null,
+      "state_of_residence": null,
+      "lga_of_residence": null,
+      "image": null
+     }
+    },
+    "400": {
+     "status": "fail",
+     "message": "invalid BVN supplied"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/bvn-verify"
+  },
+  {
+   "id": "get-banks",
+   "section": "Fiat",
+   "title": "Get Banks",
+   "summary": "Endpoint retrieves all banks active within the Roqqu ecosystem",
+   "method": "GET",
+   "path": "/banks",
+   "auth": false,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "Use these exact bank names with Bank Account Resolve.",
+   "params": [],
+   "examples": {
+    "200": "{\n    \"status\": \"success\",\n    \"message\": \"all banks retrieved\",\n    \"data\": [\n        \"Access Bank\",\n        \"Aso Savings\",\n        \"Eco Bank\",\n        \"Fidelity Bank Plc\",\n        \"First Bank of Nigeria\",\n        \"First Bank of Nigeria Plc\",\n        ...\n    ]\n}"
+   },
+   "doc_url": "https://developers.roqqu.com/reference/get-all-banks"
+  },
+  {
+   "id": "account-resolve",
+   "section": "Fiat",
+   "title": "Bank Account Resolve",
+   "summary": "",
+   "method": "POST",
+   "path": "/user/account-resolve",
+   "auth": true,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "",
+   "params": [
+    {
+     "name": "account_number",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "3051559336",
+     "description": "This is the account number you wish to verify it's validity"
+    },
+    {
+     "name": "bank",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "First Bank of Nigeria Limited",
+     "description": "This is the name of the bank gotten from the bank list api"
+    }
+   ],
+   "examples": {
+    "200": {
+     "status": "success",
+     "message": "account details retrieved successfully",
+     "data": "ADA OKAFOR"
+    },
+    "400": {
+     "status": "fail",
+     "message": "invalid account details"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/bank-account-resolve"
+  },
+  {
+   "id": "nin-verify",
+   "section": "Fiat",
+   "title": "NIN Verification",
+   "summary": "Document that explains how to verify user's NIN information",
+   "method": "POST",
+   "path": "/user/nin-verify",
+   "auth": true,
+   "moves_money": false,
+   "paid_lookup": true,
+   "note": "Costs NGN 100 per successful lookup, taken from your Roqqu wallet.",
+   "params": [
+    {
+     "name": "nin",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "",
+     "description": "The National identification Number"
+    }
+   ],
+   "examples": {
+    "200": "{\n  status: 'success',\n  message: 'NIN data retrieved successfully',\n  data: {\n    nin: '00000000000',\n    first_name: 'ADA',\n    last_name: 'OKAFOR',\n    middle_name: 'CHIOMA',\n    gender: 'm',\n    phone_number: '080XXXXXXXX',\n    address: '12 SAMPLE STREET, ENUGU',\n    lga_of_residence: 'Enugu South',\n    date_of_birth: '19-01-1989',\n    nationality: 'Nigerian'\n  }\n}"
+   },
+   "doc_url": "https://developers.roqqu.com/reference/nin-verification"
+  },
+  {
+   "id": "recharge-airtime",
+   "section": "Bills",
+   "title": "Airtime Recharge",
+   "summary": "This document explains how to recharge airtime on phone numbers",
+   "method": "POST",
+   "path": "/user/recharge-airtime",
+   "auth": true,
+   "moves_money": true,
+   "paid_lookup": false,
+   "note": "Moves real money from your Roqqu balance.",
+   "params": [
+    {
+     "name": "phone_number",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "080XXXXXXXX",
+     "description": "This is the phone number you intend to recharge"
+    },
+    {
+     "name": "amount",
+     "in": "body",
+     "required": true,
+     "type": "number",
+     "default": 200,
+     "description": "This is the amount you intend to recharge on the phone number"
+    }
+   ],
+   "examples": {
+    "200": {
+     "status": "success",
+     "message": "airtime recharge sent successfully"
+    },
+    "400": {
+     "status": "fail",
+     "message": "invalid phone number supplied"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/airtime-recharge"
+  },
+  {
+   "id": "data-bundles",
+   "section": "Bills",
+   "title": "Get Data Bundles",
+   "summary": "This document explains how to get the different data bundles of the different providers",
+   "method": "GET",
+   "path": "/data/subscriptions",
+   "auth": false,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "Each bundle's variation_code is what Data Subscription needs.",
+   "params": [
+    {
+     "name": "provider",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "mtn",
+     "description": "This is the name of the provider, they are mtn, glo, etisalat and airtel"
+    }
+   ],
+   "examples": {
+    "200": "{\n    \"status\": \"success\",\n    \"message\": \"available subscriptions retrieved\",\n    \"data\": [\n        {\n            \"variation_code\": \"mtn-10mb-100\",\n            \"name\": \"N100 100MB - 24 hrs\",\n            \"variation_amount\": \"100.00\",\n            \"fixedPrice\": \"Yes\"\n        },\n        {\n            \"variation_code\": \"mtn-50mb-200\",\n            \"name\": \"N200 200MB - 2 days\",\n            \"variation_amount\": \"200.00\",\n            \"fixedPrice\": \"Yes\"\n        },\n        {\n            \"variation_code\": \"mtn-100mb-1000\",\n            \"name\": \"N1000 1.5GB - 30 days\",\n            \"variation_amount\": \"1000.00\",\n            \"fixedPrice\": \"Yes\"\n        },\n        ...\n    ]\n}",
+    "400": {
+     "status": "fail",
+     "message": "unable to get subscriptions"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/get-data-subscriptions"
+  },
+  {
+   "id": "buy-data",
+   "section": "Bills",
+   "title": "Data Subscription",
+   "summary": "This document explains how to activate a data bundle for a phone number",
+   "method": "POST",
+   "path": "/user/pay-data",
+   "auth": true,
+   "moves_money": true,
+   "paid_lookup": false,
+   "note": "Moves real money from your Roqqu balance.",
+   "params": [
+    {
+     "name": "provider",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "mtn",
+     "description": "This is the name of the provider, they are mtn, glo, etisalat and airtel"
+    },
+    {
+     "name": "variation_code",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "mtn-10mb-100",
+     "description": "This is the variation code retrieved from the get data bundles endpoint"
+    },
+    {
+     "name": "phone_number",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "080XXXXXXXX",
+     "description": "This is the recipient phone number that will receive the data bundle"
+    }
+   ],
+   "examples": {
+    "200": {
+     "status": "success",
+     "message": "purchase complete",
+     "data": {
+      "request_id": "484104",
+      "phone": "080XXXXXXXX",
+      "variation_code": "mtn-10mb-100",
+      "billersCode": "080XXXXXXXX",
+      "serviceID": "mtn-data"
+     }
+    },
+    "400": {
+     "status": "success",
+     "message": "invalid phone number supplied"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/data-subscription"
+  },
+  {
+   "id": "cable-bundles",
+   "section": "Bills",
+   "title": "Get Cable Bundles",
+   "summary": "This document explains how to retrieve the different cable subscriptions",
+   "method": "GET",
+   "path": "/cable/subscriptions",
+   "auth": false,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "",
+   "params": [
+    {
+     "name": "provider",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "dstv",
+     "description": "This is the provider of the cable, dstv, gotv and startimes currently enabled"
+    }
+   ],
+   "examples": {},
+   "doc_url": "https://developers.roqqu.com/reference/get-cable-bundles"
+  },
+  {
+   "id": "verify-iuc",
+   "section": "Bills",
+   "title": "Verify IUC Number",
+   "summary": "This document explains how to verify the validity of an IUC number of a decoder",
+   "method": "GET",
+   "path": "/verify-iuc",
+   "auth": false,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "",
+   "params": [
+    {
+     "name": "provider",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "dstv",
+     "description": "This is the provider of the cable, dstv, gotv and startimes currently enabled"
+    },
+    {
+     "name": "iuc",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "7029557786",
+     "description": "This is the unique identity number of the decoder"
+    }
+   ],
+   "examples": {},
+   "doc_url": "https://developers.roqqu.com/reference/verify-iuc-number"
+  },
+  {
+   "id": "verify-meter",
+   "section": "Bills",
+   "title": "Verify Meter Number",
+   "summary": "This document explains how to verify a meter number to ensure it's correct",
+   "method": "GET",
+   "path": "/verify-meter",
+   "auth": false,
+   "moves_money": false,
+   "paid_lookup": false,
+   "note": "",
+   "params": [
+    {
+     "name": "provider",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "ikeja",
+     "description": "This is the meter provider, eko, ikeja and ph supported"
+    },
+    {
+     "name": "meter_type",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "prepaid",
+     "description": "This is the type of meter, prepaid or postpaid"
+    },
+    {
+     "name": "meter_number",
+     "in": "query",
+     "required": true,
+     "type": "string",
+     "default": "45055844760",
+     "description": "This is the meter number that needs to be verified"
+    }
+   ],
+   "examples": {
+    "200": {
+     "status": "success",
+     "message": "user info retrieved successfully",
+     "data": {
+      "cust_name": "MRS ADA OKAFOR",
+      "address": "T/FORMER 2 BY JOY PRIM "
+     }
+    },
+    "400": {
+     "status": "fail",
+     "message": "invalid meter number"
+    }
+   },
+   "doc_url": "https://developers.roqqu.com/reference/verify-meter-number"
+  },
+  {
+   "id": "pay-electricity",
+   "section": "Bills",
+   "title": "Electricity Meter Recharge",
+   "summary": "This document explains how to purchase and refill electricity meters",
+   "method": "POST",
+   "path": "/user/pay-electric",
+   "auth": true,
+   "moves_money": true,
+   "paid_lookup": false,
+   "note": "Roqqu keeps NGN 100 of the amount as a fee. Verify the meter first.",
+   "params": [
+    {
+     "name": "provider",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "ikeja",
+     "description": "This is the meter provider, eko, ikeja and ph supported"
+    },
+    {
+     "name": "meter_type",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "prepaid",
+     "description": "This is the type of meter, prepaid or postpaid"
+    },
+    {
+     "name": "meter_number",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "45055844760",
+     "description": "This is the meter number that needs to be verified"
+    },
+    {
+     "name": "amount",
+     "in": "body",
+     "required": true,
+     "type": "number",
+     "default": 500,
+     "description": "This is the amount you intend to recharge to the meter"
+    },
+    {
+     "name": "phone_number",
+     "in": "body",
+     "required": true,
+     "type": "string",
+     "default": "080XXXXXXXX",
+     "description": "This is the phone number that will receive the token code after paying"
+    }
+   ],
+   "examples": {},
+   "doc_url": "https://developers.roqqu.com/reference/electricity-meter-recharge"
+  }
+ ],
+ "webhook": {
+  "title": "Receive Token (deposit webhook)",
+  "summary": "Roqqu POSTs to the URL you set on the dashboard whenever coins land on one of your generated addresses.",
+  "payload": {
+   "secret": "<the secret you set on the dashboard>",
+   "token": "trx",
+   "amount": "16.00",
+   "address": "<your generated address>",
+   "timestamp": "2026-10-21T10:00:00Z"
+  },
+  "note": "Compare secret with the one you stored before trusting anything, then confirm the deposit with Get Wallets.",
+  "doc_url": "https://developers.roqqu.com/reference/receive-token"
+ }
+}

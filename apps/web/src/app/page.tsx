@@ -51,6 +51,7 @@ export default function Landing() {
         <div className={styles.navLinks}>
           <a href="#build">What you can build</a>
           <a href="#hood">Under the hood</a>
+          <Link href="/studio/playground">API playground</Link>
           <a href="https://github.com/Obiajulu-gif/roqqu-studio">GitHub</a>
           <Link href="/studio" className={styles.navCta}>
             Get started
@@ -73,9 +74,9 @@ export default function Landing() {
             <Link href="/studio" className={styles.primary}>
               Get started
             </Link>
-            <a href="#hood" className={styles.secondary}>
-              See the generated code
-            </a>
+            <Link href="/studio/playground" className={styles.secondary}>
+              Try the Roqqu API
+            </Link>
           </div>
           <ul className={styles.coins} aria-label="Coins customers can pay with">
             <li><b>BTC</b> Bitcoin</li>
@@ -180,7 +181,7 @@ export default function Landing() {
             </div>
             <div className={styles.meterMock} aria-hidden>
               <p><code>45055844760</code><span>Ikeja Electric, prepaid</span></p>
-              <p className={styles.meterOk}>✓ Meter belongs to MR BETHEL LAWSON</p>
+              <p className={styles.meterOk}>✓ Meter belongs to MRS ADA OKAFOR</p>
               <p><span>Units bought</span><b>₦5,000</b></p>
             </div>
           </article>

@@ -55,7 +55,7 @@ def _handler(request: httpx.Request) -> httpx.Response:
         return _ok(0.25)
     if path == "/prod/v1/user/account-resolve":
         assert body == {"account_number": "3051559336", "bank": "First Bank of Nigeria Limited"}
-        return _ok("ONOMOR ESEOGHENE BENJAMIN")
+        return _ok("ADA OKAFOR")
     return httpx.Response(404, json={"status": "fail", "message": f"no route {path}"})
 
 
@@ -96,7 +96,7 @@ def test_price_and_account_resolve() -> None:
     with _client() as c:
         assert c.token_price(symbol="TRX") == Decimal("0.25")
         name = c.account_resolve(account_number="3051559336", bank="First Bank of Nigeria Limited")
-    assert name == "ONOMOR ESEOGHENE BENJAMIN"
+    assert name == "ADA OKAFOR"
 
 
 def test_fail_envelope_and_http_errors_raise() -> None:
