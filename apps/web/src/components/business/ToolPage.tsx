@@ -8,8 +8,10 @@ import {
 
 import { InvoicesPage, SavingsPage, SellPage } from "./GetPaid";
 import type { ToolSlug } from "./tools";
+import { WalletPage } from "./WalletPage";
 
 const PAGES: Record<ToolSlug, () => React.JSX.Element> = {
+  wallet: WalletPage,
   sell: SellPage,
   invoices: InvoicesPage,
   savings: SavingsPage,

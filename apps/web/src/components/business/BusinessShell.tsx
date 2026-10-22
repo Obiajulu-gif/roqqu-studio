@@ -8,9 +8,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
+import { Onboarding } from "./Onboarding";
 import { TOOL_GROUPS, TOOLS, toolBySlug } from "./tools";
+import { BusinessProvider, useBusiness } from "./useBusiness";
 
 export function ToolIcon({ d, size = 18 }: { d: string; size?: number }) {
   return (
@@ -21,6 +23,45 @@ export function ToolIcon({ d, size = 18 }: { d: string; size?: number }) {
 }
 
 export function BusinessShell({ children }: { children: ReactNode }) {
+  return (
+    <BusinessProvider>
+      <Suspense>
+        <Gate>{children}</Gate>
+      </Suspense>
+    </BusinessProvider>
+  );
+}
+
+/** Onboarding first; the workspace only once a business is signed in. */
+function Gate({ children }: { children: ReactNode }) {
+  const { state } = useBusiness();
+  if (state.kind === "loading") return <div className="ob"><p className="ob-loading">Loading your business…</p></div>;
+  if (state.kind === "signed_out") return <Onboarding />;
+  if (state.kind === "unavailable") {
+    return (
+      <div className="ob">
+        <div className="ob-card">
+          <h1>Business accounts are not set up</h1>
+          <div className="svc-notice is-info">{state.message}</div>
+          <p className="ob-lead">The flow canvas, API playground and templates still work without it.</p>
+          <Link href="/studio" className="svc-btn">Back to the studio</Link>
+        </div>
+      </div>
+    );
+  }
+  return <Workspace business={state.me.business} mode={state.me.mode}>{children}</Workspace>;
+}
+
+function Workspace({
+  children,
+  business,
+  mode,
+}: {
+  children: ReactNode;
+  business: { business_name: string; owner_name: string; slug: string };
+  mode: "practice" | "test" | "live";
+}) {
+  const { signOut } = useBusiness();
   const pathname = usePathname() ?? "/studio/business";
   const router = useRouter();
   const slug = pathname.split("/")[3];
@@ -56,6 +97,14 @@ export function BusinessShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="bz-side__foot">
+          <div className="bz-who">
+            <b>{business.business_name}</b>
+            <span>{business.owner_name}</span>
+            <span className={`bz-mode is-${mode}`}>
+              {mode === "practice" ? "Practice" : mode === "test" ? "Roqqu test mode" : "Live"}
+            </span>
+            <button type="button" className="svc-link" onClick={() => void signOut()}>Sign out</button>
+          </div>
           <Link href="/studio/developer" className="bz-link">
             <ToolIcon d="M8 7 3 12l5 5m8-10 5 5-5 5" />
             Developer tools
@@ -98,8 +147,8 @@ export function BusinessShell({ children }: { children: ReactNode }) {
               <span>{tool.group}</span>
             </nav>
           ) : null}
-          <h1>{tool ? tool.title : "Your business"}</h1>
-          <p>{tool ? tool.blurb : "Everything you can run on Roqqu, in one place."}</p>
+          <h1>{tool ? tool.title : business.business_name}</h1>
+          <p>{tool ? tool.blurb : `Welcome back, ${business.owner_name.split(" ")[0]}. Everything you run on Roqqu, in one place.`}</p>
         </header>
         <div className="bz-body">{children}</div>
       </main>

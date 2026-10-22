@@ -7,6 +7,7 @@
  */
 
 export type ToolSlug =
+  | "wallet"
   | "sell"
   | "invoices"
   | "savings"
@@ -25,15 +26,24 @@ export interface Tool {
   icon: string;
 }
 
-export type ToolGroup = "Get paid" | "Pay out" | "Markets";
+export type ToolGroup = "Your money" | "Get paid" | "Pay out" | "Markets";
 
 export const TOOL_GROUPS: { name: ToolGroup; lead: string }[] = [
+  { name: "Your money", lead: "Your Roqqu wallets: receive, hold and send." },
   { name: "Get paid", lead: "Take crypto payments that Roqqu confirms." },
   { name: "Pay out", lead: "Send crypto to staff and customers." },
   { name: "Markets", lead: "Watch prices at Roqqu's live rates." },
 ];
 
 export const TOOLS: Tool[] = [
+  {
+    slug: "wallet",
+    title: "Wallet",
+    blurb: "Your balances, an address on every network, and sends protected by an emailed code.",
+    group: "Your money",
+    template: "withdrawals",
+    icon: "M3 7h15a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7Zm0 0 2.5-3H16l1.5 3M16 13.5h2",
+  },
   {
     slug: "sell",
     title: "Sell online",

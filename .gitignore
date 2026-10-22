@@ -42,3 +42,6 @@ runs/
 graphify-out/
 *.log
 .venv/
+
+# Local dev database (npm run db:local)
+.pglite/
