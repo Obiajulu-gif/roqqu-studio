@@ -15,9 +15,6 @@ import { AjoPanel, type AjoPanelHandle } from "./AjoPanel";
 import { CryptoRates } from "./CryptoRates";
 import {
   AlertsPanel,
-  BillsPanel,
-  DataPanel,
-  KycPanel,
   PayrollPanel,
   RecentServiceActivity,
   WithdrawPanel,
@@ -27,10 +24,7 @@ export type ProductTab =
   | "sell"
   | "invoice"
   | "ajo"
-  | "bills"
-  | "data"
   | "withdraw"
-  | "kyc"
   | "alerts"
   | "payroll";
 
@@ -38,19 +32,13 @@ const PRODUCT_TABS: { id: ProductTab; label: string }[] = [
   { id: "sell", label: "Sell Online" },
   { id: "invoice", label: "Invoice" },
   { id: "ajo", label: "Saving Group (Ajo)" },
-  { id: "bills", label: "Pay Bills" },
-  { id: "data", label: "Data Bundles" },
   { id: "withdraw", label: "Withdrawals" },
-  { id: "kyc", label: "KYC" },
   { id: "alerts", label: "Price Alerts" },
   { id: "payroll", label: "Payroll" },
 ];
 
 const SERVICE_PANELS: Partial<Record<ProductTab, () => React.JSX.Element>> = {
-  bills: BillsPanel,
-  data: DataPanel,
   withdraw: WithdrawPanel,
-  kyc: KycPanel,
   alerts: AlertsPanel,
   payroll: PayrollPanel,
 };

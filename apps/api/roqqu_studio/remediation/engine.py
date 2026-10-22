@@ -114,7 +114,7 @@ def _fix_mon009(wf: Workflow, finding: Finding, catalog: Catalog) -> Remediation
 def _fix_mon011(wf: Workflow, finding: Finding, catalog: Catalog) -> RemediationStep:
     src, dst = _final_edge(finding)
     ids = insert_chain_on_edge(
-        wf, src, dst, [("roqqu.account_resolve", "Validate Bank Account")]
+        wf, src, dst, [("roqqu.blockchain_address", "Check Destination Address")]
     )
     return RemediationStep(
         rule_id="MON011", action=f"Inserted beneficiary validation before '{dst}'", added_nodes=ids

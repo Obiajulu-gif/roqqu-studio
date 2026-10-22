@@ -71,12 +71,11 @@ function GripIcon() {
   );
 }
 
-// Grouped like the Roqqu API reference (developers.roqqu.com).
+// Grouped like the Roqqu API Service docs (roqqu-api-services.gitbook.io/ras).
 const CATEGORY_ORDER = [
-  "Wallet",
-  "Fiat",
-  "Market & Blockchain",
-  "Ancillary Services",
+  "Wallets",
+  "Payment links",
+  "Market & Transactions",
   "Customer Verification",
   "Events",
   "Control",
@@ -84,17 +83,18 @@ const CATEGORY_ORDER = [
 ];
 
 const ROQQU_SECTION: Record<string, string> = {
-  "roqqu.account_resolve": "Fiat",
-  "roqqu.bvn_verify": "Fiat",
-  "roqqu.nin_verify": "Fiat",
-  "roqqu.token_price": "Market & Blockchain",
-  "roqqu.blockchain_address": "Market & Blockchain",
-  "roqqu.recharge_airtime": "Ancillary Services",
-  "roqqu.pay_electric": "Ancillary Services",
+  "roqqu.payment_link": "Payment links",
+  "roqqu.token_price": "Market & Transactions",
+  "roqqu.all_prices": "Market & Transactions",
+  "roqqu.fiat_rates": "Market & Transactions",
+  "roqqu.balances": "Market & Transactions",
+  "roqqu.network_fee": "Market & Transactions",
+  "roqqu.tx_status": "Market & Transactions",
+  "roqqu.swap": "Market & Transactions",
 };
 
 function displayCategory(meta: NodeMeta): string {
-  if (meta.category === "roqqu") return ROQQU_SECTION[meta.type] ?? "Wallet";
+  if (meta.category === "roqqu") return ROQQU_SECTION[meta.type] ?? "Wallets";
   if (meta.category === "safety") return "Customer Verification";
   if (meta.category === "event") return "Events";
   if (meta.category === "control") return "Control";

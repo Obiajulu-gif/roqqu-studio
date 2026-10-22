@@ -15,6 +15,8 @@ Security invariants:
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from .config import Settings, get_settings
@@ -26,8 +28,8 @@ log = get_logger("credentials")
 class RoqquCredentials(BaseModel):
     """A workflow's own Roqqu keys (write path only)."""
 
-    secret_key: str = Field(min_length=1)  # RQ-SEC-..., dashboard -> Security
-    webhook_secret: str = ""  # the secret set beside the webhook URL on the dashboard
+    secret_key: str = Field(min_length=1)  # RAS console -> Settings -> API Keys and Webhooks
+    mode: Literal["test", "live"] = "test"  # which RAS key this is
 
 
 class CredentialStatus(BaseModel):
@@ -44,7 +46,6 @@ class CredentialStore:
 
     def put(self, workflow_id: str, creds: RoqquCredentials) -> None:
         register_secret(creds.secret_key)
-        register_secret(creds.webhook_secret)
         self._by_workflow[workflow_id] = creds
         log.info("credentials.set", workflow=workflow_id)  # values are redacted
 
@@ -65,6 +66,13 @@ class CredentialStore:
             return CredentialStatus(workflow_id=workflow_id, configured=True, source="platform")
         return CredentialStatus(workflow_id=workflow_id, configured=False, source="none")
 
+    def all_keys(self) -> list[str]:
+        """Every RAS key we hold: the platform's and each workflow's (webhook decryption)."""
+        platform = get_settings()
+        keys = [k for k in (platform.ras_test_key, platform.ras_live_key, platform.roqqu_secret_key) if k]
+        keys += [c.secret_key for c in self._by_workflow.values()]
+        return list(dict.fromkeys(keys))
+
     def settings_for(self, workflow_id: str | None) -> Settings:
         """Resolve the Settings a real call should use for this workflow.
 
@@ -77,7 +85,7 @@ class CredentialStore:
         return platform.model_copy(
             update={
                 "roqqu_secret_key": creds.secret_key,
-                "roqqu_webhook_secret": creds.webhook_secret or platform.roqqu_webhook_secret,
+                "ras_mode": creds.mode,
             }
         )
 

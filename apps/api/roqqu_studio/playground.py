@@ -1,20 +1,21 @@
-"""Roqqu API playground: try any documented Roqqu endpoint from the studio.
+"""Roqqu API playground: try any documented RAS endpoint from the studio.
 
-The catalog (`integrations/roqqu/endpoints.json`) is generated from the
-OpenAPI blocks on developers.roqqu.com and covers every endpoint there. Calls
-go through this server so the secret key never reaches a browser, and only
-catalog entries can be called (no free-form URLs).
+The catalog (`integrations/roqqu/endpoints.json`) is generated from the Roqqu
+API Service docs (roqqu-api-services.gitbook.io/ras) and covers every endpoint
+there. Calls go through this server so the API key never reaches a browser, and
+only catalog entries can be called (no free-form URLs).
 
 Safety tiers:
-  * public reads (no auth): always allowed
-  * authorised reads: need ROQQU_SECRET_KEY
-  * side effects (money moves, paid lookups, wallet create/delete): also need
-    ALLOW_PRODUCTION_EXECUTION=true, because Roqqu has no sandbox
+  * public reads (prices, rates, supported networks): always allowed
+  * authorised calls: need RAS_TEST_KEY (test mode) or RAS_LIVE_KEY
+  * side effects (money moves, wallet create/delete, settings) in LIVE mode also
+    need ALLOW_PRODUCTION_EXECUTION=true; test mode never moves real money
 """
 
 from __future__ import annotations
 
 import json
+from decimal import Decimal, InvalidOperation
 import re
 import time
 from functools import lru_cache
@@ -25,12 +26,11 @@ import httpx
 from pydantic import BaseModel, Field
 
 from .config import Settings
-from .integrations.roqqu.client import RoqquError, claim_address_lookup
+from .integrations.roqqu.client import _form
 from .observability import register_secret
 
 _CATALOG = Path(__file__).parent / "integrations" / "roqqu" / "endpoints.json"
-_SIDE_EFFECTS = {"generate-wallet", "delete-wallet"}
-_TOKEN_RE = re.compile(r"^[a-z]{2,6}$")
+_PATH_VALUE_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 
 class PlaygroundCall(BaseModel):
@@ -58,15 +58,19 @@ def _endpoint(endpoint_id: str) -> dict[str, Any]:
 
 
 def has_side_effects(e: dict[str, Any]) -> bool:
-    return bool(e["moves_money"] or e["paid_lookup"] or e["id"] in _SIDE_EFFECTS)
+    return bool(e.get("side_effects") or e["moves_money"])
 
 
 def _coerce(value: Any, kind: str) -> Any:
+    # RAS docs type some crypto amounts as "integer" though they are fractional
+    # (0.00002 BTC): validate as a decimal and send the exact text, never a float.
     if kind in ("number", "integer") and isinstance(value, str) and value.strip():
         try:
-            return int(value) if kind == "integer" else float(value)
-        except ValueError:
+            if not Decimal(value.strip()).is_finite():
+                raise InvalidOperation
+        except InvalidOperation:
             raise PlaygroundError(400, f"{value!r} is not a number") from None
+        return value.strip()
     return value
 
 
@@ -81,8 +85,8 @@ def build_request(e: dict[str, Any], params: dict[str, Any]) -> tuple[str, str, 
             continue
         value = _coerce(value, p["type"])
         if p["in"] == "path":
-            if not _TOKEN_RE.match(str(value)):
-                raise PlaygroundError(400, f"{p['name']} must be a coin symbol like eth")
+            if not _PATH_VALUE_RE.match(str(value)):
+                raise PlaygroundError(400, f"{p['name']} must be letters, numbers, - or _ only")
             path = path.replace("{" + p["name"] + "}", str(value))
         elif p["in"] == "query":
             query[p["name"]] = value
@@ -100,28 +104,23 @@ def call(
     if e["auth"]:
         if not settings.roqqu_secret_key:
             raise PlaygroundError(
-                422, "This endpoint needs your Roqqu secret key. Set ROQQU_SECRET_KEY on the API."
+                422, "This endpoint needs a RAS key. Set RAS_TEST_KEY (test mode) on the API."
             )
         register_secret(settings.roqqu_secret_key)
-        headers["Authorization"] = f"Bearer {settings.roqqu_secret_key}"
-    if has_side_effects(e) and not settings.allow_production_execution:
+        headers[settings.ras_key_header] = settings.roqqu_secret_key
+    if has_side_effects(e) and not settings.is_sandbox and not settings.allow_production_execution:
         raise PlaygroundError(
             422,
-            "This call changes real money or wallets, and Roqqu has no sandbox. "
-            "Set ALLOW_PRODUCTION_EXECUTION=true on the API to allow it.",
+            "This call changes real money or wallets in LIVE mode. Use a RAS test key, or "
+            "set ALLOW_PRODUCTION_EXECUTION=true on the API to allow it.",
         )
-    if e["id"] == "address-lookup":
-        try:
-            claim_address_lookup()
-        except RoqquError as exc:
-            raise PlaygroundError(429, str(exc)) from None
 
     base = settings.roqqu_base_url.rstrip("/")
     started = time.monotonic()
     try:
         with httpx.Client(timeout=20.0, transport=transport) as http:
             resp = http.request(method, base + path, params=query or None,
-                                json=body if method != "GET" else None, headers=headers)
+                                data=_form(body) if method != "GET" else None, headers=headers)
     except httpx.HTTPError as exc:
         raise PlaygroundError(502, f"Roqqu unreachable: {type(exc).__name__}") from None
     try:

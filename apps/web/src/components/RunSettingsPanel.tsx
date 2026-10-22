@@ -49,7 +49,7 @@ export function RunSettingsPanel({
           />
           <span>
             <strong>Live on Roqqu</strong>
-            <small>Uses your saved Roqqu keys. Roqqu has no sandbox: this moves real crypto.</small>
+            <small>Calls the real Roqqu API with your saved key. A test key moves no real money; a live key does.</small>
           </span>
         </label>
       </fieldset>

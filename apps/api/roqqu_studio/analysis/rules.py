@@ -17,9 +17,9 @@ from .engine import Analysis, Finding
 
 Rule = Callable[[Analysis], list[Finding]]
 
-DOCS_COLLECTIONS = "https://developers.roqqu.com/reference/receive-token"
-DOCS_LIVE = "https://developers.roqqu.com/reference/how-it-works"
-DOCS_API = "https://developers.roqqu.com/reference/getting-started-with-your-api"
+DOCS_COLLECTIONS = "https://roqqu-api-services.gitbook.io/ras/webhooks/coin-webhook-events"
+DOCS_LIVE = "https://roqqu-api-services.gitbook.io/ras/introduction"
+DOCS_API = "https://roqqu-api-services.gitbook.io/ras/authentication"
 
 
 def mon001_client_callback_as_truth(a: Analysis) -> list[Finding]:
@@ -72,7 +72,7 @@ def mon002_missing_signature_check(a: Analysis) -> list[Finding]:
                         "you set on the dashboard in every webhook body; compare it before any "
                         "effect runs."
                     ),
-                    remediation="Insert Verify Webhook Secret immediately after the webhook node.",
+                    remediation="Insert Decrypt Webhook immediately after the webhook node.",
                     doc_url=DOCS_COLLECTIONS,
                 )
             )

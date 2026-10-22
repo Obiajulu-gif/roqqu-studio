@@ -7,7 +7,6 @@ Run from apps/api:
 from __future__ import annotations
 
 import asyncio
-import hmac
 import json
 import os
 import re
@@ -58,11 +57,15 @@ from roqqu_studio.onboarding import (
     profile_store,
 )
 from roqqu_studio.integrations.roqqu import (
-    WALLET_TOKENS,
+    PAY_OPTIONS,
     RoqquClient,
     RoqquError,
+    decrypt_webhook,
+    ngn_per_usd,
     ngn_to_token,
+    pay_option,
     public_prices,
+    token_price_usd,
     usd_to_ngn,
 )
 from roqqu_studio import playground, services
@@ -736,26 +739,26 @@ def _public_base_url(request: Request) -> str:
 
 
 def _pay_token(workflow_id: str | None, token: str | None) -> str:
-    """The coin the buyer chose (btc, eth or trx), else the merchant default."""
+    """The pay option the buyer chose (usdt_trc20, usdt_bep20, btc), else the merchant default."""
     chosen = (token or credential_store.settings_for(workflow_id).roqqu_pay_token).lower()
-    if chosen not in WALLET_TOKENS:
-        raise HTTPException(status_code=400, detail=f"pay with one of: {', '.join(WALLET_TOKENS)}")
+    if chosen not in PAY_OPTIONS:
+        raise HTTPException(status_code=400, detail=f"pay with one of: {', '.join(PAY_OPTIONS)}")
     return chosen
 
 
 def _open_deposit(
     workflow_id: str | None, amount_ngn: Decimal, reference: str, artifact_id: str, token: str
 ) -> dict:
-    """Collect an NGN amount in crypto on Roqqu: a fresh deposit address
-    (Generate Wallet) plus the token amount that covers it at Roqqu's price.
-
-    Roqqu has no hosted checkout, so `checkout_url` is our own deposit page.
-    The address doubles as the payment reference the verifier checks."""
+    """Collect an NGN amount in crypto on RAS: a fresh merchant deposit address
+    (Generate Wallet For Self) plus the token amount that covers it at Roqqu's
+    live price and NGN rate. `checkout_url` is our own deposit page; the address
+    doubles as the payment reference the verifier checks."""
     settings = credential_store.settings_for(workflow_id)
+    network, coin = pay_option(token)
     try:
         with RoqquClient(settings) as client:
-            wallet = client.generate_wallet(token=token)
-            due = ngn_to_token(amount_ngn, client.token_price(symbol=token), settings)
+            wallet = client.generate_wallet(network=network)
+        due = ngn_to_token(amount_ngn, token_price_usd(settings, coin), settings)
     except RoqquError as exc:
         raise HTTPException(status_code=502, detail=f"Roqqu error: {exc}") from None
     return {
@@ -829,6 +832,7 @@ def playground_endpoints() -> dict:
     return {
         **playground.catalog(),
         "live_key": bool(settings.roqqu_secret_key),
+        "mode": settings.ras_mode,
         "production_allowed": settings.allow_production_execution,
     }
 
@@ -844,10 +848,8 @@ def playground_call(body: playground.PlaygroundCall) -> dict:
 
 @app.get("/roqqu/prices")
 def roqqu_prices() -> dict:
-    """Live Roqqu market prices (public GET /prices) with an NGN column.
-
-    Needs no Roqqu key, so the dashboard rate card works on day one. NGN is
-    derived from ROQQU_NGN_PER_USD because Roqqu quotes USD only."""
+    """Live Roqqu market prices (public GET /prices) with an NGN column from
+    Roqqu's live NGN rate (public GET /rates). Needs no key."""
     settings = credential_store.settings_for(None)
     try:
         data = public_prices(settings.roqqu_base_url)
@@ -864,10 +866,10 @@ def roqqu_prices() -> dict:
                 "price_usd": str(usd),
                 "price_ngn": str(usd_to_ngn(usd, settings)),
                 "change": row.get("change"),
-                "payable": symbol in WALLET_TOKENS,
+                "payable": symbol in {coin for _, coin in PAY_OPTIONS.values()},
             }
         )
-    return {"ngn_per_usd": settings.roqqu_ngn_per_usd, "tokens": tokens}
+    return {"ngn_per_usd": str(ngn_per_usd(settings)), "tokens": tokens}
 
 
 @app.post("/preview/{artifact_id}/deposit/{reference}")
@@ -898,13 +900,16 @@ def deposit_page(artifact_id: str, reference: str) -> HTMLResponse:
 
     import segno
 
-    token, _, due = (order.transaction_reference or "").partition(":")
+    option, _, due = (order.transaction_reference or "").partition(":")
+    network, coin = pay_option(option)
+    token = f"{coin} ({network.upper()})" if coin == "usdt" else coin
     address = order.payment_reference
     qr = segno.make(address, error="m").svg_inline(scale=5, border=2, dark="#1C2127")
     e = html.escape
     switch = "".join(
-        f'<button name="token" value="{t}"{" disabled" if t == token else ""}>{t.upper()}</button>'
-        for t in WALLET_TOKENS
+        f'<button name="token" value="{t}"{" disabled" if t == option else ""}>'
+        f'{PAY_OPTIONS[t][1].upper()} {"" if t == "btc" else PAY_OPTIONS[t][0].upper()}</button>'
+        for t in PAY_OPTIONS
     )
     return HTMLResponse(
         f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -920,7 +925,7 @@ form button:disabled{{background:#2764FF;color:#fff;cursor:default}}</style></he
 <p>Send exactly</p><div class="amt">{e(due)} {e(token.upper())}</div>
 <small>= NGN {order.amount:,} at Roqqu's live price</small>
 <p>to this {e(token.upper())} address</p><code>{e(address)}</code>{qr}
-<p><small>Only send {e(token.upper())}, and only to the address shown now.</small></p>
+<p><small>Only send {e(token.upper())} on {e(network.upper())}, and only to the address shown now.</small></p>
 <p id="s"><small>Waiting for Roqqu to confirm the deposit...</small></p></div>
 <script>setInterval(async()=>{{const r=await fetch("/preview/{e(artifact_id)}/orders/{e(reference)}/verify",{{method:"POST"}});
 if(r.ok&&(await r.json()).status==="verified")document.getElementById("s").textContent="Paid. Confirmed by Roqqu.";}},10000);</script>
@@ -1701,12 +1706,12 @@ def verify_order(artifact_id: str, reference: str) -> Order:
 
 @app.post("/roqqu/webhook")
 async def roqqu_webhook(request: Request) -> dict:
-    """Roqqu's deposit notification (Receive Token docs).
+    """RAS coin / payment-link webhook (Coin Webhook Events docs).
 
-    Body: {secret, token, amount, address, timestamp}. `secret` must equal the
-    one set beside the webhook URL on the Roqqu dashboard; it is compared in
-    constant time before anything else (MON002). Even then the payload is only
-    a TRIGGER: the order flips solely on Get Wallets via the verifier (#53).
+    The body is `{hash}`, AES-256-CTR encrypted with our API key; the IV rides in
+    the `x-api-key` header. Only a body that decrypts with one of our keys is
+    authentic (MON002). Even then the event is only a TRIGGER: the order flips
+    solely on Get Addresses via the verifier (#53).
     """
     raw = await request.body()
     try:
@@ -1715,21 +1720,18 @@ async def roqqu_webhook(request: Request) -> dict:
         raise HTTPException(status_code=400, detail="invalid webhook body") from None
     if not isinstance(payload, dict):
         raise HTTPException(status_code=400, detail="invalid webhook body")
-    sent_secret = str(payload.get("secret") or "")
-    payment_reference = str(payload.get("address") or "")
-
-    def _matches(secret: str) -> bool:
-        return bool(secret) and hmac.compare_digest(secret.encode(), sent_secret.encode())
-
-    # The address is a LOOKUP key only (never trusted state): it lets a
-    # per-workflow webhook secret (#68) also satisfy the check.
+    iv_hex = request.headers.get("x-api-key", "")
+    event = None
+    for key in credential_store.all_keys():
+        event = decrypt_webhook(payload, iv_hex, key)
+        if event is not None:
+            break
+    if event is None:
+        log.warning("webhook.undecryptable")
+        raise HTTPException(status_code=401, detail="webhook body does not decrypt with our key")
+    meta = event.get("meta_data") or {}
+    payment_reference = str(meta.get("address") or "")
     order = orders_service.find_by_payment_reference(payment_reference)
-    secrets = [credential_store.settings_for(None).roqqu_webhook_secret]
-    if order is not None:
-        secrets.append(credential_store.settings_for(order.workflow_id).roqqu_webhook_secret)
-    if not any(_matches(s) for s in secrets):
-        log.warning("webhook.bad_secret", payment_reference=payment_reference)
-        raise HTTPException(status_code=401, detail="invalid webhook secret")
     if order is None:
         # Signed but not ours (e.g. a replay for a pruned in-memory order):
         # 200 so Roqqu stops retrying; nothing to flip.

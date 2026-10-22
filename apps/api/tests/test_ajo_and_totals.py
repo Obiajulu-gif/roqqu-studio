@@ -34,7 +34,7 @@ def test_ajo_has_both_money_in_and_money_out_paths():
     # Money in: authenticated contribution -> credit. Money out: guarded payout.
     assert "event.payment_webhook" in types and "app.credit_ledger" in types
     assert "safety.balance_guard" in types and "roqqu.send_token" in types
-    assert "roqqu.account_resolve" in types  # MON011 receiver validation
+    assert "roqqu.blockchain_address" in types  # MON011 receiver validation
 
 
 def _shop_artifact() -> str:

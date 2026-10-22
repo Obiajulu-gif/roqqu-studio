@@ -37,10 +37,10 @@ const TOOLS = [
 ];
 
 const STEPS = [
-  { title: "Try an endpoint", body: "Open the playground and send a public call, such as Get price." },
-  { title: "Add your secret key", body: "Set ROQQU_SECRET_KEY on the API server (Roqqu dashboard, Security)." },
+  { title: "Try an endpoint", body: "Open the playground and send a public call, such as Get Crypto Prices." },
+  { title: "Add your test key", body: "Set RAS_TEST_KEY on the API server (RAS console, Settings, API Keys and Webhooks)." },
   { title: "Build and review a flow", body: "Start from a template on the canvas; fix anything the review flags." },
-  { title: "Go live", body: "Set ALLOW_PRODUCTION_EXECUTION=true when you are ready to move real crypto." },
+  { title: "Go live", body: "Swap in RAS_LIVE_KEY and set ALLOW_PRODUCTION_EXECUTION=true when you are ready to move real crypto." },
 ];
 
 export function DeveloperHome() {
@@ -59,7 +59,7 @@ export function DeveloperHome() {
         <nav className="dv-nav" aria-label="Developer">
           <Link href="/studio/playground">API playground</Link>
           <Link href="/studio/canvas">Flow canvas</Link>
-          <a href="https://developers.roqqu.com" target="_blank" rel="noopener noreferrer">Roqqu docs</a>
+          <a href="https://roqqu-api-services.gitbook.io/ras" target="_blank" rel="noopener noreferrer">Roqqu docs</a>
           <Link href="/studio/business">Business tools</Link>
         </nav>
       </header>

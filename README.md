@@ -84,7 +84,7 @@ The thesis, in one line: **AI proposes, the analyzer disposes. Correctness never
 
 ### 📣 DevRel
 - Rooky is **grounded in Roqqu's own docs**, so she composes from documented features, not model memory - citations come from the catalog, never invented.
-- Ask Rooky *"why?"* on any node and get a grounded answer with a real `developers.roqqu.com` reference.
+- Ask Rooky *"why?"* on any node and get a grounded answer with a real Roqqu API Service docs reference.
 - Every catalog node maps to a real Roqqu capability (Collections, Reserved Accounts, Disbursements, Verification/KYC, Reconciliation).
 
 ## The safety analyzer
@@ -103,9 +103,9 @@ Deterministic, no LLM. Apply-Fix rewrites a flawed graph to a clean one in front
 
 ## Roqqu API playground
 
-Open **/studio/playground** (or the `</>` button in the studio) to try every endpoint in the [Roqqu API reference](https://developers.roqqu.com): market prices, address lookup, wallets, send token, BVN/NIN, banks, account resolve, airtime, data, cable, meter and electricity, plus the deposit webhook. Each endpoint shows its parameters, live JavaScript (axios in the same shape as the docs, fetch, or the generated client), the documented example responses, and a **Send request** button that calls Roqqu through the API server so your secret key never reaches the browser. **Download roqqu.js** gives you a dependency-free client with one function per endpoint.
+Open **/studio/playground** (or the `</>` button in the studio) to try every endpoint in the [Roqqu API Service docs](https://roqqu-api-services.gitbook.io/ras): wallets, send, payment links, balances, trades, transactions, history, prices and rates, customers, IP whitelist, webhooks and analytics (40 endpoints), plus the encrypted webhook. Each endpoint shows its parameters, live JavaScript (axios, fetch, or the generated client), the documented example responses, and a **Send request** button that calls Roqqu through the API server so your key never reaches the browser. **Download roqqu.js** gives you a dependency-free client with one function per endpoint.
 
-Public market endpoints work without keys. Endpoints that need auth use `ROQQU_SECRET_KEY`; anything that moves money, costs money or creates/deletes wallets also needs `ALLOW_PRODUCTION_EXECUTION=true`.
+Public market endpoints work without keys. Everything else uses `RAS_TEST_KEY` (test mode, no real money). With a live key, anything that moves money or changes your account also needs `ALLOW_PRODUCTION_EXECUTION=true`.
 
 ## Configuration (all optional)
 
@@ -114,11 +114,11 @@ Nothing is required to run the app or the tests. Copy [`.env.example`](.env.exam
 | Key | Unlocks | Get it |
 |-----|---------|--------|
 | `NVIDIA_API_KEY` (or `GOOGLE_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`) | Rooky composing new flows from free text | [build.nvidia.com](https://build.nvidia.com) · [aistudio.google.com](https://aistudio.google.com/app/apikey) · [console.anthropic.com](https://console.anthropic.com) · [platform.openai.com](https://platform.openai.com) |
-| `ROQQU_SECRET_KEY`, `ROQQU_WEBHOOK_SECRET` (+ `ALLOW_PRODUCTION_EXECUTION=true`) | Real crypto deposits (Generate Wallet), verification (Get Wallets) and payouts (Send Token) | [app.roqqu.com](https://app.roqqu.com/signup) → dashboard → Security; API reference at [developers.roqqu.com](https://developers.roqqu.com) |
+| `RAS_TEST_KEY` (or `RAS_LIVE_KEY` + `ALLOW_PRODUCTION_EXECUTION=true`) | Real payment links, deposit addresses, verification and payouts | RAS console → Settings → API Keys and Webhooks; docs at [roqqu-api-services.gitbook.io/ras](https://roqqu-api-services.gitbook.io/ras) |
 | `ZEPTOMAIL_*` | Real email receipts | [zeptomail.zoho.com](https://zeptomail.zoho.com) |
 | `EVOLUTION_*` | Real WhatsApp nudges (the recipient comes from the run prompt or the node) | a self-hosted [Evolution API](https://github.com/EvolutionAPI/evolution-api) instance |
 
-**Roqqu has no sandbox** - live execution moves real crypto, so it is refused until you set `ALLOW_PRODUCTION_EXECUTION=true`. See [SETUP.md](SETUP.md). Secrets never enter logs, workflows, shared links, or AI context.
+**Start with a RAS test key**: it calls the real API without moving real money. A live key is refused until you set `ALLOW_PRODUCTION_EXECUTION=true`. See [SETUP.md](SETUP.md). Secrets never enter logs, workflows, shared links, or AI context.
 
 ## Prove the thesis from the command line
 

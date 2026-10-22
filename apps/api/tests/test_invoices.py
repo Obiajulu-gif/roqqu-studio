@@ -117,20 +117,15 @@ def test_pay_then_verify_marks_paid(monkeypatch):
         def __exit__(self, *a):
             return False
 
-        def generate_wallet(self, *, token):
-            return {"address": "TPAYREF1", "token": token, "total_received": "0", "created_at": ""}
-
-        def token_price(self, *, symbol):
-            from decimal import Decimal
-
-            return Decimal("0.25")
+        def generate_wallet(self, *, network, customer=None):
+            return {"address": "TPAYREF1", "network": network}
 
     monkeypatch.setattr(api_main, "RoqquClient", _FakeClient)
     res = client.post(f"/preview/{artifact_id}/invoice/{inv['reference']}/pay")
     assert res.status_code == 200 and "checkout_url" in res.json()
-    # NGN 120,000 at NGN 1,500/USD and USD 0.25/TRX = 320 TRX to the new address.
+    # NGN 120,000 at the NGN 1,360/USD fallback rate (tests are offline) = 88.23529412 USDT.
     deposit = client.get(res.json()["checkout_url"]).text
-    assert "TPAYREF1" in deposit and "320.00000000 TRX" in deposit
+    assert "TPAYREF1" in deposit and "88.23529412 USDT (TRC20)" in deposit
 
     original = orders_service.verifier
     orders_service.verifier = lambda ref: {"status": "PAID", "amount_paid": 120000.0}

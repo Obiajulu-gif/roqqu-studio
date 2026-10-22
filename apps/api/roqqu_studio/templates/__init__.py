@@ -17,9 +17,8 @@ from pydantic import BaseModel
 
 from ..ir.models import Workflow
 from .ajo import ajo
-from .bills import bills
 from .invoice import invoice
-from .more import kyc, price_alerts, sell_data, withdrawals
+from .more import price_alerts, withdrawals
 from .payroll import payroll
 from .sell_online import sell_online
 
@@ -58,9 +57,9 @@ _TEMPLATES: dict[str, TemplateDef] = {
             title="Invoice a client, get paid",
             persona="Freelancer / B2B billing",
             description=(
-                "Create an invoice, share the link. The buyer pays in crypto to a "
-                "fresh Roqqu address, and the invoice is only marked paid once Roqqu "
-                "shows the deposit landed."
+                "Create an invoice priced in naira and share its Roqqu payment link. "
+                "The buyer pays in BTC or USDT, and the invoice is only marked paid "
+                "once Roqqu shows the deposit landed."
             ),
         ),
         builder=invoice,
@@ -74,7 +73,7 @@ _TEMPLATES: dict[str, TemplateDef] = {
                 "Members save into a shared pool through their own dedicated "
                 "accounts. Every contribution is only credited after Roqqu "
                 "confirms it, and the cycle payout only leaves after the pool is "
-                "checked and the receiver's account is validated by name."
+                "checked and the receiver's wallet address is checked on Roqqu."
             ),
         ),
         builder=ajo,
@@ -85,37 +84,12 @@ _TEMPLATES: dict[str, TemplateDef] = {
             title="Pay staff salaries (payroll)",
             persona="Small business paying staff every month",
             description=(
-                "Employee list in, salaries out. Every account number is validated "
-                "with Name Enquiry before any money moves, and the whole batch is "
-                "reconciled after, so a typo never sends a salary to a stranger."
+                "Employee list in, salaries out in crypto. Every wallet address is "
+                "checked on Roqqu before any money moves, and every send is reconciled "
+                "after, so a typo never sends a salary to a stranger."
             ),
         ),
         builder=payroll,
-    ),
-    "pay-bills": TemplateDef(
-        info=TemplateInfo(
-            id="pay-bills",
-            title="Pay bills (electricity & airtime)",
-            persona="Vendor or app selling airtime and power units",
-            description=(
-                "Sell electricity units and airtime through Roqqu. The meter is "
-                "checked by name before money moves, each request is paid once, "
-                "and your Roqqu balance is checked first."
-            ),
-        ),
-        builder=bills,
-    ),
-    "sell-data": TemplateDef(
-        info=TemplateInfo(
-            id="sell-data",
-            title="Sell data bundles",
-            persona="Vendor or app reselling mobile data",
-            description=(
-                "Live plans from Roqqu, each order paid once, and your balance checked "
-                "before the bundle is bought."
-            ),
-        ),
-        builder=sell_data,
     ),
     "withdrawals": TemplateDef(
         info=TemplateInfo(
@@ -124,22 +98,10 @@ _TEMPLATES: dict[str, TemplateDef] = {
             persona="App or exchange paying customers out in crypto",
             description=(
                 "Each request is paid once, the destination address is checked on Roqqu "
-                "and your balance must cover it before Send Token runs."
+                "and your balance must cover it before Send runs."
             ),
         ),
         builder=withdrawals,
-    ),
-    "kyc": TemplateDef(
-        info=TemplateInfo(
-            id="kyc",
-            title="Verify customers (KYC)",
-            persona="Any business that must know who it pays",
-            description=(
-                "BVN and NIN checks plus bank account resolve, all through Roqqu, before a "
-                "customer can transact."
-            ),
-        ),
-        builder=kyc,
     ),
     "price-alerts": TemplateDef(
         info=TemplateInfo(

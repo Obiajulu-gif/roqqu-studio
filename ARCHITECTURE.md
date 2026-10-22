@@ -83,7 +83,7 @@ All of it is lost on API restart.
 
 | Service | Used for | Env |
 |---|---|---|
-| Roqqu API (production only) | Deposit addresses, deposit verification, crypto payouts, prices, KYC, bills | `ROQQU_SECRET_KEY`, `ROQQU_WEBHOOK_SECRET`, `ROQQU_PAY_TOKEN`, `ROQQU_NGN_PER_USD`, `ROQQU_BASE_URL`, `ALLOW_PRODUCTION_EXECUTION` |
+| Roqqu API Service (test + live) | Payment links, deposit addresses, deposit verification, crypto payouts, balances, prices, NGN rates | `RAS_TEST_KEY`, `RAS_LIVE_KEY`, `RAS_MODE`, `ROQQU_PAY_TOKEN`, `ROQQU_NGN_PER_USD`, `ROQQU_BASE_URL`, `ALLOW_PRODUCTION_EXECUTION` |
 | Anthropic / OpenAI / Google | Rooky | `AI_PROVIDER`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, plus `*_MODEL`, `AI_TIMEOUT_S`, `ROOKY_COMPOSE_ROUNDS` |
 | ZeptoMail | Email receipts | `ZEPTOMAIL_API_KEY`, `ZEPTOMAIL_SENDER`, `ZEPTOMAIL_REPLY_TO` |
 | Evolution API | WhatsApp | `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE` |
@@ -114,25 +114,24 @@ The app has one route (`/`). Screens are states of `StudioApp.tsx`:
 
 ## Roqqu status
 
-The integration follows the Roqqu API reference (https://developers.roqqu.com, base `https://api.roqqu.com/prod/v1`, `Authorization: Bearer RQ-SEC-...`).
+The integration follows the Roqqu API Service docs (https://roqqu-api-services.gitbook.io/ras, base `https://service.roqqu.com/v1`, `x-staging-api-key` for a test key or `x-api-key` for a live key, form-encoded bodies).
 
 | Studio node | Roqqu endpoint |
 |---|---|
-| `roqqu.generate_wallet`, `invoice_wallet`, `member_wallet` | `POST /user/generate-wallet` (btc, eth, trx) |
-| `roqqu.get_wallets` (the authoritative verify) | `POST /user/wallets` (`total_received`, `total_received_usdt`) |
-| `roqqu.send_token`, `batch_send`, `split_send`, `refund_send` | `POST /user/send-{token}` (one call per payee) |
-| `roqqu.delete_wallet` | `POST /user/delete-wallet` |
-| `roqqu.token_price` | `GET /price` |
-| `roqqu.blockchain_address` | `GET /blockchain/address` (1 call / 100 s, enforced in-process) |
-| `roqqu.account_resolve`, `bvn_verify`, `nin_verify` | `POST /user/account-resolve`, `/user/bvn-verify`, `/user/nin-verify` |
-| `roqqu.verify_meter` | `GET /verify-meter` |
-| `roqqu.recharge_airtime`, `pay_electric` | `POST /user/recharge-airtime`, `/user/pay-electric` |
-| Dashboard "Roqqu rates" card (`GET /roqqu/prices`) | `GET /prices` (public, no key, cached 60 s) |
-| `event.payment_webhook` + `safety.verify_signature` | Receive Token webhook `{secret, token, amount, address, timestamp}`; the `secret` is compared in constant time |
+| `roqqu.payment_link` | `POST /payment-links` (NGN priced, BTC / USDT TRC20 / USDT BEP20) |
+| `roqqu.generate_wallet`, `invoice_wallet`, `member_wallet` | `POST /wallets/generate-wallet` (customer) or `/wallets/generate-merchant-wallet` |
+| `roqqu.get_wallets` (the authoritative verify) | `POST /wallets/get-addresses` (`total_received`) |
+| `roqqu.send_token`, `batch_send`, `split_send`, `refund_send` | `POST /wallets/send` (one call per payee, returns a `refid`) |
+| `roqqu.delete_wallet` | `DELETE /wallets/delete` |
+| `roqqu.blockchain_address` (Check Address) | `POST /wallets/what-network` |
+| `roqqu.tx_status` | `GET /transaction/refId/{refid}` |
+| `roqqu.balances`, `network_fee`, `swap` | `POST /balances`, `/transaction/network-fee`, `/trade/swap` |
+| `roqqu.token_price`, `all_prices`, `fiat_rates` | `GET /prices`, `GET /rates` (public, cached 60 s) |
+| `event.payment_webhook` + `safety.verify_signature` | Encrypted webhook `{hash}`; decrypted with the API key, IV from the `x-api-key` header |
 
-Nodes whose names are not Roqqu endpoints (`invoice_wallet`, `member_wallet`, `batch_send`, `split_send`, `refund_send`) are Studio steps built on Generate Wallet or Send Token, because Roqqu has no invoice, batch, split or refund endpoint.
+Nodes whose names are not RAS endpoints (`invoice_wallet`, `member_wallet`, `batch_send`, `split_send`, `refund_send`) are Studio steps built on Generate Wallet or Send, because RAS has no invoice-address, batch, split or customer-refund endpoint.
 
-Payments: NGN totals are priced in crypto with `GET /price` and `ROQQU_NGN_PER_USD`. The buyer gets a fresh deposit address on `/preview/{id}/deposit/{ref}` and can switch between BTC, ETH and TRX there (`POST` the same URL with `token=`); each switch generates a new address, and verification checks the coin stored on the order. The order flips to paid only when Get Wallets shows enough received. Roqqu has no sandbox, so `RoqquClient` refuses every call unless `ALLOW_PRODUCTION_EXECUTION=true`.
+Payments: NGN totals are priced with RAS `GET /rates` (NGN per USD) and `GET /prices`. The buyer gets a fresh merchant deposit address on `/preview/{id}/deposit/{ref}` and can switch between USDT (TRC20), USDT (BEP20) and BTC there (`POST` the same URL with `token=`); each switch generates a new address, and verification checks the network stored on the order. The order flips to paid only when Get Addresses shows enough received. Webhooks are AES-256-CTR encrypted with the API key (`integrations/roqqu/webhook.py`). A test key never moves real money; a live key is refused unless `ALLOW_PRODUCTION_EXECUTION=true`.
 
 The files in `docs/` are the original Monnify Studio planning notes and still describe the Monnify sandbox.
 

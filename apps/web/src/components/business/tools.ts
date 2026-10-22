@@ -12,9 +12,6 @@ export type ToolSlug =
   | "savings"
   | "payroll"
   | "withdrawals"
-  | "bills"
-  | "data"
-  | "kyc"
   | "alerts";
 
 export interface Tool {
@@ -28,13 +25,12 @@ export interface Tool {
   icon: string;
 }
 
-export type ToolGroup = "Get paid" | "Pay out" | "Sell services" | "Customers & markets";
+export type ToolGroup = "Get paid" | "Pay out" | "Markets";
 
 export const TOOL_GROUPS: { name: ToolGroup; lead: string }[] = [
   { name: "Get paid", lead: "Take crypto payments that Roqqu confirms." },
   { name: "Pay out", lead: "Send crypto to staff and customers." },
-  { name: "Sell services", lead: "Resell electricity, airtime and data." },
-  { name: "Customers & markets", lead: "Check who you deal with and watch prices." },
+  { name: "Markets", lead: "Watch prices at Roqqu's live rates." },
 ];
 
 export const TOOLS: Tool[] = [
@@ -49,7 +45,7 @@ export const TOOLS: Tool[] = [
   {
     slug: "invoices",
     title: "Invoices",
-    blurb: "Bill a client in naira. They pay in BTC, ETH or TRX.",
+    blurb: "Bill a client in naira. They pay in BTC or USDT.",
     group: "Get paid",
     template: "invoice",
     icon: "M7 3h7l4 4v14H7V3Zm7 0v4h4M10 12h5M10 16h5",
@@ -79,34 +75,10 @@ export const TOOLS: Tool[] = [
     icon: "M12 19V5m0 0-5 5m5-5 5 5M5 21h14",
   },
   {
-    slug: "bills",
-    title: "Bills",
-    blurb: "Electricity units and airtime, meter checked by name.",
-    group: "Sell services",
-    template: "pay-bills",
-    icon: "M13 3 5 14h6l-1 7 8-11h-6l1-7Z",
-  },
-  {
-    slug: "data",
-    title: "Data bundles",
-    blurb: "Resell MTN, Airtel, Glo and 9mobile data.",
-    group: "Sell services",
-    template: "sell-data",
-    icon: "M5 12a10 10 0 0 1 14 0M8 15a6 6 0 0 1 8 0M12 19h.01",
-  },
-  {
-    slug: "kyc",
-    title: "Verify customers",
-    blurb: "BVN, NIN and bank account checks before anyone transacts.",
-    group: "Customers & markets",
-    template: "kyc",
-    icon: "M4 5h16v14H4V5Zm4 9c.5-1.5 1.5-2 2-2s1.5.5 2 2M10 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm5-2h3m-3 3h3",
-  },
-  {
     slug: "alerts",
     title: "Price alerts",
     blurb: "Know when a coin crosses your price.",
-    group: "Customers & markets",
+    group: "Markets",
     template: "price-alerts",
     icon: "M4 18 9 12l4 3 7-8M15 7h5v5",
   },

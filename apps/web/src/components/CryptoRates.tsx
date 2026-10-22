@@ -52,7 +52,7 @@ export function CryptoRates() {
             price_usd: String(p.price),
             price_ngn: String(p.price * rate),
             change: p.change,
-            payable: ["btc", "eth", "trx"].includes(symbol),
+            payable: ["btc", "usdt"].includes(symbol),
           }));
           if (alive) {
             setPrices({ ngn_per_usd: status.ngn_per_usd, tokens });

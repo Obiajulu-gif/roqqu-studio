@@ -13,7 +13,7 @@ from roqqu_studio.observability import configure_logging, get_logger
 
 client = TestClient(app)
 
-_CREDS = {"secret_key": "RQ-SEC-super_secret_9z", "webhook_secret": "hook_secret_77"}
+_CREDS = {"secret_key": "ras_test_super_secret_9z_0123456789abcdef", "mode": "test"}
 
 
 def _a_workflow_id() -> str:
@@ -41,7 +41,6 @@ def test_secret_values_are_never_returned():
         client.get(f"/workflows/{wid}/credentials"),
     ):
         body = res.text
-        assert _CREDS["webhook_secret"] not in body
         assert _CREDS["secret_key"] not in body
         assert "secret_key" not in res.json()  # no secret fields on the model at all
 
@@ -54,12 +53,12 @@ def test_settings_for_prefers_workflow_then_platform():
     store = CredentialStore()
     # No creds: falls back to platform settings (base url unchanged).
     platform = store.settings_for("wf-x")
-    assert platform.roqqu_base_url == "https://api.roqqu.com/prod/v1"
+    assert platform.roqqu_base_url == "https://service.roqqu.com/v1"
 
     store.put("wf-x", RoqquCredentials(**_CREDS))
     resolved = store.settings_for("wf-x")
     assert resolved.roqqu_secret_key == _CREDS["secret_key"]
-    assert resolved.roqqu_webhook_secret == _CREDS["webhook_secret"]
+    assert resolved.ras_mode == "test" and resolved.ras_key_header == "x-staging-api-key"
     # The user set keys, but NOT the base url: it stays platform-pinned (guard).
     assert resolved.roqqu_base_url == platform.roqqu_base_url
 

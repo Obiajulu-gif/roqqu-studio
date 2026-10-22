@@ -19,15 +19,20 @@ const AXIOS = `const axios = require('axios');
 
 const options = {
   method: 'POST',
-  url: 'https://api.roqqu.com/prod/v1/user/generate-wallet',
+  url: 'https://service.roqqu.com/v1/payment-links',
   headers: {
     accept: 'application/json',
-    'content-type': 'application/json',
-    Authorization: \`Bearer \${process.env.ROQQU_SECRET_KEY}\`
+    'content-type': 'application/x-www-form-urlencoded',
+    'x-staging-api-key': process.env.RAS_TEST_KEY
   },
-  data: {
-    token: 'trx'
-  }
+  data: new URLSearchParams({
+    amount: '150000',
+    amount_currency: 'ngn',
+    customer_details: JSON.stringify({ email: 'ada@example.com', first_name: 'Ada', last_name: 'Obi' }),
+    payment_reference: 'INV2041',
+    success_url: 'https://yourshop.com/paid',
+    cancel_url: 'https://yourshop.com/cancelled'
+  })
 };
 
 axios
@@ -36,23 +41,22 @@ axios
   .catch((err) => console.error(err.response?.data ?? err.message));`;
 
 const CLIENT = `// npm needs nothing: roqqu.js is one file from the playground.
-const roqqu = require('./roqqu')(process.env.ROQQU_SECRET_KEY);
+const roqqu = require('./roqqu')({ testKey: process.env.RAS_TEST_KEY });
 
-const { address } = await roqqu.generateWallet({ token: 'trx' });
-const price = await roqqu.getPrice({ symbol: 'trx' });
-const meter = await roqqu.verifyMeter({
-  provider: 'ikeja',
-  meter_type: 'prepaid',
-  meter_number: '45055844760'
+const { address } = await roqqu.generateWallet({
+  network: 'trc20',
+  customer: { email: 'ada@example.com', first_name: 'Ada', last_name: 'Obi' }
 });
+const networks = await roqqu.whatNetwork({ address });
+const { refid } = await roqqu.sendCoin({ amount: '5', network: 'trc20', to: address, token: 'usdt' });
 
-console.log(address, price, meter.cust_name);`;
+console.log(address, networks, refid);`;
 
 const FINDINGS = [
-  { rule: "MON002", title: "Webhook reaches the order without a secret check" },
+  { rule: "MON002", title: "Webhook reaches the order without being decrypted" },
   { rule: "MON003", title: "No idempotency guard before the order is fulfilled" },
   { rule: "MON004", title: "Amount paid never compared with the invoice total" },
-  { rule: "MON011", title: "Payout wallet not validated before Send Token" },
+  { rule: "MON011", title: "Payout address not checked before Send" },
 ];
 
 export function UnderTheHood() {

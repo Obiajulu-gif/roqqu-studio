@@ -76,10 +76,7 @@ const HERO_WORKFLOW_IDS = new Set(["marketplace-unsafe", "marketplace-safe"]);
 
 /** The dashboard tab that matches the template a business picked. */
 const TEMPLATE_TAB: Record<string, ProductTab> = {
-  "pay-bills": "bills",
-  "sell-data": "data",
   withdrawals: "withdraw",
-  kyc: "kyc",
   "price-alerts": "alerts",
   payroll: "payroll",
   invoice: "invoice",
@@ -1148,8 +1145,8 @@ function CanvasInner({ forceDeveloper = false }: { forceDeveloper?: boolean }) {
                 downloadable
                 runHint={
                   codeFormat === "python"
-                    ? "pip install httpx, then ROQQU_SECRET_KEY=RQ-SEC-… python " + (pythonFilename ?? "flow.py")
-                    : "Node 18+, no installs: ROQQU_SECRET_KEY=RQ-SEC-… node " + (pythonFilename ?? "flow.mjs")
+                    ? "pip install httpx cryptography, then RAS_TEST_KEY=… python " + (pythonFilename ?? "flow.py")
+                    : "Node 18+, no installs: RAS_TEST_KEY=… node " + (pythonFilename ?? "flow.mjs")
                 }
                 emptyHint={
                   pythonError ?? "Open a template or add blocks to generate code."

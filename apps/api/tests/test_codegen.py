@@ -27,8 +27,8 @@ def test_codegen_is_deterministic():
 def test_generated_code_is_grounded_and_real():
     src = generate_python(build_template("sell-online"))
     # Real documented endpoint, not a placeholder.
-    assert "/user/generate-wallet" in src and "/user/wallets" in src
-    assert "https://api.roqqu.com/prod/v1" in src
+    assert "/wallets/generate-wallet" in src and "/wallets/get-addresses" in src
+    assert "https://service.roqqu.com/v1" in src and "x-staging-api-key" in src
     # Catalog grounding travels into docstrings: doc links + cheat-sheet notes.
     assert "roqqu.com" in src
     # Safety blocks become guards that raise, never silent passes.
@@ -42,7 +42,7 @@ def test_node_config_lands_in_generated_body():
         id="cfg",
         name="Config Flow",
         nodes=[
-            Node(id="init", type="roqqu.generate_wallet", label="Start",
+            Node(id="init", type="roqqu.balances", label="Start",
                  config={"amount": "45000"}),
         ],
         edges=[],
@@ -103,7 +103,7 @@ def test_employee_sheet_bakes_into_a_real_batch():
     compile(src, "<pr>", "exec")
     assert 'ctx["payouts"] = [' in src
     assert "'TAdaWallet123'" in src
-    assert "/user/send-{TOKEN}" in src
+    assert "/wallets/send" in src and '"to": leg["wallet"]' in src
     assert 'for leg in ctx.get("payouts", []):' in src
 
 

@@ -26,10 +26,10 @@ export interface CredentialStatus {
   source: "workflow" | "platform" | "none" | string;
 }
 
-/** Roqqu keys (developers.roqqu.com): dashboard -> Security, and the webhook modal. */
+/** A RAS API key (RAS console -> Settings -> API Keys and Webhooks) and which kind it is. */
 export interface RoqquCredentialInput {
   secret_key: string;
-  webhook_secret: string;
+  mode: "test" | "live";
 }
 
 /** Subset of ArtifactConfig the Seller form edits (#55, #61). */

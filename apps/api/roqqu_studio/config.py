@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,37 +23,54 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    # Roqqu API (https://developers.roqqu.com): one secret key, sent as
-    # `Authorization: Bearer RQ-SEC-...` (dashboard -> Security).
+    # Roqqu API Service (https://roqqu-api-services.gitbook.io/ras). Keys come
+    # from the RAS console (Settings -> API Keys and Webhooks): a test key sent as
+    # `x-staging-api-key`, a live key sent as `x-api-key`.
+    ras_test_key: str = ""
+    ras_live_key: str = ""
+    # practice | test | live. Blank: test when a test key is set, else live when a
+    # live key is set, else practice (everything simulated).
+    ras_mode: str = ""
+    # The key real calls use, resolved from the mode (per-workflow keys override it).
     roqqu_secret_key: str = ""
-    # The `secret` you typed when registering the webhook URL on the Roqqu
-    # dashboard; Roqqu echoes it in every deposit webhook body.
-    roqqu_webhook_secret: str = ""
-    roqqu_base_url: str = "https://api.roqqu.com/prod/v1"
-    # Token buyers pay in. Generate Wallet supports btc, eth and trx only.
-    roqqu_pay_token: str = "trx"
-    # ponytail: Roqqu prices are USD and it has no NGN rate endpoint, so the
-    # NGN->USD bridge is a manual rate; swap for a live FX feed if it matters.
-    roqqu_ngn_per_usd: str = "1500"
+    roqqu_base_url: str = "https://service.roqqu.com/v1"
+    # What buyers pay with: usdt_trc20 | usdt_bep20 | btc (RAS payment-link options).
+    roqqu_pay_token: str = "usdt_trc20"
+    # Fallback NGN per USD, used only when RAS GET /rates is unreachable.
+    roqqu_ngn_per_usd: str = "1360"
 
     allow_production_execution: bool = False
     studio_env: str = "development"
 
+    @model_validator(mode="after")
+    def _resolve_mode(self) -> "Settings":
+        mode = self.ras_mode.strip().lower()
+        if mode not in ("practice", "test", "live"):
+            mode = "test" if self.ras_test_key else "live" if self.ras_live_key else "practice"
+        self.ras_mode = mode
+        if not self.roqqu_secret_key:
+            self.roqqu_secret_key = {"test": self.ras_test_key, "live": self.ras_live_key}.get(mode, "")
+        return self
+
     @property
     def is_sandbox(self) -> bool:
-        # Roqqu has no sandbox: every call hits production (real crypto).
-        return "sandbox" in self.roqqu_base_url
+        """True in RAS test mode: test keys never move real crypto."""
+        return self.ras_mode != "live"
+
+    @property
+    def ras_key_header(self) -> str:
+        return "x-api-key" if self.ras_mode == "live" else "x-staging-api-key"
 
     def assert_sandbox(self) -> None:
         if not self.is_sandbox and not self.allow_production_execution:
             raise RuntimeError(
-                "Roqqu has no sandbox: live calls move real crypto. Set "
-                "ALLOW_PRODUCTION_EXECUTION=true only when you intend that."
+                "Live mode moves real crypto. Set ALLOW_PRODUCTION_EXECUTION=true only "
+                "when you intend that, or use a RAS test key (RAS_TEST_KEY)."
             )
 
     def assert_roqqu_credentials(self) -> None:
         if not self.roqqu_secret_key:
-            raise RuntimeError("Missing Roqqu credentials: ROQQU_SECRET_KEY")
+            raise RuntimeError("Missing Roqqu credentials: RAS_TEST_KEY or RAS_LIVE_KEY")
 
 
 @lru_cache

@@ -2,7 +2,7 @@
 
 When a user questions a node or pattern while building, Rooky answers from two
 grounded inputs: the catalog's cheat-sheet grounding (#25) and a live fetch of
-the node's official doc page on developers.roqqu.com. Sources are assembled
+the node's official doc page on roqqu-api-services.gitbook.io/ras. Sources are assembled
 by US from the catalog, never taken from model output, so a reference can never
 be an invented URL. With no AI key, the grounding itself is the answer (D11).
 
@@ -96,7 +96,7 @@ def explain(
     if workflow_summary:
         context.append(f"The user's current flow: {workflow_summary}")
     if not sources:
-        sources.append(Source(title="Roqqu developer documentation", url="https://developers.roqqu.com"))
+        sources.append(Source(title="Roqqu API Service documentation", url="https://roqqu-api-services.gitbook.io/ras"))
 
     chosen: AIProvider = select_provider(provider)
     grounded = "\n\n".join(context) if context else "(no node context supplied)"

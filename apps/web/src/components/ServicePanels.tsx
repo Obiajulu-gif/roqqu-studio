@@ -1,7 +1,8 @@
 /**
- * Working business panels for the Roqqu templates: bills, data, withdrawals,
- * KYC, price alerts and payroll. Each calls /services/* in practice mode (no
- * keys, Roqqu-shaped simulated answers) or live mode (the real Roqqu API).
+ * Working business panels for the Roqqu templates: withdrawals, price alerts
+ * and payroll. Each calls /services/* in practice mode (no keys, RAS-shaped
+ * simulated answers) or live mode (the real Roqqu API Service; a test key
+ * never moves real money).
  */
 "use client";
 
@@ -31,6 +32,7 @@ interface RunResult<T> {
 
 interface ServiceStatus {
   live_key: boolean;
+  mode: "practice" | "test" | "live";
   production_allowed: boolean;
   ngn_per_usd: string;
 }
@@ -64,11 +66,12 @@ function ModeSwitch({
   movesMoney: boolean;
 }) {
   const status = useStatus();
-  const liveReady = !!status?.live_key && (!movesMoney || status.production_allowed);
+  const realMoney = status?.mode === "live";
+  const liveReady = !!status?.live_key && (!movesMoney || !realMoney || status.production_allowed);
   const why = !status?.live_key
-    ? "Live needs ROQQU_SECRET_KEY on the API."
-    : movesMoney && !status.production_allowed
-      ? "Live moves real money. It needs ALLOW_PRODUCTION_EXECUTION=true on the API."
+    ? "Connecting needs RAS_TEST_KEY on the API."
+    : movesMoney && realMoney && !status.production_allowed
+      ? "Your live key moves real money. It needs ALLOW_PRODUCTION_EXECUTION=true on the API."
       : "";
   return (
     <div className="svc-mode">
@@ -79,10 +82,10 @@ function ModeSwitch({
         </button>
         <button type="button" role="radio" aria-checked={mode === "live"} disabled={!liveReady}
           className={mode === "live" ? "is-on is-live" : ""} onClick={() => onChange("live")}>
-          Live on Roqqu
+          {status?.mode === "live" ? "Live on Roqqu" : "Roqqu test mode"}
         </button>
       </div>
-      <small>{mode === "practice" ? "Simulated with Roqqu's response shapes. No money moves." : "Real Roqqu API."} {why}</small>
+      <small>{mode === "practice" ? "Simulated with Roqqu's response shapes. No money moves." : realMoney ? "Real Roqqu API, real money." : "Real Roqqu API with your test key. No real money moves."} {why}</small>
     </div>
   );
 }
@@ -172,6 +175,24 @@ function useAction() {
   return { busy, error, nonce, go, setError };
 }
 
+/** What RAS can pay out on: option id -> [network, coin]. */
+const PAY_OPTIONS = {
+  usdt_trc20: ["trc20", "usdt"],
+  usdt_bep20: ["bep20", "usdt"],
+  btc: ["bitcoin", "btc"],
+} as const satisfies Record<string, readonly [string, string]>;
+type PayOption = keyof typeof PAY_OPTIONS;
+
+function CoinOptions() {
+  return (
+    <>
+      <option value="usdt_trc20">USDT on Tron (TRC20)</option>
+      <option value="usdt_bep20">USDT on BNB Chain (BEP20)</option>
+      <option value="btc">Bitcoin (BTC)</option>
+    </>
+  );
+}
+
 const naira = (v: string | number) => `₦${Number(v).toLocaleString("en-NG")}`;
 
 /** Every panel action, newest first, for the dashboard's Activity card. */
@@ -188,179 +209,18 @@ export function RecentServiceActivity() {
     };
   }, []);
   if (items.length === 0) {
-    return <p className="biz-activity__empty">No activity yet. Payments, bills, KYC checks and payouts appear here.</p>;
+    return <p className="biz-activity__empty">No activity yet. Payments, address checks and payouts appear here.</p>;
   }
   return <History panel="" nonce={items.length} />;
-}
-
-/* --- bills ------------------------------------------------------------------ */
-
-export function BillsPanel() {
-  const [mode, setMode] = useState<Mode>("practice");
-  const { busy, error, nonce, go } = useAction();
-  const [meter, setMeter] = useState({ provider: "ikeja", meter_type: "prepaid", meter_number: "" });
-  const [owner, setOwner] = useState<string | null>(null);
-  const [buy, setBuy] = useState({ amount: "5000", phone_number: "" });
-  const [receipt, setReceipt] = useState<{ token?: string; units_kwh?: string } | null>(null);
-  const [airtime, setAirtime] = useState({ phone_number: "", amount: "500" });
-  const [airtimeDone, setAirtimeDone] = useState<string | null>(null);
-
-  async function verify(e: FormEvent) {
-    e.preventDefault();
-    setOwner(null);
-    setReceipt(null);
-    const r = await go(() => runAction<{ cust_name: string }>("verify-meter", meter, mode));
-    if (r) setOwner(r.data.cust_name);
-  }
-  async function pay(e: FormEvent) {
-    e.preventDefault();
-    const r = await go(() => runAction<{ token?: string; units_kwh?: string }>("pay-electricity", { ...meter, ...buy }, mode));
-    if (r) setReceipt(r.data ?? {});
-  }
-  async function topUp(e: FormEvent) {
-    e.preventDefault();
-    setAirtimeDone(null);
-    const r = await go(() => runAction("recharge-airtime", airtime, mode));
-    if (r) setAirtimeDone(`${naira(airtime.amount)} airtime sent to ${airtime.phone_number}.`);
-  }
-
-  return (
-    <Panel title="Pay bills" lead="Check the meter by name, then buy units. Roqqu keeps a ₦100 fee per electricity purchase." panel="bills" nonce={nonce}>
-      <ModeSwitch mode={mode} onChange={setMode} movesMoney />
-      <form className="svc-card" onSubmit={verify}>
-        <h3>1. Check the meter</h3>
-        <div className="svc-grid">
-          <Field label="Distributor">
-            <select value={meter.provider} onChange={(e) => setMeter({ ...meter, provider: e.target.value })}>
-              {["ikeja", "eko", "abuja", "kano", "portharcourt", "ibadan", "kaduna", "jos", "enugu"].map((p) => (
-                <option key={p} value={p}>{p[0].toUpperCase() + p.slice(1)} Electric</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Meter type">
-            <select value={meter.meter_type} onChange={(e) => setMeter({ ...meter, meter_type: e.target.value })}>
-              <option value="prepaid">Prepaid</option>
-              <option value="postpaid">Postpaid</option>
-            </select>
-          </Field>
-          <Field label="Meter number" hint="11 to 13 digits">
-            <input inputMode="numeric" value={meter.meter_number} placeholder="45055844760"
-              onChange={(e) => setMeter({ ...meter, meter_number: e.target.value.trim() })} required />
-          </Field>
-        </div>
-        <button className="svc-btn" disabled={busy}>Check meter</button>
-        {owner ? <Notice kind="ok">This meter belongs to <b>{owner}</b>.</Notice> : null}
-      </form>
-
-      <form className={`svc-card${owner ? "" : " is-locked"}`} onSubmit={pay}>
-        <h3>2. Buy units</h3>
-        <div className="svc-grid">
-          <Field label="Amount (₦)" hint="Minimum ₦500">
-            <input inputMode="numeric" value={buy.amount} onChange={(e) => setBuy({ ...buy, amount: e.target.value })} required />
-          </Field>
-          <Field label="Customer phone">
-            <input inputMode="tel" value={buy.phone_number} placeholder="08031234567"
-              onChange={(e) => setBuy({ ...buy, phone_number: e.target.value.trim() })} required />
-          </Field>
-        </div>
-        <button className="svc-btn svc-btn--primary" disabled={busy || !owner}>Buy {naira(buy.amount || 0)} of units</button>
-        {receipt ? (
-          <Notice kind="ok">
-            Purchase complete.{" "}
-            {receipt.token ? <>Token <code>{receipt.token}</code>, about {receipt.units_kwh} kWh.</> : "Roqqu confirmed the purchase."}
-          </Notice>
-        ) : null}
-      </form>
-
-      <form className="svc-card" onSubmit={topUp}>
-        <h3>Airtime top-up</h3>
-        <div className="svc-grid">
-          <Field label="Phone number">
-            <input inputMode="tel" value={airtime.phone_number} placeholder="08031234567"
-              onChange={(e) => setAirtime({ ...airtime, phone_number: e.target.value.trim() })} required />
-          </Field>
-          <Field label="Amount (₦)">
-            <input inputMode="numeric" value={airtime.amount} onChange={(e) => setAirtime({ ...airtime, amount: e.target.value })} required />
-          </Field>
-        </div>
-        <button className="svc-btn" disabled={busy}>Send airtime</button>
-        {airtimeDone ? <Notice kind="ok">{airtimeDone}</Notice> : null}
-      </form>
-      {error ? <Notice kind="bad">{error}</Notice> : null}
-    </Panel>
-  );
-}
-
-/* --- data ------------------------------------------------------------------- */
-
-interface Plan {
-  variation_code: string;
-  name: string;
-  variation_amount: string;
-}
-
-export function DataPanel() {
-  const [mode, setMode] = useState<Mode>("practice");
-  const { busy, error, nonce, go } = useAction();
-  const [provider, setProvider] = useState("mtn");
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [picked, setPicked] = useState<string | null>(null);
-  const [phone, setPhone] = useState("");
-  const [done, setDone] = useState<string | null>(null);
-
-  useEffect(() => {
-    setPicked(null);
-    setDone(null);
-    void go(() => runAction<Plan[]>("data-bundles", { provider }, mode)).then((r) => setPlans(r?.data ?? []));
-  }, [provider, mode, go]);
-
-  async function buy(e: FormEvent) {
-    e.preventDefault();
-    if (!picked) return;
-    setDone(null);
-    const r = await go(() => runAction<{ request_id?: string }>("buy-data", { provider, variation_code: picked, phone_number: phone }, mode));
-    if (r) setDone(`Bundle active on ${phone}.${r.data?.request_id ? ` Request ${r.data.request_id}.` : ""}`);
-  }
-
-  return (
-    <Panel title="Sell data bundles" lead="Pick a network, pick a plan, enter the customer's number. Plans come from Roqqu." panel="data" nonce={nonce}>
-      <ModeSwitch mode={mode} onChange={setMode} movesMoney />
-      <div className="svc-tabs" role="tablist" aria-label="Network">
-        {[["mtn", "MTN"], ["airtel", "Airtel"], ["glo", "Glo"], ["etisalat", "9mobile"]].map(([id, label]) => (
-          <button key={id} type="button" role="tab" aria-selected={provider === id}
-            className={provider === id ? "is-on" : ""} onClick={() => setProvider(id)}>{label}</button>
-        ))}
-      </div>
-      <form className="svc-card" onSubmit={buy}>
-        <div className="svc-plans" role="radiogroup" aria-label="Data plans">
-          {plans.map((p) => (
-            <button key={p.variation_code} type="button" role="radio" aria-checked={picked === p.variation_code}
-              className={picked === p.variation_code ? "is-on" : ""} onClick={() => setPicked(p.variation_code)}>
-              <b>{p.name}</b>
-              <span>{naira(p.variation_amount)}</span>
-            </button>
-          ))}
-          {plans.length === 0 && !busy ? <p className="svc-empty">No plans loaded.</p> : null}
-        </div>
-        <div className="svc-grid">
-          <Field label="Customer phone">
-            <input inputMode="tel" value={phone} placeholder="08031234567" onChange={(e) => setPhone(e.target.value.trim())} required />
-          </Field>
-        </div>
-        <button className="svc-btn svc-btn--primary" disabled={busy || !picked}>Buy bundle</button>
-        {done ? <Notice kind="ok">{done}</Notice> : null}
-      </form>
-      {error ? <Notice kind="bad">{error}</Notice> : null}
-    </Panel>
-  );
 }
 
 /* --- withdrawals ------------------------------------------------------------ */
 
 export function WithdrawPanel() {
   const [mode, setMode] = useState<Mode>("practice");
-  const { busy, error, nonce, go } = useAction();
-  const [form, setForm] = useState({ token: "trx", addr: "", amount: "" });
+  const { busy, error, nonce, go, setError } = useAction();
+  const [form, setForm] = useState<{ option: PayOption; addr: string; amount: string }>({ option: "usdt_trc20", addr: "", amount: "" });
+  const [network, coin] = PAY_OPTIONS[form.option];
   const [checked, setChecked] = useState<string | null>(null);
   const [sent, setSent] = useState<string | null>(null);
 
@@ -368,31 +228,31 @@ export function WithdrawPanel() {
     e.preventDefault();
     setChecked(null);
     setSent(null);
-    const r = await go(() => runAction("check-address", { symbol: form.token, addr: form.addr }, mode));
-    if (r) setChecked(form.addr);
+    const r = await go(() => runAction<string[]>("check-address", { address: form.addr }, mode));
+    if (!r) return;
+    if (r.data.includes(network)) setChecked(form.addr);
+    else setError(`That address is on ${r.data.join(", ").toUpperCase() || "no network"}, not ${network.toUpperCase()}.`);
   }
   async function send() {
-    const r = await go(() => runAction("send-token", { token: form.token, amount: form.amount, wallet: form.addr }, mode));
-    if (r) setSent(`${form.amount} ${form.token.toUpperCase()} sent to ${form.addr.slice(0, 10)}…`);
+    const r = await go(() => runAction<{ refid: string }>("send-coin", { token: coin, network, amount: form.amount, to: form.addr }, mode));
+    if (r) setSent(`${form.amount} ${coin.toUpperCase()} queued to ${form.addr.slice(0, 10)}… (refid ${r.data.refid}). Roqqu confirms on-chain shortly.`);
   }
 
   return (
-    <Panel title="Customer withdrawals" lead="Check the address on Roqqu first, then send. Address lookups are limited to one every 100 seconds." panel="withdraw" nonce={nonce}>
+    <Panel title="Customer withdrawals" lead="Roqqu checks which network the address is on, then you send. The network fee comes out of the amount sent." panel="withdraw" nonce={nonce}>
       <ModeSwitch mode={mode} onChange={setMode} movesMoney />
       <form className="svc-card" onSubmit={check}>
         <div className="svc-grid">
           <Field label="Coin">
-            <select value={form.token} onChange={(e) => { setForm({ ...form, token: e.target.value }); setChecked(null); }}>
-              <option value="trx">Tron (TRX)</option>
-              <option value="eth">Ethereum (ETH)</option>
-              <option value="btc">Bitcoin (BTC)</option>
+            <select value={form.option} onChange={(e) => { setForm({ ...form, option: e.target.value as PayOption }); setChecked(null); }}>
+              <CoinOptions />
             </select>
           </Field>
           <Field label="Customer's address">
-            <input value={form.addr} placeholder={form.token === "eth" ? "0x…" : form.token === "btc" ? "bc1… or 1… / 3…" : "T…"}
+            <input value={form.addr} placeholder={network === "bep20" ? "0x…" : network === "bitcoin" ? "bc1… or 1… / 3…" : "T…"}
               onChange={(e) => { setForm({ ...form, addr: e.target.value.trim() }); setChecked(null); }} required />
           </Field>
-          <Field label={`Amount (${form.token.toUpperCase()})`}>
+          <Field label={`Amount (${coin.toUpperCase()})`}>
             <input inputMode="decimal" value={form.amount} placeholder="10" onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
           </Field>
         </div>
@@ -400,85 +260,11 @@ export function WithdrawPanel() {
           <button className="svc-btn" disabled={busy}>Check address</button>
           <button type="button" className="svc-btn svc-btn--primary" disabled={busy || checked !== form.addr || !form.amount}
             onClick={() => void send()}>
-            Send {form.amount || 0} {form.token.toUpperCase()}
+            Send {form.amount || 0} {coin.toUpperCase()}
           </button>
         </div>
         {checked === form.addr ? <Notice kind="ok">Address checked. You can send.</Notice> : null}
         {sent ? <Notice kind="ok">{sent}</Notice> : null}
-      </form>
-      {error ? <Notice kind="bad">{error}</Notice> : null}
-    </Panel>
-  );
-}
-
-/* --- KYC -------------------------------------------------------------------- */
-
-export function KycPanel() {
-  const [mode, setMode] = useState<Mode>("practice");
-  const { busy, error, nonce, go } = useAction();
-  const [idType, setIdType] = useState<"bvn" | "nin">("bvn");
-  const [idNumber, setIdNumber] = useState("");
-  const [person, setPerson] = useState<{ name: string; masked: string } | null>(null);
-  const [banks, setBanks] = useState<string[]>([]);
-  const [acct, setAcct] = useState({ account_number: "", bank: "" });
-  const [resolved, setResolved] = useState<string | null>(null);
-
-  useEffect(() => {
-    void go(() => runAction<string[]>("get-banks", {}, mode)).then((r) => setBanks(Array.isArray(r?.data) ? r!.data : []));
-  }, [mode, go]);
-
-  async function verify(e: FormEvent) {
-    e.preventDefault();
-    setPerson(null);
-    const r = await go(() => runAction<Record<string, string>>(idType === "bvn" ? "bvn-verify" : "nin-verify", { [idType]: idNumber }, mode));
-    if (r) setPerson({ name: r.data.name, masked: r.data[idType] });
-  }
-  async function resolve(e: FormEvent) {
-    e.preventDefault();
-    setResolved(null);
-    const r = await go(() => runAction<string>("account-resolve", acct, mode));
-    if (r) setResolved(r.data);
-  }
-
-  return (
-    <Panel title="Verify customers (KYC)" lead="Roqqu charges ₦20 per successful BVN check and ₦100 per NIN check. Only the name and a masked number are shown." panel="kyc" nonce={nonce}>
-      <ModeSwitch mode={mode} onChange={setMode} movesMoney />
-      <form className="svc-card" onSubmit={verify}>
-        <h3>Identity</h3>
-        <div className="svc-tabs" role="tablist" aria-label="ID type">
-          {(["bvn", "nin"] as const).map((t) => (
-            <button key={t} type="button" role="tab" aria-selected={idType === t} className={idType === t ? "is-on" : ""}
-              onClick={() => { setIdType(t); setPerson(null); }}>{t.toUpperCase()}</button>
-          ))}
-        </div>
-        <div className="svc-grid">
-          <Field label={`${idType.toUpperCase()} number`} hint="11 digits">
-            <input inputMode="numeric" value={idNumber} onChange={(e) => setIdNumber(e.target.value.trim())} required />
-          </Field>
-        </div>
-        <button className="svc-btn svc-btn--primary" disabled={busy}>Verify {idType.toUpperCase()}</button>
-        {person ? <Notice kind="ok">Verified: <b>{person.name}</b> ({idType.toUpperCase()} {person.masked}).</Notice> : null}
-      </form>
-      <form className="svc-card" onSubmit={resolve}>
-        <h3>Payout bank account</h3>
-        <div className="svc-grid">
-          <Field label="Bank">
-            <select value={acct.bank} onChange={(e) => setAcct({ ...acct, bank: e.target.value })} required>
-              <option value="">Choose a bank</option>
-              {banks.map((b) => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </Field>
-          <Field label="Account number" hint="10 digits">
-            <input inputMode="numeric" value={acct.account_number} onChange={(e) => setAcct({ ...acct, account_number: e.target.value.trim() })} required />
-          </Field>
-        </div>
-        <button className="svc-btn" disabled={busy}>Confirm account name</button>
-        {resolved ? (
-          <Notice kind={person && !resolved.toUpperCase().includes(person.name.split(" ").slice(-1)[0]) ? "bad" : "ok"}>
-            Account holder: <b>{resolved}</b>
-            {person && !resolved.toUpperCase().includes(person.name.split(" ").slice(-1)[0]) ? ". This does not match the verified name." : "."}
-          </Notice>
-        ) : null}
       </form>
       {error ? <Notice kind="bad">{error}</Notice> : null}
     </Panel>
@@ -601,7 +387,8 @@ interface PayResult {
 export function PayrollPanel() {
   const [mode, setMode] = useState<Mode>("practice");
   const { busy, error, nonce, go } = useAction();
-  const [token, setToken] = useState<"trx" | "eth" | "btc">("trx");
+  const [token, setToken] = useState<PayOption>("usdt_trc20");
+  const coinLabel = PAY_OPTIONS[token][1].toUpperCase();
   const [rows, setRows] = useState<PayRow[]>([{ name: "", wallet: "", amount_ngn: "" }]);
   const [results, setResults] = useState<PayResult[] | null>(null);
 
@@ -618,21 +405,19 @@ export function PayrollPanel() {
   }
 
   return (
-    <Panel title="Pay staff in crypto" lead="Enter each person's wallet and naira amount. Studio prices it at Roqqu's rate and skips any address that is not valid." panel="payroll" nonce={nonce}>
+    <Panel title="Pay staff in crypto" lead="Enter each person's wallet and naira amount. Studio prices it at Roqqu's live NGN rate and skips any address on the wrong network." panel="payroll" nonce={nonce}>
       <ModeSwitch mode={mode} onChange={setMode} movesMoney />
       <form className="svc-card" onSubmit={pay}>
         <div className="svc-grid">
           <Field label="Pay in">
-            <select value={token} onChange={(e) => setToken(e.target.value as "trx" | "eth" | "btc")}>
-              <option value="trx">Tron (TRX)</option>
-              <option value="eth">Ethereum (ETH)</option>
-              <option value="btc">Bitcoin (BTC)</option>
+            <select value={token} onChange={(e) => setToken(e.target.value as PayOption)}>
+              <CoinOptions />
             </select>
           </Field>
         </div>
         <table className="svc-table">
           <thead>
-            <tr><th>Name</th><th>{token.toUpperCase()} wallet</th><th>Amount (₦)</th><th aria-label="Remove" /></tr>
+            <tr><th>Name</th><th>{coinLabel} wallet ({PAY_OPTIONS[token][0].toUpperCase()})</th><th>Amount (₦)</th><th aria-label="Remove" /></tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
@@ -658,7 +443,7 @@ export function PayrollPanel() {
           <ul className="svc-results">
             {results.map((r, i) => (
               <li key={i} className={r.ok ? "is-ok" : "is-bad"}>
-                <b>{r.name}</b> <code>{r.amount_token} {token.toUpperCase()}</code> {r.message}
+                <b>{r.name}</b> <code>{r.amount_token} {coinLabel}</code> {r.message}
               </li>
             ))}
           </ul>

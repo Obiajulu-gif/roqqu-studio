@@ -30,7 +30,7 @@ def sell_online() -> Workflow:
         _n("notify", "app.notify", "Show 'Awaiting Confirmation'", 480, 0),
         # Row 2: the truth path. Only Roqqu's word marks an order paid.
         _n("webhook", "event.payment_webhook", "Roqqu Payment Webhook", 0, 170),
-        _n("vsig", "safety.verify_signature", "Verify Webhook Secret", 240, 170),
+        _n("vsig", "safety.verify_signature", "Decrypt Webhook (our API key)", 240, 170),
         _n("verify", "roqqu.get_wallets", "Verify Deposit (Get Wallets)", 480, 170),
         _n("vamt", "safety.validate_amount", "Validate Amount (full price)", 720, 170),
         _n("idem", "safety.idempotency_guard", "Idempotency Guard", 960, 170),

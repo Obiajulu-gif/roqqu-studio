@@ -1,5 +1,5 @@
 /**
- * Roqqu API playground: every endpoint from developers.roqqu.com, with live
+ * Roqqu API playground: every endpoint from the Roqqu API Service docs, with live
  * JavaScript, example responses and real calls through the studio's server.
  */
 "use client";
@@ -42,10 +42,10 @@ function pretty(value: unknown): string {
 }
 
 function blockedReason(catalog: RoqquCatalog, e: RoqquEndpoint): string | null {
-  if (e.auth && !catalog.live_key) return "Needs ROQQU_SECRET_KEY on the API.";
-  const sideEffect = e.moves_money || e.paid_lookup || e.id === "generate-wallet" || e.id === "delete-wallet";
-  if (sideEffect && !catalog.production_allowed) {
-    return "Changes real money or wallets. Needs ALLOW_PRODUCTION_EXECUTION=true on the API.";
+  if (e.auth && !catalog.live_key) return "Needs RAS_TEST_KEY on the API.";
+  const sideEffect = e.moves_money || !!e.side_effects;
+  if (sideEffect && catalog.mode === "live" && !catalog.production_allowed) {
+    return "Your live key would change real money or wallets. Needs ALLOW_PRODUCTION_EXECUTION=true on the API.";
   }
   return null;
 }

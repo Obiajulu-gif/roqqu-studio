@@ -11,6 +11,7 @@ dependencies = [
     "opentelemetry-api>=1.24",
     "opentelemetry-sdk>=1.24",
     "segno>=1.6.6",
+    "cryptography>=42",  # RAS webhook bodies are AES-256-CTR encrypted
 ]
 
 [project.optional-dependencies]

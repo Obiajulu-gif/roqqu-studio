@@ -13,8 +13,8 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variab
 const FLOW = [
   { id: "wallet", x: 30, y: 40, title: "Generate Wallet", type: "roqqu.generate_wallet", cat: "roqqu" },
   { id: "hook", x: 250, y: 40, title: "Deposit webhook", type: "event.payment_webhook", cat: "event" },
-  { id: "secret", x: 470, y: 40, title: "Check secret", type: "safety.verify_signature", cat: "safety" },
-  { id: "verify", x: 250, y: 170, title: "Get Wallets", type: "roqqu.get_wallets", cat: "roqqu" },
+  { id: "secret", x: 470, y: 40, title: "Decrypt webhook", type: "safety.verify_signature", cat: "safety" },
+  { id: "verify", x: 250, y: 170, title: "Get Addresses", type: "roqqu.get_wallets", cat: "roqqu" },
   { id: "amount", x: 470, y: 170, title: "Amount covers total", type: "safety.validate_amount", cat: "safety" },
   { id: "paid", x: 360, y: 290, title: "Mark order paid", type: "app.mark_order_paid", cat: "app" },
 ];
@@ -22,13 +22,13 @@ const WIRES =
   "M190 70 H250 M410 70 H470 M550 100 V130 Q550 150 530 150 H350 Q330 150 330 165 M410 200 H470 M550 230 V255 Q550 270 530 270 H450 Q440 270 440 290";
 
 const ENDPOINTS = [
-  "POST /user/generate-wallet",
-  "POST /user/wallets",
-  "POST /user/send-{token}",
-  "GET /prices",
-  "POST /user/account-resolve",
-  "GET /verify-meter",
-  "POST /user/pay-electric",
+  "POST /payment-links",
+  "POST /wallets/generate-wallet",
+  "POST /wallets/get-addresses",
+  "POST /wallets/what-network",
+  "POST /wallets/send",
+  "POST /balances",
+  "GET /rates",
 ];
 
 const FAQ = [
@@ -38,23 +38,23 @@ const FAQ = [
   },
   {
     q: "Which coins can my customers pay with?",
-    a: "Bitcoin, Ethereum and Tron. These are the coins Roqqu can create deposit addresses for. The naira total is converted at Roqqu's live coin price.",
+    a: "Bitcoin, and USDT on Tron (TRC20) or BNB Chain (BEP20): the coins Roqqu payment links accept. The naira total is converted at Roqqu's live NGN rate.",
   },
   {
     q: "How do you know a customer really paid?",
-    a: "Every order gets its own Roqqu address. When Roqqu's webhook arrives, Studio checks its secret, then asks Roqqu how much landed on that address. Screenshots and the webhook alone never mark an order paid.",
+    a: "Every order gets its own Roqqu address. Roqqu's webhook is encrypted with your API key, so Studio only trusts one it can decrypt, then asks Roqqu how much landed on that address. Screenshots and the webhook alone never mark an order paid.",
   },
   {
     q: "Is there a test mode?",
-    a: "Practice mode simulates every step with no keys and no money. Roqqu itself has no sandbox, so live calls move real crypto and stay switched off until you allow them on your server.",
+    a: "Yes, two. Practice mode simulates every step with no keys at all. With a Roqqu test key, every call goes to the real Roqqu API in test mode and no real money moves. Live keys stay switched off until you allow them on your server.",
   },
   {
     q: "Does Roqqu Studio hold my money?",
-    a: "No. Payments go to your own Roqqu account, using your secret key, which stays on your server and never reaches a browser.",
+    a: "No. Payments go to your own Roqqu account, using your API key, which stays on your server and never reaches a browser.",
   },
   {
     q: "What does it cost?",
-    a: "The studio is open source. Roqqu charges its own fees for some services, for example BVN and NIN checks and electricity purchases.",
+    a: "The studio is open source. Roqqu takes its own fees: network fees come out of each send, and trades carry a transaction fee.",
   },
 ];
 
@@ -94,7 +94,7 @@ export default function Landing() {
           </p>
           <h1 className={display.className}>Stop trusting screenshots.</h1>
           <p className={styles.lede}>
-            Build crypto payment links, invoices, savings groups and bill payments on Roqqu.
+            Build crypto payment links, invoices, savings groups and payouts on Roqqu.
             Every order is marked paid only when Roqqu shows the coins in your wallet.
           </p>
           <div className={styles.actions}>
@@ -107,8 +107,8 @@ export default function Landing() {
           </div>
           <ul className={styles.coins} aria-label="Coins customers can pay with">
             <li><b>BTC</b> Bitcoin</li>
-            <li><b>ETH</b> Ethereum</li>
-            <li><b>TRX</b> Tron</li>
+            <li><b>USDT</b> Tron (TRC20)</li>
+            <li><b>USDT</b> BNB Chain (BEP20)</li>
           </ul>
         </div>
 
@@ -125,7 +125,7 @@ export default function Landing() {
               viewBox="0 0 640 360"
               className={styles.graph}
               role="img"
-              aria-label="Generate Wallet, deposit webhook, check secret, Get Wallets, amount check, mark order paid"
+              aria-label="Generate Wallet, deposit webhook, decrypt webhook, Get Addresses, amount check, mark order paid"
             >
               <path d={WIRES} className={styles.wire} />
               <path d={WIRES} className={styles.pulse} pathLength={100} />
@@ -145,7 +145,7 @@ export default function Landing() {
               <span>Order INV-2041</span>
               <b>₦6,000</b>
             </div>
-            <p><span className={styles.tick}>✓</span> 16.00 TRX received</p>
+            <p><span className={styles.tick}>✓</span> 4.42 USDT received</p>
             <p className={styles.struck}><span className={styles.cross}>✕</span> <s>Transfer screenshot</s></p>
             <p className={`${styles.stamp} ${display.className}`}>Paid, confirmed by Roqqu</p>
           </div>
@@ -186,10 +186,10 @@ export default function Landing() {
           </article>
           <article className={styles.tile}>
             <h3 className={display.className}>Send an invoice</h3>
-            <p>Bill in naira. Your client pays in BTC, ETH or TRX at Roqqu&apos;s live price.</p>
+            <p>Bill in naira. Your client pays in BTC or USDT through a Roqqu payment link.</p>
             <div className={styles.invoiceMock} aria-hidden>
               <p><span>Logo design</span><b>₦150,000</b></p>
-              <p className={styles.muted}><span>Pay with</span><b>0.0017 BTC</b></p>
+              <p className={styles.muted}><span>Pay with</span><b>110.46 USDT</b></p>
             </div>
           </article>
           <article className={styles.tile}>
@@ -203,13 +203,13 @@ export default function Landing() {
           </article>
           <article className={`${styles.tile} ${styles.tileWide}`}>
             <div>
-              <h3 className={display.className}>Pay bills</h3>
-              <p>Sell electricity units and airtime. The meter is checked by name before money moves.</p>
+              <h3 className={display.className}>Pay staff and customers</h3>
+              <p>Send USDT or BTC from your Roqqu balance. Every address is checked on the right network first.</p>
             </div>
             <div className={styles.meterMock} aria-hidden>
-              <p><code>45055844760</code><span>Ikeja Electric, prepaid</span></p>
-              <p className={styles.meterOk}>✓ Meter belongs to MRS ADA OKAFOR</p>
-              <p><span>Units bought</span><b>₦5,000</b></p>
+              <p><code>TQn9Y2…KcbLSE</code><span>USDT, Tron (TRC20)</span></p>
+              <p className={styles.meterOk}>✓ Address is on TRC20</p>
+              <p><span>Salary sent</span><b>₦150,000</b></p>
             </div>
           </article>
         </div>
@@ -220,11 +220,11 @@ export default function Landing() {
           <div>
             <h2 id="dev-title" className={display.className}>Every Roqqu endpoint, ready to copy</h2>
             <p className={styles.sectionLede}>
-              The API playground covers the whole Roqqu reference. Pick an endpoint, fill the form,
-              copy working JavaScript, and send a real request without exposing your key.
+              The API playground covers the whole Roqqu API Service. Pick an endpoint, fill the form,
+              copy working JavaScript, and send a real test-mode request without exposing your key.
             </p>
             <ul className={styles.devList}>
-              <li><b>19 endpoints and the deposit webhook</b> from developers.roqqu.com</li>
+              <li><b>40 endpoints and the encrypted webhooks</b> from the Roqqu API Service docs</li>
               <li><b>axios, fetch or roqqu.js</b>, updating as you type</li>
               <li><b>Example responses</b> from the docs, even with no account</li>
               <li><b>roqqu.js</b>: one dependency-free file, one function per endpoint</li>
@@ -269,7 +269,7 @@ export default function Landing() {
           <p className={styles.bot}>
             <span aria-hidden>R</span>
             That isn&apos;t a payment flow I can build. I can set up a shop link, an invoice, a
-            savings group or bill payments.
+            savings group or payouts.
           </p>
         </div>
       </section>
@@ -313,7 +313,7 @@ export default function Landing() {
           </div>
           <div>
             <h3>Resources</h3>
-            <a href="https://developers.roqqu.com">Roqqu API docs</a>
+            <a href="https://roqqu-api-services.gitbook.io/ras">Roqqu API docs</a>
             <a href="https://github.com/Obiajulu-gif/roqqu-studio">Source on GitHub</a>
             <a href="#faq">Questions</a>
           </div>

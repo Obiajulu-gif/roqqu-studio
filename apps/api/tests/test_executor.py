@@ -162,18 +162,20 @@ def test_live_member_wallet_node_generates_a_real_roqqu_address(monkeypatch):
     from roqqu_studio.ir.models import Node
 
     class FakeClient:
-        def generate_wallet(self, *, token):
-            assert token == "eth"
-            return {"address": "0xabc", "token": "eth", "total_received": "0", "created_at": ""}
+        def generate_wallet(self, *, network, customer=None):
+            assert network == "bep20" and customer["email"] == "ada@x.co"
+            return {"address": "0xabc", "network": network}
 
     adapter = SandboxAdapter(Settings(_env_file=None, roqqu_secret_key="RQ-SEC-x"))
     monkeypatch.setattr(adapter, "_c", lambda: FakeClient())
     result = adapter.invoke(
-        Node(id="account", type="roqqu.member_wallet", config={"token": "eth"}), {"inputs": {}}
+        Node(id="account", type="roqqu.member_wallet",
+             config={"network": "bep20", "email": "ada@x.co"}),
+        {"inputs": {}},
     )
     assert result.ok is True
     assert result.outputs["account_number"] == "0xabc"
-    assert result.request["path"] == "/user/generate-wallet"
+    assert result.request["path"] == "/wallets/generate-wallet"
 
 
 def test_live_send_refuses_without_a_destination_wallet(monkeypatch):

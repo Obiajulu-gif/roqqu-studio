@@ -47,7 +47,7 @@ def test_sources_come_from_catalog_never_model(monkeypatch):
     result, provider = explain("why is split wrong here?", node_type="roqqu.split_send")
     assert provider == "fake"
     assert result.sources and all(
-        s.url.startswith("https://developers.roqqu.com") for s in result.sources
+        s.url.startswith("https://roqqu-api-services.gitbook.io/ras") for s in result.sources
     )
     assert "Transfer" in result.answer
 
@@ -68,28 +68,28 @@ def test_model_invented_url_is_stripped_from_answer(monkeypatch):
     result, _ = explain("why?", node_type="roqqu.get_wallets")
     assert "http" not in result.answer  # citations only come from sources[]
     assert "Verify the transaction" in result.answer
-    assert all(s.url.startswith("https://developers.roqqu.com") for s in result.sources)
+    assert all(s.url.startswith("https://roqqu-api-services.gitbook.io/ras") for s in result.sources)
 
 
 def test_failed_doc_fetch_is_not_cached(monkeypatch):
     # A transient fetch failure must not permanently degrade this url to empty.
-    explain_mod._DOC_CACHE.pop("https://developers.roqqu.com", None)
+    explain_mod._DOC_CACHE.pop("https://roqqu-api-services.gitbook.io/ras", None)
 
     def _boom(url, timeout=6.0, follow_redirects=True):
         raise RuntimeError("network blip")
 
     monkeypatch.setattr(explain_mod.httpx, "get", _boom)
-    assert explain_mod._fetch_doc("https://developers.roqqu.com") == ""
+    assert explain_mod._fetch_doc("https://roqqu-api-services.gitbook.io/ras") == ""
     # The failure was not written to the cache, so a later success can still land.
-    assert "https://developers.roqqu.com" not in explain_mod._DOC_CACHE
+    assert "https://roqqu-api-services.gitbook.io/ras" not in explain_mod._DOC_CACHE
 
 
 def test_provider_failure_degrades_to_grounding(monkeypatch):
     _offline(monkeypatch, _Failing())
-    result, provider = explain("why validate the account?", node_type="roqqu.account_resolve")
+    result, provider = explain("why validate the account?", node_type="roqqu.blockchain_address")
     assert "grounding" in provider  # fell back, but still a real answer
-    assert "Confirm who you are paying" in result.answer or "payout account" in result.answer
-    assert result.sources[0].url.startswith("https://developers.roqqu.com")
+    assert "Validate a payout address" in result.answer
+    assert result.sources[0].url.startswith("https://roqqu-api-services.gitbook.io/ras")
 
 
 def test_endpoint_roundtrip_and_unknown_node(monkeypatch):
@@ -100,7 +100,7 @@ def test_endpoint_roundtrip_and_unknown_node(monkeypatch):
     )
     assert res.status_code == 200
     body = res.json()
-    assert body["answer"] and body["sources"][0]["url"].startswith("https://developers.roqqu.com")
+    assert body["answer"] and body["sources"][0]["url"].startswith("https://roqqu-api-services.gitbook.io/ras")
 
     assert (
         client.post(

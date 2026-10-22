@@ -55,9 +55,10 @@ CORE_NODE_TYPES: list[NodeTypeDef] = [
     NodeTypeDef(
         type="safety.verify_signature",
         category=C.SAFETY,
-        title="Verify Webhook Secret",
-        description="Compare the webhook's `secret` with the one set on the Roqqu dashboard "
-        "(constant time) and reject forged events before any business logic runs.",
+        title="Decrypt Webhook (verify it is Roqqu)",
+        description="RAS webhook bodies are AES-256-CTR encrypted with your API key (IV in the "
+        "x-api-key header). Only a body that decrypts to JSON is from Roqqu: reject anything "
+        "else before any business logic runs.",
         default_tags=[T.SIGNATURE_CHECK],
         inputs=[
             PortSpec(name="payload", type=D.WEBHOOK_PAYLOAD),
@@ -92,8 +93,8 @@ CORE_NODE_TYPES: list[NodeTypeDef] = [
         when_to_use="Before any transfer or payout from a wallet/ledger: query the "
         "available balance and only proceed if it covers the amount plus fees. "
         "Without it, disbursements fail at runtime with 'insufficient balance' "
-        "(Send Token pays from your Roqqu balance).",
-        doc_url="https://developers.roqqu.com/reference/receive-token",
+        "(Send pays from your Roqqu balance; check it with Get Balances).",
+        doc_url="https://roqqu-api-services.gitbook.io/ras/balances/get-crypto-balances",
         default_tags=[T.BALANCE_CHECK],
         inputs=[PortSpec(name="amount", type=D.MONEY)],
         outputs=[PortSpec(name="covered", type=D.BOOLEAN)],

@@ -83,18 +83,19 @@ def roqqu_verifier(
 ) -> dict[str, Any]:
     """Default verifier: ask Roqqu what actually landed on the deposit address.
 
-    The payment reference IS the Roqqu deposit address (Generate Wallet). Get
-    Wallets reports `total_received_usdt`, converted to NGN at the configured
-    rate so it compares against the NGN order total (#53, #68)."""
+    The payment reference IS the RAS deposit address. Get Addresses reports
+    `total_received` in the token, valued in USD at Roqqu's price and in NGN at
+    Roqqu's live rate, so it compares against the NGN order total (#53, #68).
+    `token` is the pay option id (usdt_trc20, usdt_bep20, btc)."""
     from ..credentials import credential_store
-    from ..integrations.roqqu import RoqquClient, usd_to_ngn
+    from ..integrations.roqqu import RoqquClient, pay_option, token_price_usd, usd_to_ngn
 
     settings = credential_store.settings_for(workflow_id)
+    network, coin = pay_option(token or settings.roqqu_pay_token)
     with RoqquClient(settings) as client:
-        res = client.wallet_received(
-            token=token or settings.roqqu_pay_token, address=payment_reference
-        )
-    return {"status": res["status"], "amount_paid": str(usd_to_ngn(res["amount_usd"], settings))}
+        res = client.wallet_received(network=network, address=payment_reference)
+    usd = Decimal(res["amount_token"]) * token_price_usd(settings, coin)
+    return {"status": res["status"], "amount_paid": str(usd_to_ngn(usd, settings))}
 
 
 class OrdersService:

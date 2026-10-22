@@ -43,20 +43,6 @@ export const TEMPLATE_PICKER_OPTIONS: TemplatePickerOption[] = [
     kind: "template",
   },
   {
-    id: "pay-bills",
-    title: "Pay bills",
-    description: "Sell electricity units and airtime through Roqqu",
-    image: "/figma/templates/template-payments.png",
-    kind: "template",
-  },
-  {
-    id: "sell-data",
-    title: "Sell data bundles",
-    description: "Resell MTN, Airtel, Glo and 9mobile data with live Roqqu plans",
-    image: "/figma/templates/template-data.svg",
-    kind: "template",
-  },
-  {
     id: "payroll",
     title: "Pay staff in crypto",
     description: "Pay a list of people, each wallet checked before money moves",
@@ -68,13 +54,6 @@ export const TEMPLATE_PICKER_OPTIONS: TemplatePickerOption[] = [
     title: "Customer withdrawals",
     description: "Let customers cash out crypto, address and balance checked first",
     image: "/figma/templates/template-withdraw.svg",
-    kind: "template",
-  },
-  {
-    id: "kyc",
-    title: "Verify customers (KYC)",
-    description: "BVN, NIN and bank account checks before anyone transacts",
-    image: "/figma/templates/template-kyc.svg",
     kind: "template",
   },
   {

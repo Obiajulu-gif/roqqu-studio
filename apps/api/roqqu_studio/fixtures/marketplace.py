@@ -74,10 +74,10 @@ def safe_marketplace() -> Workflow:
         # Payout waits for fulfilment, then moves money via Transfer.
         _n("confirm", "event.fulfilment_confirmed", "Customer Confirms Job", 0, 340),
         _n("idem2", "safety.idempotency_guard", "Idempotency Guard (payout)", 240, 340),
-        _n("validate", "roqqu.account_resolve", "Validate Provider Account", 480, 340),
+        _n("validate", "roqqu.blockchain_address", "Check Provider Wallet Address", 480, 340),
         _n("balance", "safety.balance_guard", "Check Balance First", 720, 340),
         _n("transfer", "roqqu.send_token", "Transfer to Provider (minus 5%)", 960, 340),
-        _n("qstatus", "roqqu.blockchain_address", "Query Transfer Status", 1200, 340),
+        _n("qstatus", "roqqu.tx_status", "Query Send Status", 1200, 340),
         _n("audit", "safety.audit_event", "Audit", 1440, 340),
         # Reconciliation catches provider/local divergence.
         _n("sched", "event.scheduled", "Nightly Reconciliation", 0, 500),

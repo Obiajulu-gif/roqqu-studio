@@ -21,12 +21,12 @@ def invoice() -> Workflow:
     """Invoice -> link -> verified payment. Expected findings: none."""
     nodes = [
         # Row 1: the merchant's side.
-        _n("create", "roqqu.invoice_wallet", "Create Invoice (deposit address)", 0, 0),
+        _n("create", "roqqu.payment_link", "Create Invoice (Roqqu payment link)", 0, 0),
         _n("send", "app.notify", "Send Invoice Link", 240, 0),
         # Row 2: the truth path; only Roqqu's word marks an invoice paid.
         _n("webhook", "event.payment_webhook", "Roqqu Payment Webhook", 0, 170),
-        _n("vsig", "safety.verify_signature", "Verify Webhook Secret", 240, 170),
-        _n("verify", "roqqu.get_wallets", "Verify Deposit (Get Wallets)", 480, 170),
+        _n("vsig", "safety.verify_signature", "Decrypt Webhook (our API key)", 240, 170),
+        _n("verify", "roqqu.get_wallets", "Verify Deposit (Get Addresses)", 480, 170),
         _n("vamt", "safety.validate_amount", "Validate Amount (full invoice)", 720, 170),
         _n("idem", "safety.idempotency_guard", "Idempotency Guard", 960, 170),
         _n("paid", "app.mark_order_paid", "Mark Invoice Paid", 1200, 170),

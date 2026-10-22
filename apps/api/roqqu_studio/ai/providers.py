@@ -44,28 +44,20 @@ class AIProvider(Protocol):
 
 _KEYWORD_ROUTES: list[tuple[str, tuple[str, ...], float, str]] = [
     ("invoice", ("invoice", "bill my client", "billing", "receipt for", "invoice link"), 0.6,
-     "This looks like billing a client. Create an invoice, share the link, and it is only "
-     "marked paid after Roqqu confirms the money."),
-    ("sell-data", ("data bundle", "data plan", "sell data", "mobile data", "data subscription"), 0.6,
-     "This looks like selling data. Plans come live from Roqqu, each order is paid once, and "
-     "your balance is checked before the bundle is bought."),
+     "This looks like billing a client. Create a naira invoice with a Roqqu payment link; "
+     "it is only marked paid after Roqqu confirms the money."),
     ("withdrawals", ("withdraw", "cash out", "payout to customer", "send crypto to"), 0.6,
      "This looks like paying customers out in crypto. Each request is paid once and the "
      "destination address is checked before any coins move."),
-    ("kyc", ("kyc", "bvn", "nin", "verify customer", "verify my customer", "identity"), 0.6,
-     "This looks like verifying customers. BVN, NIN and bank account checks run through "
-     "Roqqu before anyone can transact."),
     ("price-alerts", ("price alert", "alert me", "price watch", "notify me when", "crosses"), 0.6,
      "This looks like a price alert. Roqqu prices are checked on a schedule and you get a "
      "WhatsApp message when a coin crosses your level."),
-    ("pay-bills", ("electricity", "meter", "airtime", "light bill", "prepaid", "recharge"), 0.6,
-     "This looks like bill payments. The meter is checked by name before any money moves."),
     ("ajo", ("ajo", "esusu", "savings group", "contribution", "cooperative"), 0.6,
      "This looks like a savings group. Every member gets their own Roqqu wallet and every "
      "contribution is checked."),
     ("payroll", ("payroll", "salary", "salaries", "staff", "employee", "wages", "pay my"), 0.5,
-     "This looks like paying staff. Each payee is validated before any transfer, so money "
-     "never goes to a wrong account."),
+     "This looks like paying staff. Each wallet address is checked on Roqqu before any "
+     "send, so money never goes to a wrong address."),
     ("sell-online", ("sell", "instagram", "whatsapp", "store", "shop", "boutique"), 0.6,
      "This looks like selling online. Orders are only marked paid after Roqqu confirms the "
      "money, so fake transfer screenshots never work."),

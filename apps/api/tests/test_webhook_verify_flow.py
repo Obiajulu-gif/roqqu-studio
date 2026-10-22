@@ -9,8 +9,6 @@ FAILED and starves the downstream notify node.
 
 from __future__ import annotations
 
-from decimal import Decimal
-
 from roqqu_studio.config import Settings
 from roqqu_studio.executor import RunStatus, execution_store, run_workflow
 from roqqu_studio.executor.adapter import SandboxAdapter, _run_payment_reference
@@ -23,15 +21,12 @@ class _FakeRoqqu:
     def __init__(self) -> None:
         self.queried: list[str] = []
 
-    def generate_wallet(self, *, token):
-        return {"address": "pay-real-123", "token": token, "total_received": "0", "created_at": ""}
+    def generate_wallet(self, *, network, customer=None):
+        return {"address": "pay-real-123", "network": network}
 
-    def token_price(self, *, symbol):
-        return Decimal("0.25")
-
-    def wallet_received(self, *, token, address):
+    def wallet_received(self, *, network, address):
         self.queried.append(address)
-        return {"status": "PENDING", "amount_token": "0", "amount_usd": "0"}
+        return {"status": "PENDING", "amount_token": "0"}
 
 
 def _webhook_first_flow() -> Workflow:
@@ -53,7 +48,7 @@ def _webhook_first_flow() -> Workflow:
 
 def _sandbox_adapter() -> tuple[SandboxAdapter, _FakeRoqqu]:
     adapter = SandboxAdapter(
-        Settings(_env_file=None, roqqu_secret_key="RQ-SEC-s")
+        Settings(_env_file=None, ras_test_key="ras_test_s_0123456789abcdef0123456789", roqqu_ngn_per_usd="1500")
     )
     fake = _FakeRoqqu()
     adapter._client = fake  # _c() returns the set client, so no network

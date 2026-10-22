@@ -21,11 +21,8 @@ describe("template picker options match Figma contract", () => {
       "sell-online",
       "ajo",
       "invoice",
-      "pay-bills",
-      "sell-data",
       "payroll",
       "withdrawals",
-      "kyc",
       "price-alerts",
       "__other__",
     ]);
@@ -33,11 +30,8 @@ describe("template picker options match Figma contract", () => {
       "Sell goods & services",
       "Start a savings group (Ajo)",
       "Send an invoice",
-      "Pay bills",
-      "Sell data bundles",
       "Pay staff in crypto",
       "Customer withdrawals",
-      "Verify customers (KYC)",
       "Crypto price alerts",
       "Something else",
     ]);

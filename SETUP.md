@@ -11,10 +11,9 @@ Roqqu Studio runs with **zero keys**. Every key below only unlocks a live featur
 | Chat: compose a new flow from free text | Needs an AI key (returns "composing flows needs an AI provider key") |
 | Run | Practice mode (simulated, the default) |
 | Shop link, invoice, dashboard pages | Render fully |
-| Pay button on shop/invoice | Needs Roqqu keys and `ALLOW_PRODUCTION_EXECUTION=true` (returns a clear 502 until then) |
+| Pay button on shop/invoice | Needs a RAS test key (`RAS_TEST_KEY`); returns a clear 502 until then |
 | Email / WhatsApp notifications | Recorded only, not sent |
 | Roqqu rates card on the dashboard | Works without keys (Roqqu's `/prices` is public); shows "unavailable" if Roqqu is unreachable |
-| Pay bills template (meter check, electricity, airtime) | Practice runs work; live runs need Roqqu keys |
 
 ## Keys
 
@@ -35,28 +34,30 @@ If the first provider fails, the API falls through to the next one that has a ke
 
 ### 2. Roqqu (makes Pay and live Run work)
 
-The integration follows the Roqqu API reference at https://developers.roqqu.com (base URL `https://api.roqqu.com/prod/v1`).
+The integration follows the Roqqu API Service docs at https://roqqu-api-services.gitbook.io/ras (base URL `https://service.roqqu.com/v1`).
 
-> **Roqqu has no sandbox.** Every live call hits production and moves real crypto. The API refuses live calls until you set `ALLOW_PRODUCTION_EXECUTION=true`. Test with small amounts.
+RAS has a **test mode**: a test key calls the real API without moving real money. Start there.
 
-1. Sign up at https://app.roqqu.com/signup and finish verification.
-2. In the dashboard, open the **Security** section and copy your secret key (`RQ-SEC-...`). Put it in `ROQQU_SECRET_KEY`.
-3. In the dashboard's webhook settings, set the URL to `https://<api-domain>/roqqu/webhook` and type a secret. Put the same secret in `ROQQU_WEBHOOK_SECRET`.
+1. Sign up for the RAS console and finish merchant verification.
+2. Open **Settings → API Keys and Webhooks**. Generate a **test** key and put it in `RAS_TEST_KEY`. It is sent as `x-staging-api-key`.
+3. On the same page, set the webhook URL to `https://<web-domain>/api/ras/webhook`. RAS encrypts every webhook body with your API key, so there is no separate webhook secret.
 4. Optional settings:
-   - `ROQQU_PAY_TOKEN`: the token buyers pay in, one of `btc`, `eth` or `trx` (default `trx`).
-   - `ROQQU_NGN_PER_USD`: the NGN to USD rate used to price NGN totals in crypto. Roqqu prices are in USD and it has no NGN rate endpoint, so you set this rate yourself.
-5. Set `ALLOW_PRODUCTION_EXECUTION=true` when you are ready for real money.
+   - `ROQQU_PAY_TOKEN`: what buyers pay with on the studio's deposit page: `usdt_trc20` (default), `usdt_bep20` or `btc`.
+   - `ROQQU_NGN_PER_USD`: fallback NGN rate, used only if RAS `GET /rates` is unreachable.
+   - `RAS_MODE`: force `practice`, `test` or `live`. Blank picks test when a test key is set.
+5. Going live: put your **live** key in `RAS_LIVE_KEY` (sent as `x-api-key`), remove `RAS_TEST_KEY`, and set `ALLOW_PRODUCTION_EXECUTION=true`. Live calls are refused without it.
 
 How a payment works:
 1. The buyer clicks Pay.
-2. Studio calls Generate Wallet to get a fresh address, and Get Token Price to work out how much crypto covers the NGN total.
-3. The buyer sees the address, the amount and a QR code.
-4. Roqqu sends the deposit webhook. Studio checks the webhook `secret`, then reads Get Wallets (`total_received_usdt`) and marks the order paid only if that covers the total.
+2. Studio creates a Roqqu payment link (or a deposit address) priced in naira at Roqqu's live `/rates`.
+3. The buyer pays in BTC, USDT (TRC20) or USDT (BEP20), from MetaMask or by scanning the address.
+4. RAS sends an encrypted webhook. Studio decrypts it with your key (anything that does not decrypt is rejected), then reads Get Addresses and marks the order paid only if what landed covers the total.
 
-Roqqu limits to respect:
-- Address Lookup (`/blockchain/address`) allows 1 call per 100 seconds. More gets your IP blocked for 10 hours, so Studio refuses a second call inside that window.
-- Get Wallets returns every wallet you have ever generated, with no paging.
-- BVN checks cost NGN 20 and NIN checks NGN 100 per successful call. Electricity payments keep a NGN 100 fee.
+RAS facts to respect:
+- POST bodies are form fields; nested objects (customer, wallets) travel as JSON strings.
+- Send fees come out of the token you send. A send returns a `refid` at once; the `token_sent` webhook confirms it on-chain.
+- Buy, sell and swap emit no webhook: confirm them with balances or history.
+- Payment links expire after 2 hours unless you set `expires_at`.
 
 ### 3. Notifications (optional)
 

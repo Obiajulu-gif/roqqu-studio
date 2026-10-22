@@ -2,9 +2,6 @@
 
 import {
   AlertsPanel,
-  BillsPanel,
-  DataPanel,
-  KycPanel,
   PayrollPanel,
   WithdrawPanel,
 } from "@/components/ServicePanels";
@@ -18,9 +15,6 @@ const PAGES: Record<ToolSlug, () => React.JSX.Element> = {
   savings: SavingsPage,
   payroll: PayrollPanel,
   withdrawals: WithdrawPanel,
-  bills: BillsPanel,
-  data: DataPanel,
-  kyc: KycPanel,
   alerts: AlertsPanel,
 };
 

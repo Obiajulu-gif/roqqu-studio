@@ -1,6 +1,11 @@
 /**
- * JavaScript snippets for the Roqqu API playground, generated from the
- * endpoint catalog (developers.roqqu.com). Pure functions, so they are tested.
+ * JavaScript snippets for the Roqqu API playground, generated from the RAS
+ * endpoint catalog (roqqu-api-services.gitbook.io/ras). Pure functions, so they
+ * are tested.
+ *
+ * RAS facts every snippet follows: base https://service.roqqu.com/v1; a test key
+ * rides in `x-staging-api-key`, a live key in `x-api-key`; POST bodies are form
+ * fields (objects as JSON strings); replies are {status, message, data}.
  */
 
 export interface RoqquParam {
@@ -17,11 +22,12 @@ export interface RoqquEndpoint {
   section: string;
   title: string;
   summary: string;
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "DELETE";
   path: string;
   auth: boolean;
   moves_money: boolean;
   paid_lookup: boolean;
+  side_effects?: boolean;
   note: string;
   params: RoqquParam[];
   examples: Record<string, unknown>;
@@ -31,7 +37,7 @@ export interface RoqquEndpoint {
 export interface RoqquWebhook {
   title: string;
   summary: string;
-  payload: Record<string, string>;
+  payload: Record<string, unknown>;
   note: string;
   doc_url: string;
 }
@@ -42,6 +48,7 @@ export interface RoqquCatalog {
   endpoints: RoqquEndpoint[];
   webhook: RoqquWebhook;
   live_key?: boolean;
+  mode?: "practice" | "test" | "live";
   production_allowed?: boolean;
 }
 
@@ -49,10 +56,8 @@ export type ParamValues = Record<string, string>;
 
 const IDENT = /^[A-Za-z_$][\w$]*$/;
 
-function literal(value: string, type: string): string {
-  if ((type === "number" || type === "integer") && value.trim() !== "" && !Number.isNaN(Number(value))) {
-    return String(Number(value));
-  }
+/** Every value travels as text: RAS reads form fields, and amounts stay exact. */
+function literal(value: string): string {
   return `'${value.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 }
 
@@ -70,7 +75,7 @@ export function sentParams(endpoint: RoqquEndpoint, values: ParamValues) {
     endpoint.params
       .filter((p) => p.in === where)
       .filter((p) => p.required || (values[p.name] ?? "") !== "")
-      .map((p) => [p.name, literal(values[p.name] ?? "", p.type)] as [string, string]);
+      .map((p) => [p.name, literal(values[p.name] ?? "")] as [string, string]);
   let path = endpoint.path;
   for (const p of endpoint.params.filter((x) => x.in === "path")) {
     path = path.replace(`{${p.name}}`, values[p.name] || `{${p.name}}`);
@@ -84,12 +89,13 @@ export function defaultValues(endpoint: RoqquEndpoint): ParamValues {
 
 function headerLines(endpoint: RoqquEndpoint, indent: string): string {
   const lines = [`${indent}  accept: 'application/json'`];
-  if (endpoint.method !== "GET") lines.push(`${indent}  'content-type': 'application/json'`);
-  if (endpoint.auth) lines.push(`${indent}  Authorization: \`Bearer \${process.env.ROQQU_SECRET_KEY}\``);
+  if (endpoint.method !== "GET") lines.push(`${indent}  'content-type': 'application/x-www-form-urlencoded'`);
+  // Test key in test mode; swap to 'x-api-key': process.env.RAS_LIVE_KEY for live.
+  if (endpoint.auth) lines.push(`${indent}  'x-staging-api-key': process.env.RAS_TEST_KEY`);
   return `{\n${lines.join(",\n")}\n${indent}}`;
 }
 
-/** axios, in the same shape as the samples on developers.roqqu.com. */
+/** axios, form-encoded the way the RAS curl examples are. */
 export function axiosSnippet(catalog: RoqquCatalog, endpoint: RoqquEndpoint, values: ParamValues): string {
   const { path, query, body } = sentParams(endpoint, values);
   const parts = [
@@ -98,7 +104,7 @@ export function axiosSnippet(catalog: RoqquCatalog, endpoint: RoqquEndpoint, val
   ];
   if (query.length) parts.push(`  params: ${objectLiteral(query, "  ")}`);
   parts.push(`  headers: ${headerLines(endpoint, "  ")}`);
-  if (endpoint.method !== "GET") parts.push(`  data: ${objectLiteral(body, "  ")}`);
+  if (endpoint.method !== "GET") parts.push(`  data: new URLSearchParams(${objectLiteral(body, "  ")})`);
   return [
     "const axios = require('axios');",
     "",
@@ -112,14 +118,14 @@ export function axiosSnippet(catalog: RoqquCatalog, endpoint: RoqquEndpoint, val
   ].join("\n");
 }
 
-/** Native fetch (Node 18+ or the browser's fetch on your own server). */
+/** Native fetch (Node 18+ or your own server). */
 export function fetchSnippet(catalog: RoqquCatalog, endpoint: RoqquEndpoint, values: ParamValues): string {
   const { path, query, body } = sentParams(endpoint, values);
   const lines = [`const url = new URL('${catalog.base_url}${path}');`];
-  for (const [k, v] of query) lines.push(`url.searchParams.set('${k}', ${v.startsWith("'") ? v : `'${v}'`});`);
+  for (const [k, v] of query) lines.push(`url.searchParams.set('${k}', ${v});`);
   lines.push("");
   const init = [`  method: '${endpoint.method}'`, `  headers: ${headerLines(endpoint, "  ")}`];
-  if (endpoint.method !== "GET") init.push(`  body: JSON.stringify(${objectLiteral(body, "  ")})`);
+  if (endpoint.method !== "GET") init.push(`  body: new URLSearchParams(${objectLiteral(body, "  ")})`);
   lines.push(`const res = await fetch(url, {\n${init.join(",\n")}\n});`);
   lines.push("const json = await res.json();");
   lines.push("if (json.status !== 'success') throw new Error(json.message);");
@@ -129,17 +135,17 @@ export function fetchSnippet(catalog: RoqquCatalog, endpoint: RoqquEndpoint, val
 }
 
 export function functionName(id: string): string {
-  return id.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+  return id.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 }
 
 /** The same call through the downloadable roqqu.js client. */
 export function clientSnippet(endpoint: RoqquEndpoint, values: ParamValues): string {
   const args = endpoint.params
     .filter((p) => p.required || (values[p.name] ?? "") !== "")
-    .map((p) => [p.name, literal(values[p.name] ?? "", p.type)] as [string, string]);
+    .map((p) => [p.name, literal(values[p.name] ?? "")] as [string, string]);
   const call = args.length ? objectLiteral(args, "") : "";
   return [
-    "const roqqu = require('./roqqu')(process.env.ROQQU_SECRET_KEY);",
+    "const roqqu = require('./roqqu')({ testKey: process.env.RAS_TEST_KEY });",
     "",
     `const data = await roqqu.${functionName(endpoint.id)}(${call});`,
     "console.log(data);",
@@ -161,7 +167,7 @@ export function clientModule(catalog: RoqquCatalog): string {
     if (pick("body").length) opts.push(`body: { ${pick("body").join(", ")} }`);
     if (e.auth) opts.push("auth: true");
     const optsText = opts.length ? `, { ${opts.join(", ")} }` : "";
-    const warn = e.moves_money ? " Moves real money." : e.paid_lookup ? " Paid lookup." : "";
+    const warn = e.moves_money ? " Moves money." : e.side_effects ? " Changes your account." : "";
     return [
       `    /** ${e.title}: ${e.method} ${e.path}.${warn} ${e.doc_url} */`,
       `    ${functionName(e.id)}: (${arg}) => request('${e.method}', ${pathExpr}${optsText}),`,
@@ -169,16 +175,18 @@ export function clientModule(catalog: RoqquCatalog): string {
   });
   return [
     "/**",
-    " * roqqu.js: a tiny client for every endpoint in the Roqqu API reference",
-    " * (https://developers.roqqu.com). Generated by Roqqu Studio. No dependencies;",
-    " * needs Node 18+ for fetch. Keep your secret key on the server.",
+    " * roqqu.js: a tiny client for every endpoint in the Roqqu API Service",
+    " * (https://roqqu-api-services.gitbook.io/ras). Generated by Roqqu Studio.",
+    " * No dependencies; needs Node 18+ for fetch. Keep your keys on the server.",
     " *",
-    " *   const roqqu = require('./roqqu')(process.env.ROQQU_SECRET_KEY);",
-    " *   const btc = await roqqu.getPrice({ symbol: 'btc' });",
+    " *   const roqqu = require('./roqqu')({ testKey: process.env.RAS_TEST_KEY });",
+    " *   const prices = await roqqu.getCryptoPrices();",
+    " *",
+    " * Pass { liveKey } instead of { testKey } to move real money.",
     " */",
     `const BASE_URL = '${catalog.base_url}';`,
     "",
-    "module.exports = function roqqu(secretKey) {",
+    "module.exports = function roqqu({ testKey, liveKey } = {}) {",
     "  async function request(method, path, { query, body, auth } = {}) {",
     "    const url = new URL(BASE_URL + path);",
     "    for (const [k, v] of Object.entries(query || {})) {",
@@ -186,15 +194,19 @@ export function clientModule(catalog: RoqquCatalog): string {
     "    }",
     "    const headers = { accept: 'application/json' };",
     "    if (auth) {",
-    "      if (!secretKey) throw new Error('This Roqqu endpoint needs your secret key');",
-    "      headers.Authorization = `Bearer ${secretKey}`;",
+    "      if (testKey) headers['x-staging-api-key'] = testKey;",
+    "      else if (liveKey) headers['x-api-key'] = liveKey;",
+    "      else throw new Error('This RAS endpoint needs a key: pass { testKey } or { liveKey }');",
     "    }",
     "    let payload;",
     "    if (method !== 'GET') {",
-    "      headers['content-type'] = 'application/json';",
-    "      payload = JSON.stringify(",
-    "        Object.fromEntries(Object.entries(body || {}).filter(([, v]) => v !== undefined && v !== '')),",
-    "      );",
+    "      headers['content-type'] = 'application/x-www-form-urlencoded';",
+    "      const form = new URLSearchParams();",
+    "      for (const [k, v] of Object.entries(body || {})) {",
+    "        if (v === undefined || v === '') continue;",
+    "        form.set(k, typeof v === 'object' ? JSON.stringify(v) : String(v));",
+    "      }",
+    "      payload = form.toString();",
     "    }",
     "    const res = await fetch(url, { method, headers, body: payload });",
     "    const json = await res.json().catch(() => ({ status: 'fail', message: `HTTP ${res.status}` }));",
@@ -215,34 +227,46 @@ export function clientModule(catalog: RoqquCatalog): string {
   ].join("\n");
 }
 
-/** Express handler for the Receive Token webhook. */
+/** Express handler for RAS webhooks: decrypt with your key, then treat it as a trigger. */
 export function webhookSnippet(): string {
   return [
     "const express = require('express');",
     "const crypto = require('crypto');",
-    "const roqqu = require('./roqqu')(process.env.ROQQU_SECRET_KEY);",
+    "const roqqu = require('./roqqu')({ testKey: process.env.RAS_TEST_KEY });",
     "",
+    "const API_KEY = process.env.RAS_TEST_KEY || process.env.RAS_LIVE_KEY;",
     "const app = express();",
     "app.use(express.json());",
     "",
-    "// Set this URL and a secret on your Roqqu dashboard.",
+    "// RAS encrypts the body with your API key (AES-256-CTR). The IV is the hex",
+    "// value of the x-api-key request header. If it does not decrypt, it is not Roqqu.",
+    "function decrypt(hash, iv) {",
+    "  try {",
+    "    const decipher = crypto.createDecipheriv('aes-256-ctr', API_KEY.substring(0, 32), Buffer.from(iv, 'hex'));",
+    "    return JSON.parse(Buffer.concat([decipher.update(Buffer.from(hash, 'hex')), decipher.final()]).toString());",
+    "  } catch {",
+    "    return null;",
+    "  }",
+    "}",
+    "",
+    "const seen = new Set(); // use your database in production",
+    "",
+    "// Set this URL in the RAS console: Settings -> API Keys and Webhooks.",
     "app.post('/roqqu/webhook', async (req, res) => {",
-    "  const { secret = '', token, amount, address } = req.body;",
-    "  const expected = process.env.ROQQU_WEBHOOK_SECRET || '';",
-    "  const ok =",
-    "    expected.length > 0 &&",
-    "    secret.length === expected.length &&",
-    "    crypto.timingSafeEqual(Buffer.from(secret), Buffer.from(expected));",
-    "  if (!ok) return res.status(401).json({ error: 'bad secret' });",
+    "  const event = decrypt(req.body.hash ?? '', req.get('x-api-key') ?? '');",
+    "  if (!event) return res.status(401).json({ error: 'not from Roqqu' });",
+    "  if (seen.has(event.event_id)) return res.json({ received: true, duplicate: true });",
+    "  seen.add(event.event_id);",
     "",
-    "  // The webhook is only a trigger. Ask Roqqu what really landed.",
-    "  const wallets = await roqqu.getWallets({ token });",
-    "  const wallet = wallets.find((w) => w.address === address);",
-    "  if (!wallet) return res.json({ received: true, matched: false });",
-    "",
-    "  console.log(`${amount} ${token} reported; Roqqu shows ${wallet.total_received} received`);",
-    "  // Mark the order paid here, once per address (idempotent).",
-    "  res.json({ received: true, matched: true });",
+    "  const { address, network, value, token } = event.meta_data;",
+    "  if (event.event_type === 'token_received') {",
+    "    // The webhook is only a trigger. Ask Roqqu what really landed.",
+    "    const addresses = await roqqu.getAddresses({ network });",
+    "    const mine = addresses.find((w) => w.address === address);",
+    "    console.log(`${value} ${token} reported; Roqqu shows ${mine?.total_received} received`);",
+    "  }",
+    "  // payment_link_completed / _overpaid / _failed, token_sent, token_refunded: handle here.",
+    "  res.json({ received: true });",
     "});",
     "",
     "app.listen(3001);",

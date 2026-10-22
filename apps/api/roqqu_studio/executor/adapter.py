@@ -6,14 +6,23 @@ in later (#9) without changing the event stream format.
 
 from __future__ import annotations
 
+import json
 import os
+from decimal import Decimal
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 from uuid import uuid4
 
 from ..config import Settings
 from .. import playground
-from ..integrations.roqqu import RoqquClient, RoqquError, ngn_to_token, usd_to_ngn
+from ..integrations.roqqu import (
+    RoqquClient,
+    RoqquError,
+    ngn_to_token,
+    pay_option,
+    token_price_usd,
+    usd_to_ngn,
+)
 from ..ir.models import Node
 from ..money import covers, money
 from ..notifications import email_notifier, whatsapp_notifier
@@ -205,10 +214,24 @@ def _row_email(row: dict[str, Any]) -> str:
     return ""
 
 
-def _full_name(data: dict[str, Any]) -> str:
-    """Name only from a KYC record: the rest (DOB, phone, address) never enters a trace."""
-    parts = (data.get("first_name"), data.get("middle_name"), data.get("last_name"))
-    return " ".join(str(p) for p in parts if p).strip()
+def _customer(config: dict[str, Any], inputs: dict[str, Any]) -> dict[str, str]:
+    """The {email, first_name, last_name} RAS needs for a customer wallet or payment link."""
+    raw = config.get("customer") or config.get("customer_details") or inputs.get("customer") or {}
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except ValueError:
+            raw = {"first_name": raw}
+    raw = raw if isinstance(raw, dict) else {}
+    email = str(raw.get("email") or config.get("email") or "studio@example.com")
+    first = str(raw.get("first_name") or config.get("first_name") or "Studio")
+    last = str(raw.get("last_name") or config.get("last_name") or "Customer")
+    return {"email": email, "first_name": first, "last_name": last}
+
+
+def _option_for(network: str) -> str:
+    """Pay option id for a network code (bitcoin -> btc, trc20 -> usdt_trc20, ...)."""
+    return {"bitcoin": "btc", "trc20": "usdt_trc20", "bep20": "usdt_bep20"}.get(network.lower(), "usdt_trc20")
 
 
 def _code_block_outputs(inputs: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
@@ -228,15 +251,14 @@ def _code_block_outputs(inputs: dict[str, Any], config: dict[str, Any]) -> dict[
     return declared
 
 
-_COLLECT_TYPES = {"roqqu.generate_wallet", "roqqu.invoice_wallet"}
+_COLLECT_TYPES = {"roqqu.generate_wallet", "roqqu.invoice_wallet", "roqqu.payment_link"}
+# Read-only and treasury blocks run through the playground's allowlisted call.
 _PLAYGROUND_IDS = {
-    "roqqu.all_prices": "get-prices",
-    "roqqu.price_history": "price-history",
-    "roqqu.get_banks": "get-banks",
-    "roqqu.data_bundles": "data-bundles",
-    "roqqu.buy_data": "buy-data",
-    "roqqu.cable_bundles": "cable-bundles",
-    "roqqu.verify_iuc": "verify-iuc",
+    "roqqu.all_prices": "get-crypto-prices",
+    "roqqu.fiat_rates": "get-fiat-rates",
+    "roqqu.balances": "get-crypto-balances",
+    "roqqu.network_fee": "get-network-fees",
+    "roqqu.swap": "swap",
 }
 _SEND_TYPES = {"roqqu.send_token", "roqqu.split_send", "roqqu.refund_send"}
 
@@ -272,14 +294,18 @@ class MockAdapter:
         # Derived, not canned: every branch passes the flowing values forward.
         outputs: dict[str, Any] = {"status": "ok", "amount": amount}
         if node.type in _COLLECT_TYPES:
-            token = str(config.get("token") or "trx")
+            network = str(config.get("network") or "trc20")
             outputs.update(
-                checkout_url="",
-                payment_reference=f"mock-{token}-address-{node.id}",
-                token=token,
+                checkout_url=(
+                    f"https://payment.roqqu.com/practice-{node.id}"
+                    if node.type == "roqqu.payment_link"
+                    else ""
+                ),
+                payment_reference=f"practice-{network}-address-{node.id}",
+                network=network,
             )
         elif node.type == "roqqu.member_wallet":
-            outputs.update(account_number=f"mock-trx-address-{node.id}", token="trx")
+            outputs.update(account_number=f"practice-trc20-address-{node.id}", network="trc20")
         elif node.type.startswith("event."):
             # The simulated external event delivers the amount the flow expects.
             outputs.update(paid_amount=amount, event="arrived")
@@ -298,12 +324,14 @@ class MockAdapter:
             # so a Run actually pays the people they entered (#payroll).
             rows = _roster(config, inputs)
             outputs.update(rows=rows, row_count=len(rows), total=_roster_total(rows))
-        elif node.type == "roqqu.account_resolve":
+        elif node.type == "roqqu.blockchain_address":
             rows = _roster(config, inputs)
             if rows:
                 outputs.update(rows=rows, validated_count=len(rows), all_valid=True)
             else:
-                outputs.update(account_name="Studio Recipient", valid=True)
+                outputs.update(networks=[str(config.get("network") or "trc20")], valid=True)
+        elif node.type == "roqqu.tx_status":
+            outputs.update(transfer_status="sent")
         elif node.type == "roqqu.batch_send":
             rows = _roster(config, inputs)
             if rows:
@@ -459,15 +487,41 @@ class SandboxAdapter:
         is_wait = node.type.startswith("event.")
 
         try:
-            if node.type in _COLLECT_TYPES or node.type == "roqqu.member_wallet":
-                token = str(_cfg(config, "token", default=self._settings.roqqu_pay_token))
-                wallet = self._c().generate_wallet(token=token)
-                request.update(method="POST", path="/user/generate-wallet", body={"token": token})
-                outputs.update(token=token, payment_reference=wallet["address"])
+            if node.type == "roqqu.payment_link":
+                customer = _customer(config, inputs)
+                reference = str(_cfg(config, "payment_reference", default="")) or f"STUDIO{uuid4().hex[:12].upper()}"
+                link = self._c().create_payment_link(
+                    amount_ngn=money(amount),
+                    reference=reference,
+                    customer=customer,
+                    success_url=str(_cfg(config, "success_url", default="https://roqqu.com")),
+                    cancel_url=str(_cfg(config, "cancel_url", default="https://roqqu.com")),
+                )
+                request.update(method="POST", path="/payment-links", body={"amount": str(amount), "amount_currency": "ngn"})
+                outputs.update(
+                    checkout_url=str(link.get("payment_link", "")),
+                    payment_reference=reference,
+                    payment_link_refid=str(link.get("refid", "")),
+                    wallets=link.get("wallets") or [],
+                )
+            elif node.type in _COLLECT_TYPES or node.type == "roqqu.member_wallet":
+                chosen = _cfg(config, "network")
+                option = _option_for(str(chosen)) if chosen else str(
+                    _cfg(config, "token", default=self._settings.roqqu_pay_token)
+                )
+                network, coin = pay_option(option)
+                customer = _customer(config, inputs) if _cfg(config, "customer", "email") else None
+                wallet = self._c().generate_wallet(network=network, customer=customer)
+                request.update(
+                    method="POST",
+                    path="/wallets/generate-wallet" if customer else "/wallets/generate-merchant-wallet",
+                    body={"network": network},
+                )
+                outputs.update(network=network, token=coin, payment_reference=wallet["address"])
                 if node.type == "roqqu.member_wallet":
                     outputs.update(account_number=wallet["address"])
                 else:
-                    due = ngn_to_token(amount, self._c().token_price(symbol=token), self._settings)
+                    due = ngn_to_token(amount, token_price_usd(self._settings, coin), self._settings)
                     outputs.update(amount_token=str(due), checkout_url="")
             elif node.type == "roqqu.get_wallets":
                 address = (
@@ -479,88 +533,64 @@ class SandboxAdapter:
                     return self._failed(
                         node, "no deposit address reached verify (wire it from Generate Wallet)"
                     )
-                token = str(_cfg(config, "token", default=self._settings.roqqu_pay_token))
-                res = self._c().wallet_received(token=token, address=address)
-                request.update(method="POST", path="/user/wallets", body={"token": token})
+                network = str(_cfg(config, "network", default=pay_option(self._settings.roqqu_pay_token)[0]))
+                res = self._c().wallet_received(network=network, address=address)
+                request.update(method="POST", path="/wallets/get-addresses", body={"network": network})
+                coin = "btc" if network == "bitcoin" else "usdt"
+                usd = Decimal(res["amount_token"]) * token_price_usd(self._settings, coin)
                 outputs.update(
                     payment_status=res["status"],
-                    paid_amount=str(usd_to_ngn(res["amount_usd"], self._settings)),
+                    paid_amount=str(usd_to_ngn(usd, self._settings)),
                     amount_token=res["amount_token"],
                     payment_reference=address,
                 )
             elif node.type in _SEND_TYPES or node.type == "roqqu.batch_send":
-                token = str(_cfg(config, "token", default=self._settings.roqqu_pay_token))
+                network, coin = pay_option(str(_cfg(config, "token", default=self._settings.roqqu_pay_token)))
+                network = str(_cfg(config, "network", default=network))
+                coin = str(_cfg(config, "coin", default=coin))
                 legs = _roster(config, inputs) if node.type == "roqqu.batch_send" else []
                 if not legs:
-                    legs = [{"wallet": _cfg(config, "wallet", "address", default=""), "amount": amount}]
+                    legs = [{"wallet": _cfg(config, "to", "wallet", "address", default=""), "amount": amount}]
                 missing = [i + 1 for i, row in enumerate(legs) if not (row.get("wallet") or row.get("address"))]
                 if missing:
                     return self._failed(node, f"no destination wallet address for row(s) {missing}")
-                price = self._c().token_price(symbol=token)
+                price = token_price_usd(self._settings, coin)
                 results = []
                 for row in legs:
-                    wallet = str(row.get("wallet") or row.get("address"))
+                    to = str(row.get("wallet") or row.get("address"))
                     due = ngn_to_token(_row_amount(row) or amount, price, self._settings)
-                    self._c().send_token(token=token, amount=due, wallet=wallet)
-                    results.append({"wallet": wallet, "amount_token": str(due), "status": "sent"})
-                request.update(method="POST", path=f"/user/send-{token}", body={"legs": len(legs)})
+                    sent = self._c().send(token=coin, network=network, to=to, amount=due)
+                    results.append({"wallet": to, "amount_token": str(due), "refid": sent["refid"], "status": "queued"})
+                request.update(method="POST", path="/wallets/send", body={"legs": len(legs), "network": network, "token": coin})
                 outputs.update(
-                    token=token,
-                    transfer_reference=f"send-{uuid4().hex[:10]}",
-                    transfer_status="sent",
+                    token=coin,
+                    network=network,
+                    transfer_reference=results[0]["refid"] if len(results) == 1 else f"batch-{uuid4().hex[:10]}",
+                    transfer_status="queued",
                     results=results,
                 )
             elif node.type == "app.data_rows":
                 rows = _roster(config, inputs)
                 outputs.update(rows=rows, row_count=len(rows), total=_roster_total(rows))
-            elif node.type == "roqqu.account_resolve":
-                rows = _roster(config, inputs) or [config]
-                names = [
-                    self._c().account_resolve(
-                        account_number=str(row.get("account_number") or ""),
-                        bank=str(row.get("bank") or ""),
-                    )
-                    for row in rows
-                ]
-                outputs.update(account_name=names[0], validated_count=len(names), all_valid=True)
             elif node.type == "roqqu.blockchain_address":
-                symbol = str(_cfg(config, "symbol", "token", default=self._settings.roqqu_pay_token))
-                address = str(
-                    _cfg(config, "addr", "address", default=inputs.get("payment_reference", ""))
-                )
-                data = self._c().blockchain_address(symbol=symbol, address=address)
-                outputs.update(balance=str(data.get("balance", "")), status="ok")
+                rows = _roster(config, inputs) or [config]
+                checked = []
+                for row in rows:
+                    address = str(row.get("wallet") or row.get("address") or inputs.get("payment_reference", ""))
+                    checked.append(self._c().what_network(address=address))
+                bad = [i + 1 for i, nets in enumerate(checked) if not nets]
+                if bad:
+                    return self._failed(node, f"not a valid address on any network: row(s) {bad}")
+                request.update(method="POST", path="/wallets/what-network", body={"addresses": len(rows)})
+                outputs.update(networks=checked[0], validated_count=len(rows), all_valid=True)
+            elif node.type == "roqqu.tx_status":
+                refid = str(inputs.get("transfer_reference") or _cfg(config, "refid", default=""))
+                record = self._c().send_record(refid=refid)
+                request.update(method="GET", path=f"/transaction/refId/{refid}")
+                outputs.update(transfer_status=str(record.get("status", "unknown")), record=record)
             elif node.type == "roqqu.token_price":
-                symbol = str(_cfg(config, "symbol", default=self._settings.roqqu_pay_token))
-                outputs.update(price_usd=str(self._c().token_price(symbol=symbol)), symbol=symbol)
-            elif node.type == "roqqu.bvn_verify":
-                data = self._c().bvn_verify(bvn=str(_cfg(config, "bvn", default="")))
-                outputs.update(account_name=_full_name(data), verified=True)
-            elif node.type == "roqqu.nin_verify":
-                data = self._c().nin_verify(nin=str(_cfg(config, "nin", default="")))
-                outputs.update(account_name=_full_name(data), verified=True)
-            elif node.type == "roqqu.verify_meter":
-                data = self._c().verify_meter(
-                    provider=str(_cfg(config, "provider", default="ikeja")),
-                    meter_type=str(_cfg(config, "meter_type", default="prepaid")),
-                    meter_number=str(_cfg(config, "meter_number", default="")),
-                )
-                outputs.update(account_name=str(data.get("cust_name", "")), valid=True)
-            elif node.type == "roqqu.recharge_airtime":
-                self._c().recharge_airtime(
-                    phone_number=str(_cfg(config, "phone_number", default="")), amount=money(amount)
-                )
-                outputs.update(recharged=True)
-            elif node.type == "roqqu.pay_electric":
-                outputs.update(
-                    self._c().pay_electric(
-                        provider=str(_cfg(config, "provider", default="ikeja")),
-                        meter_type=str(_cfg(config, "meter_type", default="prepaid")),
-                        meter_number=str(_cfg(config, "meter_number", default="")),
-                        amount=money(amount),
-                        phone_number=str(_cfg(config, "phone_number", default="")),
-                    )
-                )
+                symbol = str(_cfg(config, "symbol", default="btc"))
+                outputs.update(price_usd=str(token_price_usd(self._settings, symbol)), symbol=symbol)
             elif node.type == "safety.validate_amount":
                 expected = str(money(config.get("expected_amount", amount)))
                 paid = str(money(inputs.get("paid_amount", amount)))

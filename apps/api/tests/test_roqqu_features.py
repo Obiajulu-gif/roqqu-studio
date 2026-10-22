@@ -1,4 +1,4 @@
-"""Roqqu ecosystem features: coin choice at checkout, live price card, bills template."""
+"""Roqqu ecosystem features: coin choice at checkout, live price card, templates."""
 
 from __future__ import annotations
 
@@ -15,7 +15,6 @@ from roqqu_studio.templates import build_template, list_templates
 
 client = TestClient(api_main.app)
 
-_PRICES = {"btc": Decimal("60000"), "eth": Decimal("3000"), "trx": Decimal("0.25")}
 
 
 class _FakeRoqqu:
@@ -30,13 +29,10 @@ class _FakeRoqqu:
     def __exit__(self, *a):
         return False
 
-    def generate_wallet(self, *, token):
-        address = f"{token.upper()}-addr-{len(self.made)}"
+    def generate_wallet(self, *, network, customer=None):
+        address = f"{network.upper()}-addr-{len(self.made)}"
         self.made.append(address)
-        return {"address": address, "token": token, "total_received": "0", "created_at": ""}
-
-    def token_price(self, *, symbol):
-        return _PRICES[symbol]
+        return {"address": address, "network": network}
 
 
 def _invoice() -> tuple[str, str]:
@@ -51,22 +47,25 @@ def _invoice() -> tuple[str, str]:
 
 def test_buyer_picks_a_coin_and_can_switch(monkeypatch):
     monkeypatch.setattr(api_main, "RoqquClient", _FakeRoqqu)
+    monkeypatch.setattr(api_main, "token_price_usd", lambda s, coin: Decimal("60000") if coin == "btc" else Decimal(1))
+    monkeypatch.setattr(api_main.credential_store, "settings_for",
+                        lambda _wid: Settings(_env_file=None, ras_test_key="ras_test_k_0123456789abcdef0123", roqqu_ngn_per_usd="1500"))
     artifact_id, ref = _invoice()
 
     res = client.post(f"/preview/{artifact_id}/invoice/{ref}/pay?token=btc")
     assert res.status_code == 200
     page = client.get(res.json()["checkout_url"]).text
     # NGN 150,000 / 1,500 = USD 100 = 0.00166667 BTC (rounded up)
-    assert "0.00166667 BTC" in page and 'value="eth"' in page
+    assert "0.00166667 BTC" in page and 'value="usdt_bep20"' in page
 
     switched = client.post(
-        f"/preview/{artifact_id}/deposit/{ref}", data={"token": "eth"}, follow_redirects=True
+        f"/preview/{artifact_id}/deposit/{ref}", data={"token": "usdt_bep20"}, follow_redirects=True
     )
     assert switched.status_code == 200
-    assert "0.03333334 ETH" in switched.text
+    assert "100.00000000 USDT (BEP20)" in switched.text
     order = orders_service.get(ref)
-    assert order.transaction_reference.startswith("eth:")
-    assert order.payment_reference.startswith("ETH-addr")
+    assert order.transaction_reference.startswith("usdt_bep20:")
+    assert order.payment_reference.startswith("BEP20-addr")
 
 
 def test_unknown_coin_is_rejected(monkeypatch):
@@ -78,7 +77,7 @@ def test_unknown_coin_is_rejected(monkeypatch):
 def test_verify_checks_the_coin_the_buyer_paid_in(monkeypatch):
     monkeypatch.setattr(api_main, "RoqquClient", _FakeRoqqu)
     artifact_id, ref = _invoice()
-    client.post(f"/preview/{artifact_id}/invoice/{ref}/pay?token=eth")
+    client.post(f"/preview/{artifact_id}/invoice/{ref}/pay?token=usdt_bep20")
     seen = {}
 
     def verifier(payment_reference, workflow_id=None, token=None):
@@ -91,7 +90,7 @@ def test_verify_checks_the_coin_the_buyer_paid_in(monkeypatch):
         assert orders_service.verify(ref).status.value == "verified"
     finally:
         orders_service.verifier = original
-    assert seen["token"] == "eth"
+    assert seen["token"] == "usdt_bep20"
 
 
 def test_price_card_needs_no_key(monkeypatch):
@@ -103,46 +102,15 @@ def test_price_card_needs_no_key(monkeypatch):
         api_main.credential_store, "settings_for",
         lambda _wid: Settings(_env_file=None, roqqu_ngn_per_usd="1500"),
     )
+    monkeypatch.setattr(api_main, "ngn_per_usd", lambda s: Decimal("1500"),
+    )
     body = client.get("/roqqu/prices").json()
     btc = next(t for t in body["tokens"] if t["symbol"] == "btc")
     assert btc["price_ngn"] == "90000000.00" and btc["payable"] is True
     assert next(t for t in body["tokens"] if t["symbol"] == "xrp")["payable"] is False
 
 
-def test_bills_template_is_listed_and_clean():
-    assert "pay-bills" in {t.id for t in list_templates()}
-    report = analyze(build_template("pay-bills"), default_catalog())
-    assert report.findings == []
-
-
-def test_bills_template_runs_in_practice():
-    wf = client.post("/workflows/from-template/pay-bills").json()["workflow"]
-    run = client.post("/executions", json={"workflow": wf, "adapter": "mock"}).json()["run"]
-    assert run["status"] == "completed"
-
-
-def test_live_meter_check_returns_the_customer_name(monkeypatch):
-    from roqqu_studio.executor.adapter import SandboxAdapter
-    from roqqu_studio.ir.models import Node
-
-    class Fake:
-        def verify_meter(self, *, provider, meter_type, meter_number):
-            assert (provider, meter_type, meter_number) == ("ikeja", "prepaid", "45055844760")
-            return {"cust_name": "MRS ADA OKAFOR", "address": "x"}
-
-    adapter = SandboxAdapter(Settings(_env_file=None, roqqu_secret_key="RQ-SEC-x"))
-    monkeypatch.setattr(adapter, "_c", lambda: Fake())
-    result = adapter.invoke(
-        Node(id="m", type="roqqu.verify_meter", config={"meter_number": "45055844760"}),
-        {"inputs": {}},
-    )
-    assert result.ok and result.outputs["account_name"] == "MRS ADA OKAFOR"
-
-
-ALL_TEMPLATES = [
-    "sell-online", "invoice", "ajo", "payroll", "pay-bills",
-    "sell-data", "withdrawals", "kyc", "price-alerts",
-]
+ALL_TEMPLATES = ["sell-online", "invoice", "ajo", "payroll", "withdrawals", "price-alerts"]
 
 
 def test_every_template_is_clean_and_runs_in_practice():
@@ -172,18 +140,16 @@ def test_rooky_keyword_routes_cover_the_new_templates():
 
     fb = KeywordFallback()
     cases = {
-        "I want to sell data bundles to students": "sell-data",
         "Let customers withdraw their crypto": "withdrawals",
-        "I need KYC with BVN for new users": "kyc",
         "Alert me when BTC crosses 70k": "price-alerts",
-        "Sell prepaid electricity units": "pay-bills",
         "I sell thrift clothes on Instagram": "sell-online",
     }
     for message, expected in cases.items():
         assert fb.structured(system="", user="", message=message).template_id == expected, message
 
 
-def test_live_data_bundles_run_through_the_playground(monkeypatch):
+
+def test_live_balances_run_through_the_playground(monkeypatch):
     from roqqu_studio import playground
     from roqqu_studio.executor.adapter import SandboxAdapter
     from roqqu_studio.ir.models import Node
@@ -193,13 +159,11 @@ def test_live_data_bundles_run_through_the_playground(monkeypatch):
     def fake_call(req, settings, transport=None):
         seen["endpoint"], seen["params"] = req.endpoint, req.params
         return {"status": 200, "elapsed_ms": 1,
-                "request": {"method": "GET", "url": "u", "query": req.params, "body": {}},
-                "response": {"status": "success", "data": [{"variation_code": "mtn-10mb-100"}]}}
+                "request": {"method": "POST", "url": "u", "query": {}, "body": req.params},
+                "response": {"status": "success", "data": {"balance": {"usdt": 137}}}}
 
     monkeypatch.setattr(playground, "call", fake_call)
-    adapter = SandboxAdapter(Settings(_env_file=None, roqqu_secret_key="RQ-SEC-x"))
-    result = adapter.invoke(
-        Node(id="p", type="roqqu.data_bundles", config={"provider": "mtn"}), {"inputs": {}}
-    )
-    assert result.ok and seen == {"endpoint": "data-bundles", "params": {"provider": "mtn"}}
-    assert result.outputs["data"][0]["variation_code"] == "mtn-10mb-100"
+    adapter = SandboxAdapter(Settings(_env_file=None, roqqu_secret_key="ras_test_x"))
+    result = adapter.invoke(Node(id="b", type="roqqu.balances", config={"token": "usdt"}), {"inputs": {}})
+    assert result.ok and seen == {"endpoint": "get-crypto-balances", "params": {"token": "usdt"}}
+    assert result.outputs["data"]["balance"]["usdt"] == 137

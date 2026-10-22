@@ -17,7 +17,7 @@ def _transfer_wf(with_validation: bool) -> Workflow:
     ]
     edges = [Edge(source="confirm", target="transfer", kind="event")]
     if with_validation:
-        nodes.insert(1, Node(id="validate", type="roqqu.account_resolve"))
+        nodes.insert(1, Node(id="validate", type="roqqu.blockchain_address"))
         edges = [
             Edge(source="confirm", target="validate", kind="event"),
             Edge(source="validate", target="transfer"),

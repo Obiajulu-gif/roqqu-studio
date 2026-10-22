@@ -1,17 +1,16 @@
 """Business services on Roqqu: the working panels behind each template.
 
-Every action maps to a documented Roqqu endpoint (via the playground's
-allowlisted call). Two modes:
+Every action maps to a documented Roqqu API Service endpoint (via the
+playground's allowlisted call). Two modes:
 
-  * practice - no keys, no money. Inputs are checked the way Roqqu checks them
-    and the answer is simulated in Roqqu's documented response shape. Every
+  * practice - no keys, no money. Inputs are checked the way RAS checks them
+    and the answer is simulated in RAS's documented response shape. Every
     practice result is labelled as such; practice prices are not market data.
-  * live     - the real Roqqu API with the server's key. Side effects still
-    need ALLOW_PRODUCTION_EXECUTION=true (enforced by the playground).
+  * live     - the real RAS API with the server's key (test key = test mode,
+    no real money). Live-mode side effects still need
+    ALLOW_PRODUCTION_EXECUTION=true (enforced by the playground).
 
 Each session keeps a short history so the dashboard shows what happened.
-KYC answers are reduced to a name and a masked number: the rest of the record
-(date of birth, phone, address) never leaves this module.
 """
 
 from __future__ import annotations
@@ -20,38 +19,34 @@ import re
 import secrets
 from collections import defaultdict, deque
 from datetime import datetime, timezone
-from decimal import Decimal, ROUND_UP
+from decimal import ROUND_UP, Decimal
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 from . import playground
 from .config import Settings
+from .integrations.roqqu import PAY_OPTIONS, ngn_per_usd
 
 Mode = Literal["practice", "live"]
 
 # action -> (playground endpoint id, panel)
 ACTIONS: dict[str, tuple[str, str]] = {
-    "verify-meter": ("verify-meter", "bills"),
-    "pay-electricity": ("pay-electricity", "bills"),
-    "recharge-airtime": ("recharge-airtime", "bills"),
-    "data-bundles": ("data-bundles", "data"),
-    "buy-data": ("buy-data", "data"),
-    "check-address": ("address-lookup", "withdraw"),
-    "send-token": ("send-token", "withdraw"),
-    "bvn-verify": ("bvn-verify", "kyc"),
-    "nin-verify": ("nin-verify", "kyc"),
-    "get-banks": ("get-banks", "kyc"),
-    "account-resolve": ("account-resolve", "kyc"),
-    "get-prices": ("get-prices", "alerts"),
+    "check-address": ("what-network", "withdraw"),
+    "send-coin": ("send-coin", "withdraw"),
+    "network-fee": ("get-network-fees", "withdraw"),
+    "balances": ("get-crypto-balances", "withdraw"),
+    "get-prices": ("get-crypto-prices", "alerts"),
+    "get-rates": ("get-fiat-rates", "alerts"),
 }
 
+# Which network an address shape belongs to (practice mode stands in for What Network).
 ADDRESS_RE = {
-    "btc": re.compile(r"^(bc1[a-z0-9]{25,62}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$"),
-    "eth": re.compile(r"^0x[a-fA-F0-9]{40}$"),
-    "trx": re.compile(r"^T[1-9A-HJ-NP-Za-km-z]{33}$"),
+    "bitcoin": re.compile(r"^(bc1[a-z0-9]{25,62}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$"),
+    "bep20": re.compile(r"^0x[a-fA-F0-9]{40}$"),
+    "erc20": re.compile(r"^0x[a-fA-F0-9]{40}$"),
+    "trc20": re.compile(r"^T[1-9A-HJ-NP-Za-km-z]{33}$"),
 }
-PHONE_RE = re.compile(r"^0[789][01]\d{8}$")
 
 # Practice fixtures, labelled as practice data wherever they are shown.
 PRACTICE_PRICES = {
@@ -62,25 +57,7 @@ PRACTICE_PRICES = {
     "xrp": {"price": 0.55, "change": -1.2},
     "usdt": {"price": 1.0, "change": 0.0},
 }
-PRACTICE_PLANS = {
-    "mtn": [("mtn-100mb-100", "N100 100MB - 1 day", "100.00"),
-            ("mtn-1gb-500", "N500 1GB - 7 days", "500.00"),
-            ("mtn-2gb-1200", "N1,200 2GB - 30 days", "1200.00"),
-            ("mtn-10gb-3500", "N3,500 10GB - 30 days", "3500.00")],
-    "airtel": [("airtel-100mb-100", "N100 100MB - 1 day", "100.00"),
-               ("airtel-1-5gb-1000", "N1,000 1.5GB - 30 days", "1000.00"),
-               ("airtel-6gb-2500", "N2,500 6GB - 30 days", "2500.00")],
-    "glo": [("glo-1gb-500", "N500 1GB - 14 days", "500.00"),
-            ("glo-5-8gb-2000", "N2,000 5.8GB - 30 days", "2000.00")],
-    "etisalat": [("9mobile-1gb-1000", "N1,000 1GB - 30 days", "1000.00"),
-                 ("9mobile-4-5gb-2000", "N2,000 4.5GB - 30 days", "2000.00")],
-}
-PRACTICE_BANKS = [
-    "Access Bank", "Ecobank Nigeria", "Fidelity Bank Plc", "First Bank of Nigeria",
-    "First City Monument Bank", "Guaranty Trust Bank", "Kuda Microfinance Bank", "Moniepoint MFB",
-    "Opay", "Palmpay", "Polaris Bank", "Stanbic IBTC Bank", "Sterling Bank", "Union Bank",
-    "United Bank for Africa", "Wema Bank", "Zenith Bank",
-]
+PRACTICE_FEES = {"bitcoin": "0.00002", "trc20": "1", "bep20": "0.3", "erc20": "3"}
 
 
 class ServiceRequest(BaseModel):
@@ -96,7 +73,7 @@ class PayrollRow(BaseModel):
 
 
 class PayrollRequest(BaseModel):
-    token: Literal["btc", "eth", "trx"] = "trx"
+    token: Literal["usdt_trc20", "usdt_bep20", "btc"] = "usdt_trc20"
     rows: list[PayrollRow] = Field(min_length=1, max_length=200)
     mode: Mode = "practice"
 
@@ -122,111 +99,60 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def _mask(value: str) -> str:
-    value = str(value or "")
-    return f"{'•' * max(len(value) - 3, 0)}{value[-3:]}" if value else ""
-
-
 def _fail(message: str) -> None:
     raise ServiceError(400, message)
+
+
+def networks_for(address: str) -> list[str]:
+    return [n for n, rx in ADDRESS_RE.items() if rx.match(address.strip())]
 
 
 # --- practice simulation ------------------------------------------------------
 
 def _simulate(action: str, p: dict[str, Any]) -> Any:
-    """Roqqu-shaped answers, with Roqqu's own input checks applied."""
-    if action == "verify-meter":
-        if not re.fullmatch(r"\d{11,13}", str(p.get("meter_number", ""))):
-            _fail("invalid meter number")
-        return {"cust_name": "MRS ADA OKAFOR (practice)", "address": "12 Sample Street, Ikeja"}
-    if action == "pay-electricity":
-        amount = Decimal(str(p.get("amount") or 0))
-        if amount < 500:
-            _fail("minimum electricity purchase is NGN 500")
-        units = ((amount - 100) / Decimal("68")).quantize(Decimal("0.1"))
-        token = "-".join(f"{secrets.randbelow(10000):04d}" for _ in range(5))
-        return {"token": token, "units_kwh": str(units), "fee_ngn": "100"}
-    if action == "recharge-airtime":
-        if not PHONE_RE.match(str(p.get("phone_number", ""))):
-            _fail("invalid phone number supplied")
-        return None
-    if action == "data-bundles":
-        plans = PRACTICE_PLANS.get(str(p.get("provider", "")).lower())
-        if plans is None:
-            _fail("unable to get subscriptions")
-        return [
-            {"variation_code": c, "name": n, "variation_amount": a, "fixedPrice": "Yes"}
-            for c, n, a in plans
-        ]
-    if action == "buy-data":
-        if not PHONE_RE.match(str(p.get("phone_number", ""))):
-            _fail("invalid phone number supplied")
-        return {"request_id": str(secrets.randbelow(900000) + 100000),
-                "phone": p.get("phone_number"), "variation_code": p.get("variation_code")}
+    """RAS-shaped answers, with RAS's own input checks applied."""
     if action == "check-address":
-        symbol = str(p.get("symbol", "")).lower()
-        if not ADDRESS_RE.get(symbol, re.compile(r"^$")).match(str(p.get("addr", ""))):
-            _fail(f"invalid {symbol.upper() or 'coin'} address supplied")
-        return {"address": p.get("addr"), "symbol": symbol, "balance": 0, "transactions": []}
-    if action == "send-token":
-        symbol = str(p.get("token", "")).lower()
-        if not ADDRESS_RE.get(symbol, re.compile(r"^$")).match(str(p.get("wallet", ""))):
-            _fail(f"invalid {symbol.upper() or 'coin'} address supplied")
+        nets = networks_for(str(p.get("address", "")))
+        if not nets:
+            _fail("cannot find any network for address parsed")
+        return nets
+    if action == "send-coin":
+        network = str(p.get("network", "")).lower()
+        if network not in networks_for(str(p.get("to", ""))):
+            _fail("invalid network parsed for address")
         if Decimal(str(p.get("amount") or 0)) <= 0:
-            _fail("amount must be more than zero")
-        return None
-    if action in ("bvn-verify", "nin-verify"):
-        key = "bvn" if action == "bvn-verify" else "nin"
-        if not re.fullmatch(r"\d{11}", str(p.get(key, ""))):
-            _fail(f"invalid {key.upper()} supplied")
-        return {key: p[key], "first_name": "ADA", "middle_name": "CHIOMA", "last_name": "OKAFOR"}
-    if action == "get-banks":
-        return PRACTICE_BANKS
-    if action == "account-resolve":
-        if not re.fullmatch(r"\d{10}", str(p.get("account_number", ""))):
-            _fail("invalid account details")
-        if not p.get("bank"):
-            _fail("pick a bank")
-        return "ADA CHIOMA OKAFOR (practice)"
+            _fail("amount must be greater than 0")
+        return {"refid": str(secrets.randbelow(10**19) + 10**18)}
+    if action == "network-fee":
+        network = str(p.get("network", "")).lower()
+        if network not in PRACTICE_FEES:
+            _fail("network not supported")
+        return {"fee": PRACTICE_FEES[network]}
+    if action == "balances":
+        return {"balance": {"btc": 0.0021, "eth": 0, "usdt": 137, "trx": 0}}
     if action == "get-prices":
         return PRACTICE_PRICES
+    if action == "get-rates":
+        return [{"symbol": "ngn", "title": "Nigerian Naira", "rate": 1360}]
     raise ServiceError(404, f"unknown action: {action}")
-
-
-# --- shaping what the browser sees --------------------------------------------
-
-def _shape(action: str, data: Any) -> Any:
-    if action in ("bvn-verify", "nin-verify") and isinstance(data, dict):
-        key = "bvn" if action == "bvn-verify" else "nin"
-        name = " ".join(str(data.get(k) or "") for k in ("first_name", "middle_name", "last_name"))
-        return {"name": " ".join(name.split()), key: _mask(data.get(key, ""))}
-    return data
 
 
 def _summary(action: str, p: dict[str, Any], data: Any) -> str:
     match action:
-        case "verify-meter":
-            return f"Meter {p.get('meter_number')} belongs to {data.get('cust_name', '?')}"
-        case "pay-electricity":
-            return f"Bought NGN {p.get('amount')} of electricity for meter {p.get('meter_number')}"
-        case "recharge-airtime":
-            return f"Sent NGN {p.get('amount')} airtime to {p.get('phone_number')}"
-        case "data-bundles":
-            return f"Loaded {len(data or [])} {str(p.get('provider', '')).upper()} data plans"
-        case "buy-data":
-            return f"Activated {p.get('variation_code')} on {p.get('phone_number')}"
         case "check-address":
-            return f"{str(p.get('symbol', '')).upper()} address {str(p.get('addr', ''))[:10]}… is valid"
-        case "send-token":
-            return f"Sent {p.get('amount')} {str(p.get('token', '')).upper()} to {str(p.get('wallet', ''))[:10]}…"
-        case "bvn-verify" | "nin-verify":
-            return f"{'BVN' if action == 'bvn-verify' else 'NIN'} verified for {data.get('name')}"
-        case "get-banks":
-            return f"Loaded {len(data or [])} banks"
-        case "account-resolve":
-            return f"Account {p.get('account_number')} at {p.get('bank')} is {data}"
+            return f"Address {str(p.get('address', ''))[:10]}… is on {', '.join(data or [])}"
+        case "send-coin":
+            refid = (data or {}).get("refid", "")
+            return (f"Sent {p.get('amount')} {str(p.get('token', '')).upper()} on "
+                    f"{str(p.get('network', '')).upper()} to {str(p.get('to', ''))[:10]}… (refid {refid})")
+        case "network-fee":
+            return f"{str(p.get('network', '')).upper()} network fee is {(data or {}).get('fee')}"
+        case "balances":
+            return "Loaded balances"
         case "get-prices":
             return f"Loaded {len(data or {})} prices"
+        case "get-rates":
+            return "Loaded fiat rates"
     return action
 
 
@@ -258,40 +184,42 @@ def run(req: ServiceRequest, settings: Settings, session: str) -> dict[str, Any]
     except ServiceError as exc:
         _record(session, panel, req.action, req.mode, False, exc.detail)
         raise
-    shaped = _shape(req.action, data)
-    entry = _record(session, panel, req.action, req.mode, True, _summary(req.action, params, shaped))
-    return {"mode": req.mode, "data": shaped, "entry": entry}
+    entry = _record(session, panel, req.action, req.mode, True, _summary(req.action, params, data))
+    return {"mode": req.mode, "data": data, "entry": entry}
 
 
 def run_payroll(req: PayrollRequest, settings: Settings, session: str) -> dict[str, Any]:
-    """Pay each row in crypto: address checked locally, amount priced at Roqqu's
-    price (practice prices in practice), then one Send Token per row."""
-    price_usd = Decimal(str(_prices(settings, req.mode)[req.token]["price"]))
-    ngn_per_usd = Decimal(settings.roqqu_ngn_per_usd)
+    """Pay each row in crypto: address checked against the network, amount priced at
+    Roqqu's price and NGN rate (practice values in practice), then one Send per row."""
+    network, coin = PAY_OPTIONS[req.token]
+    price_usd = Decimal(str(_prices(settings, req.mode)[coin]["price"]))
+    rate = Decimal(1360) if req.mode == "practice" else ngn_per_usd(settings)
     results = []
     for row in req.rows:
-        due = (row.amount_ngn / ngn_per_usd / price_usd).quantize(Decimal("0.00000001"), ROUND_UP)
-        if not ADDRESS_RE[req.token].match(row.wallet.strip()):
+        due = (row.amount_ngn / rate / price_usd).quantize(Decimal("0.00000001"), ROUND_UP)
+        if network not in networks_for(row.wallet):
             results.append({"name": row.name, "ok": False, "amount_token": str(due),
-                            "message": f"Not a valid {req.token.upper()} address. Skipped."})
+                            "message": f"Not a {network.upper()} address. Skipped."})
             continue
         try:
-            run(ServiceRequest(action="send-token", mode=req.mode,
-                               params={"token": req.token, "amount": str(due), "wallet": row.wallet.strip()}),
-                settings, session)
-            results.append({"name": row.name, "ok": True, "amount_token": str(due), "message": "Sent"})
+            sent = run(ServiceRequest(action="send-coin", mode=req.mode,
+                                      params={"token": coin, "network": network, "amount": str(due),
+                                              "to": row.wallet.strip()}),
+                       settings, session)
+            results.append({"name": row.name, "ok": True, "amount_token": str(due),
+                            "message": f"Queued (refid {(sent['data'] or {}).get('refid', '')})"})
         except ServiceError as exc:
             results.append({"name": row.name, "ok": False, "amount_token": str(due), "message": exc.detail})
     paid = sum(1 for r in results if r["ok"])
     _record(session, "payroll", "pay-staff", req.mode, paid == len(results),
-            f"Paid {paid} of {len(results)} staff in {req.token.upper()}")
+            f"Paid {paid} of {len(results)} staff in {coin.upper()} ({network.upper()})")
     return {"mode": req.mode, "token": req.token, "price_usd": str(price_usd), "results": results}
 
 
 def _prices(settings: Settings, mode: Mode) -> dict[str, Any]:
     if mode == "practice":
         return PRACTICE_PRICES
-    res = playground.call(playground.PlaygroundCall(endpoint="get-prices", params={}), settings)
+    res = playground.call(playground.PlaygroundCall(endpoint="get-crypto-prices", params={}), settings)
     body = res["response"] if isinstance(res["response"], dict) else {}
     if body.get("status") != "success":
         raise ServiceError(502, "Roqqu prices unavailable")
@@ -343,5 +271,6 @@ def history(session: str, panel: str | None = None) -> list[dict[str, Any]]:
 
 def status(settings: Settings) -> dict[str, Any]:
     return {"live_key": bool(settings.roqqu_secret_key),
+            "mode": settings.ras_mode,
             "production_allowed": settings.allow_production_execution,
-            "ngn_per_usd": settings.roqqu_ngn_per_usd}
+            "ngn_per_usd": str(ngn_per_usd(settings))}
