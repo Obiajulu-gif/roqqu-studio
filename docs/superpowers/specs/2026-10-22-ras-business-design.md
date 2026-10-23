@@ -45,10 +45,10 @@ Mode = `RAS_MODE` env if set, else `test` when `RAS_TEST_KEY` exists, else `prac
 
 ## Sub-project B: Neon, onboarding, business wallets (apps/web)
 
-Tables (`apps/web/db/schema.sql`): `businesses`, `sessions`, `login_tokens`, `wallets`,
+Tables (`apps/web/db/schema.sql`): `businesses`, `login_tokens`, `wallets`,
 `products`, `invoices`, `ledger`, `sends`, `webhook_events`.
 
-- `POST /api/biz/onboard` {owner_name, business_name, email} → business + session cookie;
+- `POST /api/biz/onboard` {owner_name, business_name, email} → business + signed session cookie (JWT, `SESSION_SECRET`);
   then wallets for bep20/usdt, trc20/usdt, bitcoin/btc via `/wallets/generate-wallet`
   (customer = business email + owner name). Failure leaves a "Retry wallet setup" banner.
 - `POST /api/biz/login` {email} → emails a one-time link; `GET /api/biz/login/{token}` signs in.

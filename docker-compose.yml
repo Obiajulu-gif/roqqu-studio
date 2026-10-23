@@ -50,6 +50,20 @@ services:
         STUDIO_API_ORIGIN: "http://api:8080"
     environment:
       PORT: "8080"
+      # Business accounts, store and invoices (see .env.example, "Web app").
+      DATABASE_URL: "${DATABASE_URL:-}"
+      SESSION_SECRET: "${SESSION_SECRET:-}"
+      RAS_TEST_KEY: "${RAS_TEST_KEY:-}"
+      RAS_LIVE_KEY: "${RAS_LIVE_KEY:-}"
+      RAS_MODE: "${RAS_MODE:-}"
+      ALLOW_PRODUCTION_EXECUTION: "${ALLOW_PRODUCTION_EXECUTION:-false}"
+      BREVO_API_KEY: "${BREVO_API_KEY:-}"
+      BREVO_SENDER: "${BREVO_SENDER:-}"
+      ZEPTOMAIL_API_KEY: "${ZEPTOMAIL_API_KEY:-}"
+      ZEPTOMAIL_SENDER: "${ZEPTOMAIL_SENDER:-}"
+      BIZ_DAILY_SEND_USD: "${BIZ_DAILY_SEND_USD:-500}"
+      PUBLIC_APP_URL: "${PUBLIC_APP_URL:-}"
+      STUDIO_API_ORIGIN: "http://api:8080"
     ports:
       - "3000:8080"
     depends_on:

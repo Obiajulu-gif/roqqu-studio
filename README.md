@@ -107,6 +107,17 @@ Open **/studio/playground** (or the `</>` button in the studio) to try every end
 
 Public market endpoints work without keys. Everything else uses `RAS_TEST_KEY` (test mode, no real money). With a live key, anything that moves money or changes your account also needs `ALLOW_PRODUCTION_EXECUTION=true`.
 
+## Business accounts, store and Pay now
+
+Open **/studio/business**. A business owner types three things (their name, the business name and an email) and is in, with a Roqqu wallet on BEP20, TRC20 and Bitcoin created for them. From there:
+
+- **Store** (`/s/<business>`): products with photos and naira prices, one link to share on WhatsApp.
+- **Invoices** (`/pay/<id>`): show the business and owner name, the items, the naira total and the wallet it settles to. Each invoice gets its own Roqqu payment link.
+- **Pay now**: opens the buyer's browser wallet (MetaMask, Rabby, Trust) on BNB Smart Chain and sends exactly the USDT due. BTC and Tron USDT work too. Roqqu's encrypted webhook marks the invoice paid and credits the seller.
+- **Wallet**: balances, addresses with QR codes, and sends confirmed by an emailed 6-digit code, under a daily limit.
+
+Business data lives in Postgres (Neon in production; `npm run db:local` for development). See [SETUP.md](SETUP.md#3-business-accounts-store-and-pay-now-web-app).
+
 ## Configuration (all optional)
 
 Nothing is required to run the app or the tests. Copy [`.env.example`](.env.example) to `.env` and fill in only what you want; `docker compose up` picks it up automatically.
@@ -115,6 +126,8 @@ Nothing is required to run the app or the tests. Copy [`.env.example`](.env.exam
 |-----|---------|--------|
 | `NVIDIA_API_KEY` (or `GOOGLE_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`) | Rooky composing new flows from free text | [build.nvidia.com](https://build.nvidia.com) · [aistudio.google.com](https://aistudio.google.com/app/apikey) · [console.anthropic.com](https://console.anthropic.com) · [platform.openai.com](https://platform.openai.com) |
 | `RAS_TEST_KEY` (or `RAS_LIVE_KEY` + `ALLOW_PRODUCTION_EXECUTION=true`) | Real payment links, deposit addresses, verification and payouts | RAS console → Settings → API Keys and Webhooks; docs at [roqqu-api-services.gitbook.io/ras](https://roqqu-api-services.gitbook.io/ras) |
+| `DATABASE_URL`, `SESSION_SECRET` | Business accounts, store, invoices, wallet | [console.neon.tech](https://console.neon.tech) (free) → Connect; then `npm run db:migrate` in `apps/web` |
+| `BREVO_API_KEY`, `BREVO_SENDER` | Sign-in links and send codes by email (free, 300/day) | [brevo.com](https://www.brevo.com) → SMTP & API |
 | `ZEPTOMAIL_*` | Real email receipts | [zeptomail.zoho.com](https://zeptomail.zoho.com) |
 | `EVOLUTION_*` | Real WhatsApp nudges (the recipient comes from the run prompt or the node) | a self-hosted [Evolution API](https://github.com/EvolutionAPI/evolution-api) instance |
 

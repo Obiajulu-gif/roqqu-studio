@@ -59,7 +59,30 @@ RAS facts to respect:
 - Buy, sell and swap emit no webhook: confirm them with balances or history.
 - Payment links expire after 2 hours unless you set `expires_at`.
 
-### 3. Notifications (optional)
+### 3. Business accounts, store and Pay now (web app)
+
+These live in the Next.js app (`apps/web`) and need a database.
+
+1. **Database (Neon, free).** Sign up at https://console.neon.tech, create a project, click **Connect** and copy the *pooled* connection string into `DATABASE_URL`. Apply the schema once:
+   ```bash
+   cd apps/web && DATABASE_URL="postgres://..." npm run db:migrate
+   ```
+   No Neon account yet? `npm run db:local` runs a local Postgres (PGlite) and prints its URL.
+2. **`SESSION_SECRET`**: 32+ random characters (`openssl rand -hex 32`). It signs the sign-in cookie.
+3. **Email** for sign-in links and send codes. Free option: **Brevo** (https://www.brevo.com) lets you send 300 emails a day from one verified address, with no domain. Senders & IP → add and confirm your sender, then SMTP & API → API keys. Set `BREVO_API_KEY` and `BREVO_SENDER`. ZeptoMail works too. With neither, development shows the link or code on screen.
+4. **RAS key** (`RAS_TEST_KEY`) in the web app's environment too: wallets, payment links and sends are created from there. Set the RAS webhook URL to `https://<web-domain>/api/ras/webhook`.
+5. Optional: `BIZ_DAILY_SEND_USD` (default 500), `PUBLIC_APP_URL`, and for Pay now `NEXT_PUBLIC_BSC_NETWORK=testnet` plus `NEXT_PUBLIC_BSC_USDT` while testing on BSC testnet.
+
+What the owner gets:
+- **Onboarding**: three fields (your name, business name, email). The owner is signed in at once and gets a Roqqu wallet on BEP20, TRC20 and Bitcoin. Another device signs in with an emailed one-time link.
+- **Store** at `/s/<business>`: products with photos (shrunk to WebP in the browser, stored in the database) and naira prices.
+- **Invoices** at `/pay/<id>`: the business name, the owner's name, line items, the naira total, and the wallet it settles to. Every invoice and store order gets its own Roqqu payment link.
+- **Pay now** opens the buyer's browser wallet (MetaMask, Rabby, Trust) on BNB Smart Chain and sends the USDT due to that invoice's Roqqu address. BTC and Tron USDT are offered too. Roqqu's encrypted `payment_link_completed` webhook marks the invoice paid and credits the business.
+- **Wallet**: balances (a ledger in the database), addresses with QR codes, and sends that need an emailed 6-digit code and stay under the daily limit.
+
+In Practice mode (no RAS key) everything is simulated: wallets get placeholder addresses, Pay now connects the wallet but moves no coins, and a "Simulate deposit" button credits the wallet.
+
+### 4. Notifications (optional)
 
 - **Email:** use ZeptoMail (https://zeptomail.zoho.com, free tier). Set `ZEPTOMAIL_API_KEY` (the full `Zoho-enczapikey ...` value), `ZEPTOMAIL_SENDER` and `ZEPTOMAIL_REPLY_TO`.
 - **WhatsApp:** use a self-hosted Evolution API (https://github.com/EvolutionAPI/evolution-api). Set `EVOLUTION_API_URL`, `EVOLUTION_API_KEY` and `EVOLUTION_INSTANCE`.

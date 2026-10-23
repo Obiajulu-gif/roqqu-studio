@@ -961,3 +961,221 @@
     grid-column: 1 / -1;
   }
 }
+
+/* === Store manager ========================================================== */
+.sm,
+.im {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 980px;
+}
+
+.sm-share {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #2a3b66;
+  border-radius: 12px;
+  background: rgba(39, 100, 255, 0.08);
+}
+
+.sm-share > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sm-share code {
+  font-size: 13px;
+  color: #9fb8ff;
+  word-break: break-all;
+}
+
+.sm-form h3,
+.im h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.sm-form__grid {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.sm-drop {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1.5px dashed #2f3c58;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  color: #8d98ae;
+  text-align: center;
+  font-size: 13.5px;
+}
+
+.sm-drop:hover,
+.sm-drop:focus-within {
+  border-color: #2764ff;
+  color: #e6eaf3;
+}
+
+.sm-drop span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sm-drop small {
+  font-size: 11.5px;
+  color: #6f7b93;
+}
+
+.sm-drop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sm-drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sm-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sm-list,
+.im-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #1f2a40;
+  border-radius: 12px;
+}
+
+.sm-list li,
+.im-list li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+}
+
+.sm-list li + li,
+.im-list li + li {
+  border-top: 1px solid #1a2338;
+}
+
+.sm-list li.is-hidden {
+  opacity: 0.55;
+}
+
+.sm-thumb {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #1a2338;
+  color: #6f7b93;
+  font-weight: 600;
+}
+
+.sm-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sm-info,
+.im-list li > div {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sm-info span,
+.im-list li > div span {
+  font-size: 12.5px;
+  color: #8d98ae;
+}
+
+/* === Invoices manager ======================================================= */
+.im-items input {
+  width: 100%;
+}
+
+.im-items th:nth-child(2),
+.im-items td:nth-child(2) {
+  width: 80px;
+}
+
+.im-items th:nth-child(3),
+.im-items td:nth-child(3) {
+  width: 150px;
+}
+
+.im-foot {
+  align-items: center;
+}
+
+.im-total {
+  margin-left: auto;
+  color: #8d98ae;
+}
+
+.im-total b {
+  margin-left: 6px;
+  font-size: 18px;
+  color: #e6eaf3;
+}
+
+.im-amt {
+  font-family: var(--font-mono, "JetBrains Mono", monospace);
+  font-weight: 500;
+}
+
+.im-status {
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+.im-status.is-open { color: #f5b544; }
+.im-status.is-paid,
+.im-status.is-overpaid { color: #2bd49a; }
+.im-status.is-underpaid { color: #ff6b6b; }
+.im-status.is-void { color: #6f7b93; }
+
+@media (max-width: 720px) {
+  .sm-form__grid {
+    grid-template-columns: 1fr;
+  }
+  .sm-drop {
+    max-width: 200px;
+  }
+  .im-list li {
+    flex-wrap: wrap;
+  }
+}

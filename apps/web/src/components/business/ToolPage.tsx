@@ -6,14 +6,16 @@ import {
   WithdrawPanel,
 } from "@/components/ServicePanels";
 
-import { InvoicesPage, SavingsPage, SellPage } from "./GetPaid";
+import { SavingsPage } from "./GetPaid";
+import { InvoicesManager } from "./InvoicesManager";
+import { StoreManager } from "./StoreManager";
 import type { ToolSlug } from "./tools";
 import { WalletPage } from "./WalletPage";
 
 const PAGES: Record<ToolSlug, () => React.JSX.Element> = {
   wallet: WalletPage,
-  sell: SellPage,
-  invoices: InvoicesPage,
+  sell: StoreManager,
+  invoices: InvoicesManager,
   savings: SavingsPage,
   payroll: PayrollPanel,
   withdrawals: WithdrawPanel,

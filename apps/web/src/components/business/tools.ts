@@ -46,8 +46,8 @@ export const TOOLS: Tool[] = [
   },
   {
     slug: "sell",
-    title: "Sell online",
-    blurb: "A shop link for WhatsApp. Orders turn paid only when coins land.",
+    title: "Store",
+    blurb: "Products with photos and one link to share. Orders turn paid only when Roqqu confirms the coins.",
     group: "Get paid",
     template: "sell-online",
     icon: "M4 7h16l-1.5 9a2 2 0 0 1-2 1.7H7.5a2 2 0 0 1-2-1.7L4 7Zm4 0a4 4 0 0 1 8 0",
@@ -55,7 +55,7 @@ export const TOOLS: Tool[] = [
   {
     slug: "invoices",
     title: "Invoices",
-    blurb: "Bill a client in naira. They pay in BTC or USDT.",
+    blurb: "Bill a client in naira. They pay in USDT or BTC from their wallet, confirmed by Roqqu.",
     group: "Get paid",
     template: "invoice",
     icon: "M7 3h7l4 4v14H7V3Zm7 0v4h4M10 12h5M10 16h5",
